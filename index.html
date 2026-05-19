@@ -6,103 +6,21 @@
   <title>ШТАБ УСТА</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { 
-      font-family: -apple-system, sans-serif; 
-      background: #1a1a1a; 
-      color: #fff; 
-      margin: 0; 
-      padding: 20px; 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-      min-height: 100vh; 
-    }
+    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .box { width: 100%; max-width: 400px; }
-    .btn { 
-      background: #ff3b30; 
-      color: #fff; 
-      border: none; 
-      padding: 18px; 
-      margin: 8px 0; 
-      width: 100%; 
-      font-size: 18px; 
-      font-weight: bold; 
-      border-radius: 12px; 
-      cursor: pointer; 
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-grey { background: #48484a; }
-    input { 
-      width: 100%; 
-      padding: 15px; 
-      margin: 8px 0; 
-      font-size: 16px; 
-      border-radius: 8px; 
-      border: 1px solid #48484a; 
-      background: #2c2c2e; 
-      color: #fff; 
-      box-sizing: border-box; 
-    }
+    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
+    input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
     h1 { text-align: center; margin-bottom: 30px; }
-    .error { color: #ff3b30; text-align: center; margin-top: 10px; font-size: 14px; min-height: 20px; }
   </style>
 </head>
 <body>
-
 <div class="box">
   <h1>ШТАБ УСТА 🧱</h1>
-  <input id="email" type="email" placeholder="Email" autocomplete="email" />
-  <input id="password" type="password" placeholder="Пароль" autocomplete="current-password" />
-  <button class="btn" type="button" onclick="login()">ВОЙТИ</button>
-  <button class="btn btn-grey" type="button" onclick="location.href='signup.html'">РЕГИСТРАЦИЯ</button>
-  <div class="error" id="msg"></div>
+  <input id="email" type="email" placeholder="Email" />
+  <input id="password" type="password" placeholder="Пароль" />
+  <button class="btn" onclick="login()">ВОЙТИ</button>
 </div>
 
-<script>
-const supabase = window.supabase.createClient(
-  'https://xljogkyropyocvuuodfl.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
-);
-
-async function checkAuth() {
-  const { data: { user } = await supabase.auth.getUser();
-  if (!user) return;
-  
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
-    
-  if (membership?.role === 'owner') {
-    location.href = 'chef.html';
-  } else if (membership?.role === 'povar') {
-    location.href = 'povar.html';
-  }
-}
-
-async function login() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const msg = document.getElementById('msg');
-  msg.textContent = '';
-  
-  if (!email || !password) {
-    msg.textContent = 'Введи email и пароль';
-    return;
-  }
-  
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  
-  if (error) {
-    msg.textContent = error.message;
-    return;
-  }
-  
-  checkAuth();
-}
-
-checkAuth();
-</script>
+<script src="app.js"></script>
 </body>
 </html>
