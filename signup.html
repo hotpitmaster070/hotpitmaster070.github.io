@@ -6,13 +6,13 @@
 <title>Регистрация</title>
 <style>
   body {
-    background: #1a1a1a; color: #fff; font-family: sans-serif;
+    background: #1a1a1a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
   }
   .box {
     background: #2a2a2a; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px;
   }
-  input, select {
+  input {
     width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #444;
     border-radius: 8px; background: #1a1a1a; color: #fff; font-size: 16px; box-sizing: border-box;
   }
@@ -24,29 +24,16 @@
   #msg { margin-top: 12px; text-align: center; color: #aaa; font-size: 14px; }
   label { display: block; margin-bottom: 6px; color: #8e8e93; font-size: 14px; }
   h2 { margin: 0 0 20px 0; text-align: center; }
+  .hint { font-size: 13px; color: #8e8e93; margin-bottom: 16px; text-align: center; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="box">
     <h2>Регистрация</h2>
+    <p class="hint">Оставь код пустым чтобы создать ресторан. Введи код чтобы присоединиться как повар.</p>
+    
     <form id="signup">
-      <label>Роль</label>
-      <select id="role" required>
-        <option value="owner">Шеф / Владелец</option>
-        <option value="povar">Повар</option>
-      </select>
-
-      <div id="restaurant_block">
-        <label>Название ресторана</label>
-        <input id="restaurant" type="text" placeholder="Шашлычная №1">
-      </div>
-
-      <div id="invite_block" style="display:none;">
-        <label>Код приглашения</label>
-        <input id="invite_code" type="text" placeholder="A7B3K9" style="text-transform:uppercase">
-      </div>
-
       <label>Имя</label>
       <input id="name" type="text" placeholder="Али" required>
 
@@ -55,6 +42,10 @@
 
       <label>Пароль</label>
       <input id="password" type="password" placeholder="Минимум 6 символов" minlength="6" required>
+
+      <label>Код приглашения</label>
+      <input id="invite_code" type="text" placeholder="A7B3K9" style="text-transform:uppercase">
+      <div style="font-size: 12px; color: #8e8e93; margin-bottom: 12px;">Необязательно</div>
 
       <button id="btn" type="button">Зарегистрироваться</button>
     </form>
@@ -75,16 +66,6 @@ try {
   document.getElementById('msg').textContent = 'Готово к регистрации';
   document.getElementById('msg').style.color = '#4caf50';
 
-  document.getElementById('role').onchange = (e) => {
-    if (e.target.value === 'owner') {
-      document.getElementById('restaurant_block').style.display = 'block';
-      document.getElementById('invite_block').style.display = 'none';
-    } else {
-      document.getElementById('restaurant_block').style.display = 'none';
-      document.getElementById('invite_block').style.display = 'block';
-    }
-  };
-
   document.getElementById('btn').addEventListener('click', async () => {
     const btn = document.getElementById('btn');
     const msg = document.getElementById('msg');
@@ -93,8 +74,6 @@ try {
     msg.style.color = '#aaa';
 
     try {
-      const role = document.getElementById('role').value;
-      const restaurant = document.getElementById('restaurant').value.trim();
       const invite_code = document.getElementById('invite_code').value.trim().toUpperCase();
       const name = document.getElementById('name').value.trim();
       const email = document.getElementById('email').value.trim();
@@ -106,32 +85,48 @@ try {
       if (password.length < 6) {
         throw new Error('Пароль минимум 6 символов');
       }
-      if (role === 'owner' && !restaurant) {
-        throw new Error('Введи название ресторана');
-      }
-      if (role === 'povar' && !invite_code) {
-        throw new Error('Введи код приглашения');
-      }
 
+      // 1. Создаём пользователя в Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({ 
         email, 
         password,
         options: { 
-          data: { 
-            name: name,
-            restaurant_name: role === 'owner' ? restaurant : null
-          } 
+          data: { name: name }
         }
       });
       if (authError) throw authError;
 
-      if (role === 'povar') {
-        const { error: rpcError } = await supabase.rpc('join_org_by_code', { code: invite_code });
-        if (rpcError) throw rpcError;
+      const userId = authData.user.id;
+
+      // 2. Если есть код - присоединяемся к организации
+      if (invite_code) {
+        const { error: rpcError } = await supabase.rpc('join_org_by_code', { 
+          code: invite_code, 
+          user_id: userId 
+        });
+        if (rpcError) throw new Error('Неверный код приглашения');
+        
         msg.textContent = 'Готово! Перенаправляю...';
         setTimeout(() => window.location.href = 'index.html', 1500);
+      
       } else {
-        msg.textContent = 'Готово! Проверь почту и войди в систему.';
+        // 3. Если кода нет - создаём организацию и делаем юзера owner
+        const restaurantName = prompt('Название ресторана:');
+        if (!restaurantName) throw new Error('Название ресторана обязательно');
+
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .insert({ name: restaurantName })
+          .select()
+          .single();
+        if (orgError) throw orgError;
+
+        const { error: memError } = await supabase
+          .from('memberships')
+          .insert({ user_id: userId, org_id: orgData.id, role: 'owner' });
+        if (memError) throw memError;
+
+        msg.textContent = 'Ресторан создан! Проверь почту и войди.';
         msg.style.color = '#4caf50';
         setTimeout(() => window.location.href = 'index.html', 2000);
       }
