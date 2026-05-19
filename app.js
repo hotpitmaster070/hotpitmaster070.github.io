@@ -3,9 +3,15 @@ window.onerror = function(msg, url, line) {
   alert('Ошибка: ' + msg + '\nСтрока: ' + line);
 }
 
+window.addEventListener('unhandledrejection', function(e) {
+  alert('Ошибка Promise: ' + e.reason.message);
+});
+
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Ждём пока supabase загрузится
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
 let currentRole = null;
@@ -34,6 +40,7 @@ function showScreen(id) {
 }
 
 async function login() {
+  alert('Попытка входа...'); // уберёшь потом
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   if (!email || !password) return alert('Введи email и пароль');
@@ -41,8 +48,10 @@ async function login() {
   const { data: auth, error } = await db.auth.signInWithPassword({ email, password });
   if (error) return alert('Ошибка входа: ' + error.message);
 
-  const { data: membership } = await db.from('memberships')
+  const { data: membership, error: memError } = await db.from('memberships')
    .select('role, org_id').eq('user_id', auth.user.id).single();
+  
+  if (memError) return alert('Ошибка memberships: ' + memError.message);
   if (!membership) return alert('Ты не привязан к организации. Обратись к шефу.');
 
   currentUser = auth.user;
