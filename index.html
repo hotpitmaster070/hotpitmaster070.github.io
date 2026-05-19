@@ -36,7 +36,6 @@ async function checkAuth() {
   const { data: { user } = await supabase.auth.getUser();
   if (!user) return;
   
-  // Если уже залогинен - кидай на нужную страницу
   const { data: membership } = await supabase
     .from('memberships')
     .select('role')
@@ -64,14 +63,13 @@ async function login() {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   
   if (error) {
-    msg.textContent = 'Неверный email или пароль';
+    msg.textContent = error.message;
     return;
   }
   
   checkAuth();
 }
 
-// Проверяем при загрузке страницы
 checkAuth();
 </script>
 </body>
