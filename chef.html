@@ -1,141 +1,39 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Штаб Уста - Шеф</title>
-<style>
-body{margin:0;background:#1a1a1a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;box-sizing:border-box}
-.box{background:#2a2a2a;padding:30px;border-radius:12px;width:100%;max-width:500px}
-h2{margin:0 0 20px;text-align:center}
-.code-box{background:#1a1a1a;padding:15px;border-radius:8px;text-align:center;font-size:32px;letter-spacing:4px;margin:15px 0;border:1px solid #4caf50}
-button{width:100%;padding:14px;border:none;border-radius:8px;background:#4caf50;color:#fff;font-size:16px;cursor:pointer;margin-top:10px}
-button.secondary{background:#333}
-button.whatsapp{background:#25D366}
-.info{font-size:14px;color:#aaa;text-align:center;margin-top:10px}
-.chef-list{margin-top:20px;border-top:1px solid #444;padding-top:15px}
-.chef-item{background:#1a1a1a;padding:12px;border-radius:8px;margin-bottom:8px}
-.chef-name{font-size:16px;font-weight:600}
-.chef-email{font-size:13px;color:#aaa;margin-top:4px}
-.error{color:#ff3b30;text-align:center;margin-top:10px}
-.loader{text-align:center;color:#aaa}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Экран Шефа</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
+    h1 { text-align: center; font-size: 28px; margin-bottom: 25px; }
+    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; text-align: left; }
+    .btn-grey { background: #48484a; }
+    .invite-box { background: #2c2c2e; padding: 15px; border-radius: 12px; margin: 20px 0; text-align: center; }
+    .invite-code { font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #34c759; }
+  </style>
 </head>
 <body>
-<div class="box" id="app">
-  <div class="loader">Загрузка...</div>
+<h1>Экран Шефа 🧱</h1>
+<div class="invite-box">
+  <div>Код для поваров:</div>
+  <div class="invite-code" id="inviteCode">Загрузка...</div>
 </div>
 
+<button class="btn" onclick="alert('Скоро')">1. [+ ПРИХОД ТОВАРА]</button>
+<button class="btn" onclick="alert('Скоро')">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+<button class="btn" onclick="alert('Скоро')">4. [МОЙ СКЛАД]</button>
+<button class="btn" onclick="alert('Скоро')">5. [МОИ ЗАГОТОВКИ]</button>
+<button class="btn btn-grey" onclick="alert('Скоро')">6. [СПИСАНИЕ]</button>
+<button class="btn" onclick="alert('Скоро')">7. [ОТЧЁТ ПО СПИСАНИЮ]</button>
+<button class="btn" onclick="alert('Скоро')">8. [ОТЧЁТ ЗА МЕСЯЦ]</button>
+<button class="btn" onclick="alert('Скоро')">9. [ИНВЕНТАРИЗАЦИЯ]</button>
+<button class="btn btn-grey" onclick="logout()">ВЫЙТИ</button>
+
+<script src="app.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  const supabase = window.supabase.createClient(
-    'https://xljogkyropyocvuuodfl.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
-  );
-
-  async function load() {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        window.location.href = 'index.html';
-        return;
-      }
-
-      // Проверяем что юзер owner
-      const { data: membership, error: membError } = await supabase
-        .from('memberships')
-        .select('org_id, role')
-        .eq('user_id', user.id)
-        .eq('role', 'owner')
-        .single();
-
-      if (membError || !membership) {
-        document.getElementById('app').innerHTML = '<h2>Доступ только для шефа</h2><button onclick="logout()">Выйти</button>';
-        return;
-      }
-
-      // Получаем организацию
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .select('name, invite_code')
-        .eq('id', membership.org_id)
-        .single();
-      if (orgError) throw orgError;
-
-      // Получаем список поваров
-      const { data: chefs } = await supabase
-        .from('memberships')
-        .select('user_id, role')
-        .eq('org_id', membership.org_id)
-        .eq('role', 'povar');
-
-      let chefsHtml = '<div class="info">Пока нет поваров</div>';
-      
-      if (chefs && chefs.length > 0) {
-        const userIds = chefs.map(c => c.user_id);
-        
-        // Пробуем получить профили. Если таблицы нет - не падаем
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, name, email')
-          .in('id', userIds);
-
-        chefsHtml = chefs.map(c => {
-          const profile = profiles?.find(p => p.id === c.user_id);
-          const name = profile?.name || 'Повар';
-          const email = profile?.email || c.user_id.slice(0,8) + '...';
-          return `
-            <div class="chef-item">
-              <div class="chef-name">${name}</div>
-              <div class="chef-email">${email}</div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      document.getElementById('app').innerHTML = `
-        <h2>${org.name}</h2>
-        <div class="info">Код приглашения для поваров:</div>
-        <div class="code-box">${org.invite_code}</div>
-        <div class="info">Отправь этот код повару в WhatsApp</div>
-        <button class="whatsapp" onclick="inviteWhatsApp('${org.name}', '${org.invite_code}')">Пригласить в WhatsApp</button>
-        <button class="secondary" onclick="copyCode('${org.invite_code}')">Скопировать код</button>
-        
-        <div class="chef-list">
-          <div class="info" style="margin-bottom:10px;">Повара: ${chefs ? chefs.length : 0}</div>
-          ${chefsHtml}
-        </div>
-
-        <button class="secondary" onclick="logout()">Выйти</button>
-      `;
-    } catch (e) {
-      document.getElementById('app').innerHTML = `<h2>Ошибка</h2><div class="error">${e.message}</div><button onclick="logout()">Выйти</button>`;
-    }
-  }
-
-  window.inviteWhatsApp = function(restaurantName, code) {
-    const text = encodeURIComponent(
-      `Привет! Заходи работать в ${restaurantName}.\n` +
-      `1. Открой: https://hotpitmaster070.github.io/signup.html\n` +
-      `2. Введи код: ${code}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-  }
-
-  window.copyCode = function(code) {
-    navigator.clipboard.writeText(code).then(() => {
-      alert('Код скопирован!');
-    });
-  }
-
-  window.logout = async function() {
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
-  }
-
-  load();
-});
+checkAuth();
 </script>
 </body>
 </html>
