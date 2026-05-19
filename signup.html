@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Регистрация</title>
+<style>
+  body {
+    background: #1a1a1a; color: #fff; font-family: sans-serif;
+    display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
+  }
+  .box {
+    background: #2a2a2a; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px;
+  }
+  input, select {
+    width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #444;
+    border-radius: 8px; background: #1a1a1a; color: #fff; font-size: 16px; box-sizing: border-box;
+  }
+  button {
+    width: 100%; padding: 14px; background: #4caf50; color: white; border: none;
+    border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { background: #666; cursor: not-allowed; }
+  #msg { margin-top: 12px; text-align: center; color: #aaa; font-size: 14px; }
+  label { display: block; margin-bottom: 6px; color: #8e8e93; font-size: 14px; }
+  h2 { margin: 0 0 20px 0; text-align: center; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="box">
+    <h2>Регистрация</h2>
+    <form id="signup">
+      <label>Роль</label>
+      <select id="role" required>
+        <option value="owner">Шеф / Владелец</option>
+        <option value="povar">Повар</option>
+      </select>
+
+      <div id="restaurant_block">
+        <label>Название ресторана</label>
+        <input id="restaurant" type="text" placeholder="Шашлычная №1">
+      </div>
+
+      <div id="invite_block" style="display:none;">
+        <label>Код приглашения</label>
+        <input id="invite_code" type="text" placeholder="A7B3K9" style="text-transform:uppercase">
+      </div>
+
+      <label>Имя</label>
+      <input id="name" type="text" placeholder="Али" required>
+
+      <label>Email</label>
+      <input id="email" type="email" placeholder="email@mail.com" required>
+
+      <label>Пароль</label>
+      <input id="password" type="password" placeholder="Минимум 6 символов" minlength="6" required>
+
+      <button id="btn" type="button">Зарегистрироваться</button>
+    </form>
+    <div id="msg">Проверяю подключение...</div>
+  </div>
+
+<script>
+try {
+  if (!window.supabase) {
+    throw new Error('Supabase не загрузился. Проверь интернет');
+  }
+
+  const supabase = window.supabase.createClient(
+    'https://xljogkyropyocvuuodfl.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+  );
+
+  document.getElementById('msg').textContent = 'Готово к регистрации';
+  document.getElementById('msg').style.color = '#4caf50';
+
+  document.getElementById('role').onchange = (e) => {
+    if (e.target.value === 'owner') {
+      document.getElementById('restaurant_block').style.display = 'block';
+      document.getElementById('invite_block').style.display = 'none';
+    } else {
+      document.getElementById('restaurant_block').style.display = 'none';
+      document.getElementById('invite_block').style.display = 'block';
+    }
+  };
+
+  document.getElementById('btn').addEventListener('click', async () => {
+    const btn = document.getElementById('btn');
+    const msg = document.getElementById('msg');
+    btn.disabled = true;
+    msg.textContent = 'Регистрирую...';
+    msg.style.color = '#aaa';
+
+    try {
+      const role = document.getElementById('role').value;
+      const restaurant = document.getElementById('restaurant').value.trim();
+      const invite_code = document.getElementById('invite_code').value.trim().toUpperCase();
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password || !name) {
+        throw new Error('Заполни имя, email и пароль');
+      }
+      if (password.length < 6) {
+        throw new Error('Пароль минимум 6 символов');
+      }
+      if (role === 'owner' && !restaurant) {
+        throw new Error('Введи название ресторана');
+      }
+      if (role === 'povar' && !invite_code) {
+        throw new Error('Введи код приглашения');
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { 
+          data: { 
+            name: name,
+            restaurant_name: role === 'owner' ? restaurant : null
+          } 
+        }
+      });
+      if (authError) throw authError;
+
+      if (role === 'povar') {
+        const { error: rpcError } = await supabase.rpc('join_org_by_code', { code: invite_code });
+        if (rpcError) throw rpcError;
+        msg.textContent = 'Готово! Перенаправляю...';
+        setTimeout(() => window.location.href = 'index.html', 1500);
+      } else {
+        msg.textContent = 'Готово! Проверь почту и войди в систему.';
+        msg.style.color = '#4caf50';
+        setTimeout(() => window.location.href = 'index.html', 2000);
+      }
+
+    } catch (err) {
+      msg.textContent = 'Ошибка: ' + err.message;
+      msg.style.color = '#ff3b30';
+      btn.disabled = false;
+    }
+  });
+
+} catch (e) {
+  const msg = document.getElementById('msg');
+  if (msg) {
+    msg.textContent = 'Критическая ошибка: ' + e.message;
+    msg.style.color = '#ff3b30';
+  }
+}
+</script>
+</body>
+</html>
