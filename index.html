@@ -6,43 +6,72 @@
   <title>ШТАБ УСТА</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
-    .screen { display: none; }
-    .screen.active { display: block; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; }
-    .btn-green { background: #34c759; }
+    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .box { width: 100%; max-width: 400px; }
+    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
     .btn-grey { background: #48484a; }
-    .btn-secondary { background: #5e5e60; }
-    input, select, textarea { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-    h1, h2, h3 { text-align: center; }
-    label { display: block; margin-top: 12px; color: #8e8e93; }
-    table { width: 100%; margin-top: 15px; border-collapse: collapse; }
-    td, th { padding: 12px; border-bottom: 1px solid #48484a; text-align: left; }
-    th { color: #8e8e93; }
-    .kg { text-align: right; font-weight: bold; }
-    .card { background: #2c2c2e; padding: 15px; border-radius: 12px; margin: 10px 0; }
-    .table-wrap { overflow-x: auto; }
-    .row { display: flex; gap: 8px; margin-top: 10px; }
-    .row > div { flex: 1; }
-    .error { color: #ff3b30; text-align: center; margin-top: 10px; }
+    input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
+    h1 { text-align: center; margin-bottom: 30px; }
+    .error { color: #ff3b30; text-align: center; margin-top: 10px; font-size: 14px; }
   </style>
 </head>
 <body>
 
-<div id="login" class="screen active">
+<div class="box">
   <h1>ШТАБ УСТА 🧱</h1>
-  <input id="email" type="email" placeholder="Email" />
-  <input id="password" type="password" placeholder="Пароль" />
+  <input id="email" type="email" placeholder="Email" autocomplete="email" />
+  <input id="password" type="password" placeholder="Пароль" autocomplete="current-password" />
   <button class="btn" type="button" onclick="login()">ВОЙТИ</button>
-  <button class="btn btn-grey" type="button" onclick="go('signup.html')">РЕГИСТРАЦИЯ</button>
+  <button class="btn btn-grey" type="button" onclick="location.href='signup.html'">РЕГИСТРАЦИЯ</button>
   <div class="error" id="msg"></div>
 </div>
 
-<!-- УДАЛИ все остальные div: shef, povar, yield_form и т.д. -->
-<!-- Они должны быть только в chef.html и povar.html -->
-
-<script src="app.js"></script>
 <script>
+const supabase = window.supabase.createClient(
+  'https://xljogkyropyocvuuodfl.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+);
+
+async function checkAuth() {
+  const { data: { user } = await supabase.auth.getUser();
+  if (!user) return;
+  
+  // Если уже залогинен - кидай на нужную страницу
+  const { data: membership } = await supabase
+    .from('memberships')
+    .select('role')
+    .eq('user_id', user.id)
+    .single();
+    
+  if (membership?.role === 'owner') {
+    location.href = 'chef.html';
+  } else if (membership?.role === 'povar') {
+    location.href = 'povar.html';
+  }
+}
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
+  
+  if (!email || !password) {
+    msg.textContent = 'Введи email и пароль';
+    return;
+  }
+  
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  
+  if (error) {
+    msg.textContent = 'Неверный email или пароль';
+    return;
+  }
+  
+  checkAuth();
+}
+
+// Проверяем при загрузке страницы
 checkAuth();
 </script>
 </body>
