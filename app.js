@@ -36,7 +36,7 @@ function showScreen(id) {
 async function login() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  if (!email ||!password) return alert('Введи email и пароль');
+  if (!email || !password) return alert('Введи email и пароль');
 
   const { data: auth, error } = await db.auth.signInWithPassword({ email, password });
   if (error) return alert('Ошибка входа: ' + error.message);
@@ -140,7 +140,7 @@ async function saveYield() {
   }
 
   const outputs = [];
-  document.querySelectorAll('#yield_outputs.card').forEach(div => {
+  document.querySelectorAll('#yield_outputs .card').forEach(div => {
     const itemId = div.querySelector('.yield_output_item').value;
     const qty = parseFloat(div.querySelector('.yield_output_qty').value);
     if (qty > 0) outputs.push({ item_id: itemId, qty });
@@ -201,9 +201,21 @@ async function openReport() {
    .limit(50);
 
   const reportEl = document.getElementById('yield_report_table');
-  if (error ||!data ||!data.length) {
+  if (error || !data || !data.length) {
     if (reportEl) reportEl.innerHTML = '<div class="card">Пока нет актов</div>';
     return;
   }
 
-  let html = '<div class="table-wrap"><table><tr><th>
+  let html = '<div class="table-wrap"><table><tr><th>Дата</th><th>Сырье</th><th>Выход</th><th>Кто сделал</th></tr>';
+  data.forEach(act => {
+    const outputs = act.items.map(i => `${i.item.name}: ${i.qty}кг`).join(', ');
+    html += `<tr>
+      <td>${act.act_date}</td>
+      <td>${act.input_item.name}</td>
+      <td>${outputs}</td>
+      <td>${act.done_by_profile?.name || '—'}</td>
+    </tr>`;
+  });
+  html += '</table></div>';
+  if (reportEl) reportEl.innerHTML = html;
+}
