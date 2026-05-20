@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Экран Шефа</title>
+  <style>
+    body {
+      background: #1a1a1a;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 30px;
+    }
+    .btn {
+      width: 90%;
+      max-width: 400px;
+      padding: 18px;
+      margin: 10px auto;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      display: block;
+      cursor: pointer;
+    }
+    .btn-red {
+      background: #ff3333;
+    }
+    .btn-gray {
+      background: #555;
+    }
+    .btn:active {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Экран Шефа 🧱</h1>
+
+  <button class="btn btn-red" onclick="alert('Приход товара')">1. [+ ПРИХОД ТОВАРА]</button>
+  <button class="btn btn-red" onclick="alert('Создать задание')">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+  <button class="btn btn-red" onclick="alert('Мой склад')">4. [МОЙ СКЛАД]</button>
+  <button class="btn btn-red" onclick="alert('Мои заготовки')">5. [МОИ ЗАГОТОВКИ]</button>
+  <button class="btn btn-gray" onclick="alert('Списание')">6. [СПИСАНИЕ]</button>
+  <button class="btn btn-red" onclick="alert('Отчёт по списанию')">7. [ОТЧЁТ ПО СПИСАНИЮ]</button>
+  <button class="btn btn-red" onclick="alert('Отчёт за месяц')">8. [ОТЧЁТ ЗА МЕСЯЦ]</button>
+  <button class="btn btn-red" onclick="alert('Инвентаризация')">9. [ИНВЕНТАРИЗАЦИЯ]</button>
+  <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
+
+  <script>
+    async function logout() {
+      await db.auth.signOut();
+      window.location.href = '/index.html';
+    }
+  </script>
+</body>
+</html>
