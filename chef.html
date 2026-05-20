@@ -6,34 +6,43 @@
   <title>Экран Шефа</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; }
-    h1 { text-align: center; font-size: 28px; margin-bottom: 25px; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; text-align: left; }
-    .btn-grey { background: #48484a; }
-    .invite-box { background: #2c2c2e; padding: 15px; border-radius: 12px; margin: 20px 0; text-align: center; }
-    .invite-code { font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #34c759; }
+    body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; text-align: center; }
+    h1 { font-size: 28px; margin-bottom: 30px; }
+    .btn { width: 90%; max-width: 400px; padding: 18px; margin: 10px auto; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; display: block; cursor: pointer; }
+    .btn-red { background: #ff3333; }
+    .btn-gray { background: #555; }
   </style>
 </head>
 <body>
-<h1>Экран Шефа 🧱</h1>
-<div class="invite-box">
-  <div>Код для поваров:</div>
-  <div class="invite-code" id="inviteCode">Загрузка...</div>
-</div>
+  <h1 id="rest_name">Экран Шефа 🧱</h1>
 
-<button class="btn" onclick="alert('Скоро')">1. [+ ПРИХОД ТОВАРА]</button>
-<button class="btn" onclick="alert('Скоро')">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
-<button class="btn" onclick="alert('Скоро')">4. [МОЙ СКЛАД]</button>
-<button class="btn" onclick="alert('Скоро')">5. [МОИ ЗАГОТОВКИ]</button>
-<button class="btn btn-grey" onclick="alert('Скоро')">6. [СПИСАНИЕ]</button>
-<button class="btn" onclick="alert('Скоро')">7. [ОТЧЁТ ПО СПИСАНИЮ]</button>
-<button class="btn" onclick="alert('Скоро')">8. [ОТЧЁТ ЗА МЕСЯЦ]</button>
-<button class="btn" onclick="alert('Скоро')">9. [ИНВЕНТАРИЗАЦИЯ]</button>
-<button class="btn btn-grey" onclick="logout()">ВЫЙТИ</button>
+  <button class="btn btn-red" onclick="alert('Делаем next')">1. [+ ПРИХОД ТОВАРА]</button>
+  <button class="btn btn-red" onclick="alert('Делаем next')">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+  <button class="btn btn-red" onclick="alert('Делаем next')">4. [МОЙ СКЛАД]</button>
+  <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
 
-<script src="app.js"></script>
-<script>
-checkAuth();
-</script>
+  <script>
+    const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function logout() {
+      await db.auth.signOut();
+      window.location.href = '/index.html';
+    }
+
+    db.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return window.location.href = '/index.html';
+      
+      const { data } = await db.from('memberships')
+        .select('restaurant_id, restaurants(name)')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (data) {
+        document.getElementById('rest_name').innerText = data.restaurants.name + ' 🧱';
+      }
+    });
+  </script>
 </body>
 </html>
