@@ -20,7 +20,7 @@ async function login() {
   if (error) return alert('Ошибка Supabase: ' + error.message);
   
   // Успешный логин - кидаем на экран шефа
-  window.location.href = '/dashboard.html';
+  window.location.href = '/chef.html';
 }
 
 // Функция выхода, если понадобится
