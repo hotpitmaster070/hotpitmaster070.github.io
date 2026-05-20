@@ -19,5 +19,6 @@ async function login() {
   const { error } = await db.auth.signInWithPassword({ email, password });
   if (error) return alert('Ошибка Supabase: ' + error.message);
   
-  alert('Успех! Логин прошёл');
+  // Убрал alert и сразу делаю редирект
+  window.location.href = '/dashboard.html';
 }
