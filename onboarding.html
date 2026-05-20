@@ -25,21 +25,37 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function create() {
-  const name = document.getElementById('rest_name').value;
+  const name = document.getElementById('rest_name').value.trim();
   if (!name) return alert('Введи название');
 
-  const { data: { user } = await db.auth.getUser();
-  if (!user) return window.location.href = '/index.html';
+  console.log('1. Жму создать, название:', name);
+
+  const { data: { user }, error: userError } = await db.auth.getUser();
+  console.log('2. User:', user, 'Error:', userError);
+  
+  if (userError) return alert('Ошибка юзера: ' + userError.message);
+  if (!user) return alert('Сессия умерла. Зайди заново');
 
   const { data: rest, error } = await db.from('restaurants').insert({ name }).select().single();
-  if (error) return alert(error.message);
+  console.log('3. Restaurant:', rest, 'Error:', error);
+  
+  if (error) return alert('Ошибка создания ресторана: ' + error.message);
 
-  await db.from('memberships').insert({ user_id: user.id, restaurant_id: rest.id, role: 'owner' });
+  const { error: memError } = await db.from('memberships').insert({ 
+    user_id: user.id, 
+    restaurant_id: rest.id, 
+    role: 'owner' 
+  });
+  console.log('4. Membership error:', memError);
+  
+  if (memError) return alert('Ошибка memberships: ' + memError.message);
 
+  alert('Готово! Перехожу в chef.html');
   window.location.href = '/chef.html';
 }
 
 db.auth.getSession().then(async ({ data: { session } }) => {
+  console.log('Session check:', session);
   if (!session) return window.location.href = '/index.html';
   
   const { data } = await db.from('memberships').select('restaurant_id').eq('user_id', session.user.id).limit(1);
