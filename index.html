@@ -3,24 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ШТАБ УСТА</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  
+  <title>Экран Шефа</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .box { width: 100%; max-width: 400px; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
-    input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-    h1 { text-align: center; margin-bottom: 30px; }
+    body {
+      background: #1a1a1a;
+      color: white;
+      font-family: -apple-system, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 { 
+      font-size: 28px; 
+      margin-bottom: 30px; 
+    }
+    .btn {
+      width: 90%;
+      max-width: 400px;
+      padding: 18px;
+      margin: 10px auto;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      display: block;
+      cursor: pointer;
+    }
+    .btn-red { background: #ff3333; }
+    .btn-gray { background: #555; }
+    .btn:active { opacity: 0.8; }
   </style>
 </head>
 <body>
-<div class="box">
-  <h1>ШТАБ УСТА 🧱</h1>
-  <input id="email" type="email" placeholder="Email" />
-  <input id="password" type="password" placeholder="Пароль" />
-  <button class="btn" onclick="login()">ВОЙТИ</button>
-</div>
+  <h1>Экран Шефа 🧱</h1>
 
-<script src="app.js"></script>
+  <button class="btn btn-red" onclick="go('prihod.html')">1. [+ ПРИХОД ТОВАРА]</button>
+  <button class="btn btn-red" onclick="go('zadanie.html')">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+  <button class="btn btn-red" onclick="go('sklad.html')">4. [МОЙ СКЛАД]</button>
+  <button class="btn btn-red" onclick="go('zagotovki.html')">5. [МОИ ЗАГОТОВКИ]</button>
+  <button class="btn btn-gray" onclick="go('spisanie.html')">6. [СПИСАНИЕ]</button>
+  <button class="btn btn-red" onclick="go('otchet-spisanie.html')">7. [ОТЧЁТ ПО СПИСАНИЮ]</button>
+  <button class="btn btn-red" onclick="go('otchet-mesyac.html')">8. [ОТЧЁТ ЗА МЕСЯЦ]</button>
+  <button class="btn btn-red" onclick="go('inventarizacia.html')">9. [ИНВЕНТАРИЗАЦИЯ]</button>
+  <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
+
+  <script>
+    const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function go(page) {
+      window.location.href = '/' + page;
+    }
+
+    async function logout() {
+      const { error } = await db.auth.signOut();
+      if (error) {
+        alert('Ошибка выхода: ' + error.message);
+        return;
+      }
+      window.location.href = '/index.html';
+    }
+
+    // Проверка что пользователь залогинен
+    db.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        window.location.href = '/index.html';
+      }
+    });
+  </script>
 </body>
 </html>
