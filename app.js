@@ -19,6 +19,12 @@ async function login() {
   const { error } = await db.auth.signInWithPassword({ email, password });
   if (error) return alert('Ошибка Supabase: ' + error.message);
   
-  // Убрал alert и сразу делаю редирект
+  // Успешный логин - кидаем на экран шефа
   window.location.href = '/dashboard.html';
+}
+
+// Функция выхода, если понадобится
+async function logout() {
+  await db.auth.signOut();
+  window.location.href = '/index.html';
 }
