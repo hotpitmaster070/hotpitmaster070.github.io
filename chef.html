@@ -8,10 +8,10 @@
   <style>
     body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; text-align: center; }
     h1 { font-size: 28px; margin-bottom: 30px; }
-    .btn { width: 90%; max-width: 400px; padding: 18px; margin: 10px auto; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; display: block; cursor: pointer; }
-    .btn-red { background: #ff3333; }
-    .btn-gray { background: #555; }
-    .btn-green { background: #2ecc71; }
+   .btn { width: 90%; max-width: 400px; padding: 18px; margin: 10px auto; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; display: block; cursor: pointer; }
+   .btn-red { background: #ff3333; }
+   .btn-gray { background: #555; }
+   .btn-green { background: #2ecc71; }
   </style>
 </head>
 <body>
@@ -19,9 +19,10 @@
 
   <button class="btn btn-red" onclick="prihod()">1. [+ ПРИХОД ТОВАРА]</button>
   <button class="btn btn-red" onclick="createZadanie()">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+  <button class="btn btn-red" onclick="proizvodstvo()">3. [РАЗДЕЛКА/ПРОИЗВОДСТВО]</button>
   <button class="btn btn-red" onclick="alert('Делаем next')">4. [МОЙ СКЛАД]</button>
   <button class="btn btn-red" onclick="inventarizatsiya()" id="btn-invent">9. [ИНВЕНТАРИЗАЦИЯ]</button>
-  
+
   <button class="btn btn-green" onclick="inviteEmployee()">10. [+ ПРИГЛАСИТЬ ПОВАРА]</button>
   <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
 
@@ -38,11 +39,11 @@
       user = session.user;
 
       const { data: membership, error } = await db.from('memberships')
-        .select('role, restaurant_id, restaurants(name)')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error || !membership) {
+       .select('role, restaurant_id, restaurants(name)')
+       .eq('user_id', user.id)
+       .single();
+
+      if (error ||!membership) {
         alert('Ошибка: вы не привязаны к ресторану');
         return;
       }
@@ -61,14 +62,29 @@
     async function prihod() {
       const name = prompt('Название товара:');
       const qty = prompt('Количество:');
-      if (!name || !qty) return;
+      if (!name ||!qty) return;
+
+      let { data: product } = await db.from('sklad')
+       .select('id')
+       .eq('restaurant_id', restaurantId)
+       .eq('name', name)
+       .single();
+
+      if (!product) {
+        const { data: newProduct, error: err } = await db.from('sklad')
+         .insert({ restaurant_id: restaurantId, name: name })
+         .select('id')
+         .single();
+        if (err) { alert('Ошибка создания товара: ' + err.message); return; }
+        product = newProduct;
+      }
 
       const { error } = await db.from('sklad_zapisi').insert({
         restaurant_id: restaurantId,
-        product_name: name,
+        product_id: product.id,
         quantity: parseFloat(qty),
         type: 'prihod',
-        user_id: user.id
+        created_by: user.id
       });
 
       if (error) alert('Ошибка: ' + error.message);
@@ -91,11 +107,81 @@
       else alert('Задание создано!');
     }
 
+    // 3. РАЗДЕЛКА / ПРОИЗВОДСТВО
+    async function proizvodstvo() {
+      const { data: sklad } = await db.from('sklad')
+       .select('id, name')
+       .eq('restaurant_id', restaurantId);
+
+      if (!sklad || sklad.length === 0) {
+        alert('На складе пусто. Сначала сделай приход.');
+        return;
+      }
+
+      let list = sklad.map((s,i) => `${i+1}. ${s.name}`).join('\n');
+      let idx = prompt('Что разделываем?\n' + list);
+      if (!idx) return;
+      idx = parseInt(idx) - 1;
+      let syryo = sklad[idx];
+
+      let qty = parseFloat(prompt(`Сколько ${syryo.name} разделываем?`));
+      if (!qty || qty <= 0) return;
+
+      let gotovo = prompt('Что получилось? Вводи через запятую: филе,обрезки');
+      if (!gotovo) return;
+      let gotovoArr = gotovo.split(',');
+
+      let results = [];
+      for (let name of gotovoArr) {
+        let qtyOut = parseFloat(prompt(`Сколько получилось ${name.trim()}?`));
+        if (qtyOut > 0) results.push({name: name.trim(), qty: qtyOut});
+      }
+
+      // Списываем сырьё
+      const { error: err1 } = await db.from('sklad_zapisi').insert({
+        restaurant_id: restaurantId,
+        product_id: syryo.id,
+        quantity: qty,
+        type: 'rashod',
+        created_by: user.id,
+        note: 'Разделка'
+      });
+      if (err1) { alert('Ошибка списания: ' + err1.message); return; }
+
+      // Оприходуем результат
+      for (let res of results) {
+        let { data: prod } = await db.from('sklad')
+         .select('id')
+         .eq('name', res.name)
+         .eq('restaurant_id', restaurantId)
+         .single();
+
+        if (!prod) {
+          let { data: newProd } = await db.from('sklad')
+           .insert({restaurant_id: restaurantId, name: res.name})
+           .select('id')
+           .single();
+          prod = newProd;
+        }
+
+        await db.from('sklad_zapisi').insert({
+          restaurant_id: restaurantId,
+          product_id: prod.id,
+          quantity: res.qty,
+          type: 'prihod',
+          created_by: user.id,
+          note: 'Производство'
+        });
+      }
+
+      alert('Разделка проведена!');
+    }
+
     // 9. ИНВЕНТАРИЗАЦИЯ
     async function inventarizatsiya() {
       const { data: items } = await db.from('sklad')
-        .select('product_name, quantity')
-        .eq('restaurant_id', restaurantId);
+       .select('id, name')
+       .eq('restaurant_id', restaurantId);
 
       if (!items || items.length === 0) {
         alert('На складе пока пусто');
@@ -103,50 +189,41 @@
       }
 
       for (let item of items) {
-        const factQty = prompt(`Товар: ${item.product_name}\nПо системе: ${item.quantity}\nВведи фактическое количество:`);
+        // Считаем остаток суммой всех записей
+        const { data: zapisi } = await db.from('sklad_zapisi')
+         .select('type, quantity')
+         .eq('product_id', item.id);
+
+        let ostatok = 0;
+        if (zapisi) {
+          for (let z of zapisi) {
+            if (z.type === 'prihod') ostatok += parseFloat(z.quantity);
+            else ostatok -= parseFloat(z.quantity);
+          }
+        }
+
+        const factQty = prompt(`Товар: ${item.name}\nПо системе: ${ostatok}\nВведи фактическое количество:`);
         if (factQty === null) continue;
 
-        const diff = parseFloat(factQty) - parseFloat(item.quantity);
-        
-        if (diff !== 0) {
+        const diff = parseFloat(factQty) - parseFloat(ostatok);
+
+        if (diff!== 0) {
           await db.from('sklad_zapisi').insert({
             restaurant_id: restaurantId,
-            product_name: item.product_name,
-            quantity: parseFloat(factQty),
-            type: 'inventarizatsiya',
-            user_id: user.id,
-            comment: `Расхождение: ${diff > 0 ? '+' : ''}${diff}`
+            product_id: item.id,
+            quantity: Math.abs(diff),
+            type: diff > 0? 'prihod' : 'rashod',
+            created_by: user.id,
+            note: `Инвентаризация. Расхождение: ${diff > 0? '+' : ''}${diff}`
           });
         }
       }
       alert('Инвентаризация завершена!');
     }
 
-    // 10. ПРИГЛАСИТЬ ПОВАРА - новая функция для шефа
+    // 10. ПРИГЛАСИТЬ ПОВАРА
     async function inviteEmployee() {
-      const email = prompt('Введи email повара:');
-      if (!email) return;
-
-      // Проверяем что такой email ещё не приглашён в этот ресторан
-      const { data: exists } = await db.from('memberships')
-        .select('id')
-        .eq('email', email)
-        .eq('restaurant_id', restaurantId)
-        .single();
-
-      if (exists) {
-        alert('Этот email уже приглашён в ресторан');
-        return;
-      }
-
-      const { error } = await db.from('memberships').insert({
-        email: email,
-        restaurant_id: restaurantId,
-        role: 'employee' // шеф может создавать только поваров
-      });
-
-      if (error) alert('Ошибка: ' + error.message);
-      else alert('Повар приглашён! Он может зарегистрироваться по этому email.');
+      alert('Приглашение работает через owner.html. Там владелец отправляет ссылку на регистрацию.');
     }
 
     async function logout() {
