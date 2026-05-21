@@ -24,6 +24,7 @@
   <button class="btn btn-red" onclick="inventarizatsiya()" id="btn-invent">9. [ИНВЕНТАРИЗАЦИЯ]</button>
 
   <button class="btn btn-green" onclick="inviteEmployee()">10. [+ ПРИГЛАСИТЬ ПОВАРА]</button>
+  <button class="btn btn-gray" onclick="window.location.href='/select-restaurant.html'">СМЕНИТЬ РЕСТОРАН</button>
   <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
 
   <script>
@@ -38,24 +39,61 @@
       if (!session) return window.location.href = '/index.html';
       user = session.user;
 
-      const { data: membership, error } = await db.from('memberships')
-       .select('role, restaurant_id, restaurants(name)')
-       .eq('user_id', user.id)
-       .single();
+      restaurantId = localStorage.getItem('active_restaurant_id');
+      userRole = localStorage.getItem('active_role');
 
-      if (error ||!membership) {
-        alert('Ошибка: вы не привязаны к ресторану');
+      if (!restaurantId) {
+        window.location.href = '/select-restaurant.html';
         return;
       }
 
-      restaurantId = membership.restaurant_id;
-      userRole = membership.role;
-      document.getElementById('rest_name').innerText = membership.restaurants.name + ' 🧱';
+      // Проверка подписки
+      const hasAccess = await checkSubscription(restaurantId);
+      if (!hasAccess) return;
 
+      // Получаем название ресторана
+      const { data: rest } = await db.from('restaurants')
+       .select('name')
+       .eq('id', restaurantId)
+       .single();
+
+      document.getElementById('rest_name').innerText = rest.name + ' 🧱';
+
+      // Если владелец случайно зашёл сюда
       if (userRole === 'owner') {
         window.location.href = '/owner.html';
         return;
       }
+    }
+
+    async function checkSubscription(restaurantId) {
+      const { data: rest } = await db.from('restaurants')
+        .select('subscription_status, subscription_expires_at, name')
+        .eq('id', restaurantId)
+        .single();
+
+      const now = new Date();
+      const expires = new Date(rest.subscription_expires_at);
+      const isActive = rest.subscription_status === 'active';
+      const isTrial = rest.subscription_status === 'trial' && expires > now;
+
+      if (!isActive && !isTrial) {
+        document.body.innerHTML = `
+          <div style="text-align:center; padding:40px; color:white;">
+            <h1>Подписка истекла</h1>
+            <p>Ресторан "${rest.name}" заблокирован</p>
+            <p>Оплати подписку чтобы продолжить работу</p>
+            <button class="btn btn-red" onclick="window.location.href='/billing.html'">
+              Оплатить 990₽/мес
+            </button>
+            <button class="btn btn-gray" onclick="window.location.href='/select-restaurant.html'">
+              Сменить ресторан
+            </button>
+          </div>
+        `;
+        return false;
+      }
+      return true;
     }
 
     // 1. ПРИХОД ТОВАРА
@@ -189,7 +227,6 @@
       }
 
       for (let item of items) {
-        // Считаем остаток суммой всех записей
         const { data: zapisi } = await db.from('sklad_zapisi')
          .select('type, quantity')
          .eq('product_id', item.id);
@@ -228,6 +265,7 @@
 
     async function logout() {
       await db.auth.signOut();
+      localStorage.clear();
       window.location.href = '/index.html';
     }
 
