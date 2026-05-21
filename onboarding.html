@@ -28,40 +28,27 @@ async function create() {
   const name = document.getElementById('rest_name').value.trim();
   if (!name) return alert('Введи название');
 
-  const { data: { user }, error: userError } = await db.auth.getUser();
-  if (userError) return alert('Ошибка сессии: ' + userError.message);
+  const { data: { user } = await db.auth.getUser();
   if (!user) return alert('Сессия умерла. Зайди заново');
 
-  // 1. Создаём ресторан. owner_id не нужен, его нет в таблице.
   const { data: rest, error } = await db.from('restaurants')
     .insert({ name: name })
     .select()
     .single();
   
-  if (error) return alert('Ошибка создания ресторана: ' + error.message);
+  if (error) return alert('Ошибка: ' + error.message);
 
-  // 2. Добавляем себя как owner в memberships
-  const { error: memError } = await db.from('memberships').insert({ 
+  await db.from('memberships').insert({ 
     user_id: user.id, 
     restaurant_id: rest.id, 
     role: 'owner' 
   });
 
-  if (memError) return alert('Ошибка добавления в команду: ' + memError.message);
-
-  alert('Ресторан создан!');
   window.location.href = '/owner.html';
 }
 
-db.auth.getSession().then(async ({ data: { session } }) => {
-  if (!session) return window.location.href = '/index.html';
-  
-  const { data } = await db.from('memberships')
-    .select('restaurant_id')
-    .eq('user_id', session.user.id)
-    .limit(1);
-    
-  if (data && data.length > 0) window.location.href = '/owner.html';
+db.auth.getSession().then(({ data: { session } }) => {
+  if (!session) window.location.href = '/index.html';
 });
 </script>
 </body>
