@@ -11,14 +11,18 @@
     .btn { width: 90%; max-width: 400px; padding: 18px; margin: 10px auto; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; display: block; cursor: pointer; }
     .btn-red { background: #ff3333; }
     .btn-gray { background: #555; }
+    .btn-green { background: #2ecc71; }
   </style>
 </head>
 <body>
   <h1 id="rest_name">Экран Шефа 🧱</h1>
 
-  <button class="btn btn-red" onclick="alert('Делаем next')">1. [+ ПРИХОД ТОВАРА]</button>
-  <button class="btn btn-red" onclick="alert('Делаем next')">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+  <button class="btn btn-red" onclick="prihod()">1. [+ ПРИХОД ТОВАРА]</button>
+  <button class="btn btn-red" onclick="createZadanie()">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
   <button class="btn btn-red" onclick="alert('Делаем next')">4. [МОЙ СКЛАД]</button>
+  <button class="btn btn-red" onclick="inventarizatsiya()" id="btn-invent">9. [ИНВЕНТАРИЗАЦИЯ]</button>
+  
+  <button class="btn btn-green" onclick="inviteEmployee()">10. [+ ПРИГЛАСИТЬ ПОВАРА]</button>
   <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
 
   <script>
@@ -26,23 +30,131 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    let user, restaurantId, userRole;
+
+    async function init() {
+      const { data: { session } = await db.auth.getSession();
+      if (!session) return window.location.href = '/index.html';
+      user = session.user;
+
+      const { data: membership, error } = await db.from('memberships')
+        .select('role, restaurant_id, restaurants(name)')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error || !membership) {
+        alert('Ошибка: вы не привязаны к ресторану');
+        return;
+      }
+
+      restaurantId = membership.restaurant_id;
+      userRole = membership.role;
+      document.getElementById('rest_name').innerText = membership.restaurants.name + ' 🧱';
+
+      if (userRole === 'owner') {
+        window.location.href = '/owner.html';
+        return;
+      }
+    }
+
+    // 1. ПРИХОД ТОВАРА
+    async function prihod() {
+      const name = prompt('Название товара:');
+      const qty = prompt('Количество:');
+      if (!name || !qty) return;
+
+      const { error } = await db.from('sklad_zapisi').insert({
+        restaurant_id: restaurantId,
+        product_name: name,
+        quantity: parseFloat(qty),
+        type: 'prihod',
+        user_id: user.id
+      });
+
+      if (error) alert('Ошибка: ' + error.message);
+      else alert('Приход добавлен! Склад обновился автоматически.');
+    }
+
+    // 2. СОЗДАТЬ ЗАДАНИЕ
+    async function createZadanie() {
+      const title = prompt('Что нужно сделать:');
+      if (!title) return;
+
+      const { error } = await db.from('zadaniya').insert({
+        restaurant_id: restaurantId,
+        title: title,
+        status: 'new',
+        created_by: user.id
+      });
+
+      if (error) alert('Ошибка: ' + error.message);
+      else alert('Задание создано!');
+    }
+
+    // 9. ИНВЕНТАРИЗАЦИЯ
+    async function inventarizatsiya() {
+      const { data: items } = await db.from('sklad')
+        .select('product_name, quantity')
+        .eq('restaurant_id', restaurantId);
+
+      if (!items || items.length === 0) {
+        alert('На складе пока пусто');
+        return;
+      }
+
+      for (let item of items) {
+        const factQty = prompt(`Товар: ${item.product_name}\nПо системе: ${item.quantity}\nВведи фактическое количество:`);
+        if (factQty === null) continue;
+
+        const diff = parseFloat(factQty) - parseFloat(item.quantity);
+        
+        if (diff !== 0) {
+          await db.from('sklad_zapisi').insert({
+            restaurant_id: restaurantId,
+            product_name: item.product_name,
+            quantity: parseFloat(factQty),
+            type: 'inventarizatsiya',
+            user_id: user.id,
+            comment: `Расхождение: ${diff > 0 ? '+' : ''}${diff}`
+          });
+        }
+      }
+      alert('Инвентаризация завершена!');
+    }
+
+    // 10. ПРИГЛАСИТЬ ПОВАРА - новая функция для шефа
+    async function inviteEmployee() {
+      const email = prompt('Введи email повара:');
+      if (!email) return;
+
+      // Проверяем что такой email ещё не приглашён в этот ресторан
+      const { data: exists } = await db.from('memberships')
+        .select('id')
+        .eq('email', email)
+        .eq('restaurant_id', restaurantId)
+        .single();
+
+      if (exists) {
+        alert('Этот email уже приглашён в ресторан');
+        return;
+      }
+
+      const { error } = await db.from('memberships').insert({
+        email: email,
+        restaurant_id: restaurantId,
+        role: 'employee' // шеф может создавать только поваров
+      });
+
+      if (error) alert('Ошибка: ' + error.message);
+      else alert('Повар приглашён! Он может зарегистрироваться по этому email.');
+    }
+
     async function logout() {
       await db.auth.signOut();
       window.location.href = '/index.html';
     }
 
-    db.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return window.location.href = '/index.html';
-      
-      const { data } = await db.from('memberships')
-        .select('restaurant_id, restaurants(name)')
-        .eq('user_id', session.user.id)
-        .single();
-      
-      if (data) {
-        document.getElementById('rest_name').innerText = data.restaurants.name + ' 🧱';
-      }
-    });
+    init();
   </script>
 </body>
 </html>
