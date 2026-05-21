@@ -38,7 +38,7 @@ function toggle() {
 }
 
 async function auth() {
-  const email = document.getElementById('email').value;
+  const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   if (!email || !password) return alert('Заполни поля');
 
@@ -47,11 +47,40 @@ async function auth() {
     res = await db.auth.signInWithPassword({ email, password });
   } else {
     res = await db.auth.signUp({ email, password });
+    if (!res.error) alert('Проверь почту для подтверждения. Потом войди.');
   }
 
   if (res.error) return alert('Ошибка: ' + res.error.message);
-  window.location.href = '/onboarding.html';
+  
+  // После успешного входа проверяем куда кидать
+  await routeUser(res.data.user);
 }
+
+async function routeUser(user) {
+  const { data: membership } = await db.from('memberships')
+    .select('role, restaurant_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single();
+
+  if (!membership) {
+    // Нет ресторана - на создание
+    window.location.href = '/onboarding.html';
+    return;
+  }
+
+  // Есть ресторан - кидаем по роли
+  if (membership.role === 'owner') {
+    window.location.href = '/owner.html';
+  } else {
+    window.location.href = '/chef.html';
+  }
+}
+
+// Если уже залогинен - сразу проверяем и кидаем
+db.auth.getSession().then(({ data: { session } }) => {
+  if (session) routeUser(session.user);
+});
 </script>
 </body>
 </html>
