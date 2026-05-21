@@ -32,13 +32,15 @@ async function create() {
   if (userError) return alert('Ошибка сессии: ' + userError.message);
   if (!user) return alert('Сессия умерла. Зайди заново');
 
+  // 1. Создаём ресторан. owner_id не нужен, его нет в таблице.
   const { data: rest, error } = await db.from('restaurants')
-    .insert({ name: name, owner_id: user.id })
+    .insert({ name: name })
     .select()
     .single();
   
   if (error) return alert('Ошибка создания ресторана: ' + error.message);
 
+  // 2. Добавляем себя как owner в memberships
   const { error: memError } = await db.from('memberships').insert({ 
     user_id: user.id, 
     restaurant_id: rest.id, 
@@ -48,7 +50,7 @@ async function create() {
   if (memError) return alert('Ошибка добавления в команду: ' + memError.message);
 
   alert('Ресторан создан!');
-  window.location.href = '/chef.html';
+  window.location.href = '/owner.html';
 }
 
 db.auth.getSession().then(async ({ data: { session } }) => {
@@ -59,7 +61,7 @@ db.auth.getSession().then(async ({ data: { session } }) => {
     .eq('user_id', session.user.id)
     .limit(1);
     
-  if (data && data.length > 0) window.location.href = '/chef.html';
+  if (data && data.length > 0) window.location.href = '/owner.html';
 });
 </script>
 </body>
