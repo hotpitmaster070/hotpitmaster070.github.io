@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель Владельца</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+    .btn { background: #ff3b30; color: #fff; border: none; padding: 15px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 10px; }
+    .btn-green { background: #2ecc71; }
+    .btn-gray { background: #555; }
+    .link-box { background: #1a1a1a; padding: 10px; border-radius: 8px; word-break: break-all; font-size: 12px; margin-top: 10px; }
+    .member { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1 id="rest_name">Загрузка...</h1>
+  </div>
+
+  <div class="card">
+    <h3>Пригласить сотрудника</h3>
+    <button class="btn btn-green" onclick="generateLink()">Создать ссылку-приглашение</button>
+    <div id="link_box" style="display:none;">
+      <p>Отправь эту ссылку сотруднику:</p>
+      <div class="link-box" id="invite_link"></div>
+      <button class="btn btn-gray" onclick="copyLink()">Скопировать</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Команда</h3>
+    <div id="members_list">Загрузка...</div>
+  </div>
+
+  <button class="btn" onclick="goChef()">Перейти в режим Шефа</button>
+  <button class="btn btn-gray" onclick="logout()">Выйти</button>
+
+<script>
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let restaurantId, userRole;
+
+async function init() {
+  const { data: { user } = await db.auth.getUser();
+  if (!user) return window.location.href = '/index.html';
+
+  const { data: membership } = await db.from('memberships')
+    .select('role, restaurant_id, restaurants(name)')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!membership || membership.role !== 'owner') {
+    window.location.href = '/chef.html';
+    return;
+  }
+
+  restaurantId = membership.restaurant_id;
+  userRole = membership.role;
+  document.getElementById('rest_name').innerText = membership.restaurants.name + ' 👑';
+
+  loadMembers();
+}
+
+async function loadMembers() {
+  const { data } = await db.from('memberships')
+    .select('role, user_id, profiles(email)')
+    .eq('restaurant_id', restaurantId);
+
+  let html = '';
+  data.forEach(m => {
+    html += `<div class="member">
+      <span>${m.profiles?.email || m.user_id}</span>
+      <span>${m.role}</span>
+    </div>`;
+  });
+  document.getElementById('members_list').innerHTML = html || 'Пусто';
+}
+
+function generateLink() {
+  const link = `${window.location.origin}/join.html?token=${restaurantId}`;
+  document.getElementById('invite_link').innerText = link;
+  document.getElementById('link_box').style.display = 'block';
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(document.getElementById('invite_link').innerText);
+  alert('Скопировано!');
+}
+
+function goChef() {
+  window.location.href = '/chef.html';
+}
+
+async function logout() {
+  await db.auth.signOut();
+  window.location.href = '/index.html';
+}
+
+init();
+</script>
+</body>
+</html>
