@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Приглашение</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 40px 20px; text-align: center; }
+    .box { max-width: 400px; margin: 0 auto; }
+    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 20px; }
+  </style>
+</head>
+<body>
+<div class="box">
+  <h1>Приглашение</h1>
+  <p id="status">Проверка...</p>
+  <button class="btn" id="btn" onclick="join()" style="display:none;">ПРИСОЕДИНИТЬСЯ</button>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const restaurantId = new URLSearchParams(window.location.search).get('token');
+let user;
+
+async function init() {
+  const { data: { session } = await db.auth.getSession();
+  if (!session) {
+    alert('Сначала войди или зарегистрируйся');
+    window.location.href = '/index.html';
+    return;
+  }
+  user = session.user;
+
+  if (!restaurantId) {
+    document.getElementById('status').innerText = 'Ссылка недействительна';
+    return;
+  }
+
+  const { data: rest } = await db.from('restaurants')
+    .select('name')
+    .eq('id', restaurantId)
+    .single();
+
+  if (!rest) {
+    document.getElementById('status').innerText = 'Ресторан не найден';
+    return;
+  }
+
+  document.getElementById('status').innerText = `Тебя пригласили в "${rest.name}"`;
+  document.getElementById('btn').style.display = 'block';
+}
+
+async function join() {
+  const { data: exists } = await db.from('memberships')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('restaurant_id', restaurantId)
+    .single();
+
+  if (exists) {
+    alert('Ты уже в команде');
+    window.location.href = '/chef.html';
+    return;
+  }
+
+  const { error } = await db.from('memberships').insert({
+    user_id: user.id,
+    restaurant_id: restaurantId,
+    role: 'employee'
+  });
+
+  if (error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+
+  alert('Добро пожаловать!');
+  window.location.href = '/chef.html';
+}
+
+init();
+</script>
+</body>
+</html>
