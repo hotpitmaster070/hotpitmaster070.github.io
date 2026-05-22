@@ -28,8 +28,8 @@ async function create() {
   const name = document.getElementById('rest_name').value.trim();
   if (!name) return alert('Введи название');
 
-  const { data: { user } = await db.auth.getUser();
-  if (!user) return alert('Сессия умерла. Зайди заново');
+  const { data: { user }, error: userErr } = await db.auth.getUser();
+if (userErr || !user) return alert('Сессия умерла. Зайди заново');
 
   const { data: rest, error } = await db.from('restaurants')
     .insert({ name: name })
