@@ -31,22 +31,32 @@ async function create() {
   const { data: { user }, error: userErr } = await db.auth.getUser();
   if (userErr || !user) return alert('Сессия умерла. Зайди заново');
 
+  // 1. Создаём ресторан
   const { data: rest, error } = await db.from('restaurants')
     .insert({ name: name })
     .select()
     .single();
   
-  if (error) return alert('Ошибка: ' + error.message);
+  if (error) return alert('Ошибка создания ресторана: ' + error.message);
 
-  await db.from('memberships').insert({ 
+  // 2. Создаём membership
+  const { error: memErr } = await db.from('memberships').insert({ 
     user_id: user.id, 
     restaurant_id: rest.id, 
     role: 'owner' 
   });
 
+  if (memErr) return alert('Ошибка создания членства: ' + memErr.message);
+
+  // 3. Сохраняем в localStorage
+  localStorage.setItem('active_restaurant_id', rest.id);
+  localStorage.setItem('active_role', 'owner');
+
+  alert('Готово!');
   window.location.href = '/owner.html';
 }
 
+// Проверка сессии при загрузке
 db.auth.getSession().then(({ data: { session } }) => {
   if (!session) window.location.href = '/index.html';
 });
