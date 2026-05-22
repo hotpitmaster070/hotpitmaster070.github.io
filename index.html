@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ШТАБ УСТА</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .box { width: 100%; max-width: 400px; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
+   .box { width: 100%; max-width: 400px; }
+   .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
     input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
     h1 { text-align: center; margin-bottom: 30px; }
-    .link { text-align: center; margin-top: 15px; color: #aaa; cursor: pointer; }
+   .link { text-align: center; margin-top: 15px; color: #aaa; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -31,16 +31,16 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let isLogin = true;
 
 function toggle() {
-  isLogin = !isLogin;
-  document.getElementById('title').innerText = isLogin ? 'ШТАБ УСТА 🧱' : 'РЕГИСТРАЦИЯ';
-  document.getElementById('btn').innerText = isLogin ? 'ВОЙТИ' : 'СОЗДАТЬ';
-  document.querySelector('.link').innerText = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти';
+  isLogin =!isLogin;
+  document.getElementById('title').innerText = isLogin? 'ШТАБ УСТА 🧱' : 'РЕГИСТРАЦИЯ';
+  document.getElementById('btn').innerText = isLogin? 'ВОЙТИ' : 'СОЗДАТЬ';
+  document.querySelector('.link').innerText = isLogin? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти';
 }
 
 async function auth() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  if (!email || !password) return alert('Заполни поля');
+  if (!email ||!password) return alert('Заполни поля');
 
   let res;
   if (isLogin) {
@@ -51,29 +51,37 @@ async function auth() {
   }
 
   if (res.error) return alert('Ошибка: ' + res.error.message);
-  
-  // После успешного входа проверяем куда кидать
+
   await routeUser(res.data.user);
 }
 
 async function routeUser(user) {
-  const { data: membership } = await db.from('memberships')
-    .select('role, restaurant_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single();
+  // Тянем все членства пользователя
+  const { data: memberships, error } = await db.from('memberships')
+   .select('role, restaurant_id, restaurants(name)')
+   .eq('user_id', user.id);
 
-  if (!membership) {
+  if (error) return alert('Ошибка: ' + error.message);
+
+  if (!memberships || memberships.length === 0) {
     // Нет ресторана - на создание
     window.location.href = '/onboarding.html';
     return;
   }
 
-  // Есть ресторан - кидаем по роли
-  if (membership.role === 'owner') {
-    window.location.href = '/owner.html';
+  if (memberships.length === 1) {
+    // 1 ресторан - сохраняем и кидаем по роли
+    localStorage.setItem('active_restaurant_id', memberships[0].restaurant_id);
+    localStorage.setItem('active_role', memberships[0].role);
+
+    if (memberships[0].role === 'owner') {
+      window.location.href = '/owner.html';
+    } else {
+      window.location.href = '/chef.html';
+    }
   } else {
-    window.location.href = '/chef.html';
+    // Если ресторанов несколько - кидаем на выбор
+    window.location.href = '/select-restaurant.html';
   }
 }
 
