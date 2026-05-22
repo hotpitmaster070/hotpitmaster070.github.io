@@ -12,8 +12,17 @@
     .btn { background: #ff3b30; color: #fff; border: none; padding: 15px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 10px; }
     .btn-green { background: #2ecc71; }
     .btn-gray { background: #555; }
+    .btn-small { padding: 8px 12px; font-size: 14px; width: auto; margin-top: 0; }
     .link-box { background: #1a1a1a; padding: 10px; border-radius: 8px; word-break: break-all; font-size: 12px; margin-top: 10px; }
-    .member { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #444; }
+    .member { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #444; }
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #444; }
+    .item-info { flex: 1; }
+    .item-info small { color: #aaa; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab { flex: 1; padding: 10px; background: #333; border: none; color: white; border-radius: 8px; cursor: pointer; }
+    .tab.active { background: #2ecc71; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
 <body>
@@ -36,6 +45,23 @@
     <div id="members_list">Загрузка...</div>
   </div>
 
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('zadaniya')">Задания</button>
+      <button class="tab" onclick="switchTab('sklad')">Склад</button>
+    </div>
+
+    <div id="tab_zadaniya" class="tab-content active">
+      <h3>Задания кухни</h3>
+      <div id="zadaniya_list">Загрузка...</div>
+    </div>
+
+    <div id="tab_sklad" class="tab-content">
+      <h3>Приход/Расход</h3>
+      <div id="sklad_list">Загрузка...</div>
+    </div>
+  </div>
+
   <button class="btn" onclick="goChef()">Перейти в режим Шефа</button>
   <button class="btn btn-gray" onclick="logout()">Выйти</button>
 
@@ -44,11 +70,12 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let restaurantId, userRole;
+let restaurantId, userRole, userId;
 
 async function init() {
   const { data: { user } = await db.auth.getUser();
   if (!user) return window.location.href = '/index.html';
+  userId = user.id;
 
   const { data: membership } = await db.from('memberships')
     .select('role, restaurant_id, restaurants(name)')
@@ -65,6 +92,8 @@ async function init() {
   document.getElementById('rest_name').innerText = membership.restaurants.name + ' 👑';
 
   loadMembers();
+  loadZadaniya();
+  loadSklad();
 }
 
 async function loadMembers() {
@@ -80,6 +109,77 @@ async function loadMembers() {
     </div>`;
   });
   document.getElementById('members_list').innerHTML = html || 'Пусто';
+}
+
+async function loadZadaniya() {
+  const { data } = await db.from('zadaniya')
+    .select('id, title, description, created_at, created_by')
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  let html = '';
+  data.forEach(z => {
+    html += `<div class="item">
+      <div class="item-info">
+        <strong>${z.title}</strong><br>
+        <small>${z.description || ''}</small>
+      </div>
+      <button class="btn btn-small" onclick="softDelete('zadaniya', '${z.id}')">Удалить</button>
+    </div>`;
+  });
+  document.getElementById('zadaniya_list').innerHTML = html || 'Нет заданий';
+}
+
+async function loadSklad() {
+  const { data } = await db.from('sklad_zapisi')
+    .select('id, type, quantity, created_at')
+    .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false });
+
+  let html = '';
+  data.forEach(s => {
+    html += `<div class="item">
+      <div class="item-info">
+        <strong>${s.type}</strong><br>
+        <small>Кол-во: ${s.quantity}</small>
+      </div>
+      <button class="btn btn-small" onclick="softDelete('sklad_zapisi', '${s.id}')">Удалить</button>
+    </div>`;
+  });
+  document.getElementById('sklad_list').innerHTML = html || 'Нет записей';
+}
+
+async function softDelete(table, id) {
+  const reason = prompt('Укажи причину удаления. Минимум 5 символов:');
+  if (!reason || reason.length < 5) {
+    alert('Причина обязательна');
+    return;
+  }
+  
+  const { error } = await db.from(table)
+    .update({ 
+      deleted_at: new Date().toISOString(),
+      deleted_by: userId,
+      delete_reason: reason 
+    })
+    .eq('id', id);
+    
+  if (error) {
+    alert('Ошибка: ' + error.message);
+  } else {
+    alert('Удалено');
+    if (table === 'zadaniya') loadZadaniya();
+    if (table === 'sklad_zapisi') loadSklad();
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById(`tab_${tab}`).classList.add('active');
 }
 
 function generateLink() {
@@ -105,4 +205,4 @@ async function logout() {
 init();
 </script>
 </body>
-</html>
+  </html>
