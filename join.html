@@ -7,8 +7,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 40px 20px; text-align: center; }
-    .box { max-width: 400px; margin: 0 auto; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 20px; }
+   .box { max-width: 400px; margin: 0 auto; }
+   .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -41,25 +41,25 @@ async function init() {
   }
 
   const { data: rest } = await db.from('restaurants')
-    .select('name')
-    .eq('id', restaurantId)
-    .single();
+   .select('name')
+   .eq('id', restaurantId)
+   .single();
 
   if (!rest) {
     document.getElementById('status').innerText = 'Ресторан не найден';
     return;
   }
 
-  document.getElementById('status').innerText = `Тебя пригласили в "${rest.name}"`;
+  document.getElementById('status').innerText = `Тебя пригласили в "${rest.name}" как сотрудника`;
   document.getElementById('btn').style.display = 'block';
 }
 
 async function join() {
   const { data: exists } = await db.from('memberships')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('restaurant_id', restaurantId)
-    .single();
+   .select('id')
+   .eq('user_id', user.id)
+   .eq('restaurant_id', restaurantId)
+   .maybeSingle();
 
   if (exists) {
     alert('Ты уже в команде');
@@ -70,13 +70,17 @@ async function join() {
   const { error } = await db.from('memberships').insert({
     user_id: user.id,
     restaurant_id: restaurantId,
-    role: 'employee'
+    role: 'employee'  // всегда employee по приглашению
   });
 
   if (error) {
     alert('Ошибка: ' + error.message);
     return;
   }
+
+  // Сохраняем активный ресторан и роль
+  localStorage.setItem('active_restaurant_id', restaurantId);
+  localStorage.setItem('active_role', 'employee');
 
   alert('Добро пожаловать!');
   window.location.href = '/chef.html';
