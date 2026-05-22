@@ -7,202 +7,168 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
-    .header { text-align: center; margin-bottom: 30px; }
-    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin-bottom: 15px; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 15px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 10px; }
-    .btn-green { background: #2ecc71; }
-    .btn-gray { background: #555; }
-    .btn-small { padding: 8px 12px; font-size: 14px; width: auto; margin-top: 0; }
-    .link-box { background: #1a1a1a; padding: 10px; border-radius: 8px; word-break: break-all; font-size: 12px; margin-top: 10px; }
-    .member { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #444; }
-    .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #444; }
-    .item-info { flex: 1; }
-    .item-info small { color: #aaa; }
-    .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-    .tab { flex: 1; padding: 10px; background: #333; border: none; color: white; border-radius: 8px; cursor: pointer; }
-    .tab.active { background: #2ecc71; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    h1 { text-align: center; }
+    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 600px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
+    th { background: #333; }
+    .btn-gray { background: #555; color: white; border: none; padding: 12px; width: 100%; border-radius: 12px; margin-top: 20px; cursor: pointer; }
+    .btn-red { background: #ff3b30; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .badge-prihod { color: #2ecc71; }
+    .badge-rashod { color: #ff3b30; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1 id="rest_name">Загрузка...</h1>
+  <h1 id="rest_name">Загрузка...</h1>
+
+  <div class="card">
+    <h3>Движения склада</h3>
+    <table id="sklad_table">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Тип</th>
+          <th>Кол-во</th>
+          <th>Кто</th>
+          <th>Дата</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
   <div class="card">
-    <h3>Пригласить сотрудника</h3>
-    <button class="btn btn-green" onclick="generateLink()">Создать ссылку-приглашение</button>
-    <div id="link_box" style="display:none;">
-      <p>Отправь эту ссылку сотруднику:</p>
-      <div class="link-box" id="invite_link"></div>
-      <button class="btn btn-gray" onclick="copyLink()">Скопировать</button>
-    </div>
+    <h3>Остатки на складе</h3>
+    <table id="ostatki_table">
+      <thead>
+        <tr>
+          <th>Товар</th>
+          <th>Остаток</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
 
-  <div class="card">
-    <h3>Команда</h3>
-    <div id="members_list">Загрузка...</div>
-  </div>
+  <button class="btn-gray" onclick="window.location.href='/select-restaurant.html'">СМЕНИТЬ РЕСТОРАН</button>
+  <button class="btn-gray" onclick="logout()">ВЫЙТИ</button>
 
-  <div class="card">
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('zadaniya')">Задания</button>
-      <button class="tab" onclick="switchTab('sklad')">Склад</button>
-    </div>
+  <script>
+    const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <div id="tab_zadaniya" class="tab-content active">
-      <h3>Задания кухни</h3>
-      <div id="zadaniya_list">Загрузка...</div>
-    </div>
+    let restaurantId, userId;
 
-    <div id="tab_sklad" class="tab-content">
-      <h3>Приход/Расход</h3>
-      <div id="sklad_list">Загрузка...</div>
-    </div>
-  </div>
+    async function init() {
+      const { data: { user } = await db.auth.getUser();
+      if (!user) return window.location.href = '/index.html';
+      userId = user.id;
 
-  <button class="btn" onclick="goChef()">Перейти в режим Шефа</button>
-  <button class="btn btn-gray" onclick="logout()">Выйти</button>
+      const { data: membership } = await db.from('memberships')
+        .select('role, restaurant_id, restaurants(name)')
+        .eq('user_id', user.id).single();
 
-<script>
-const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (membership.role !== 'owner') return window.location.href = '/chef.html';
+      
+      restaurantId = membership.restaurant_id;
+      document.getElementById('rest_name').innerText = membership.restaurants.name + ' 👑';
 
-let restaurantId, userRole, userId;
+      loadDvizheniya();
+      loadOstatki();
+    }
 
-async function init() {
-  const { data: { user } = await db.auth.getUser();
-  if (!user) return window.location.href = '/index.html';
-  userId = user.id;
+    async function loadDvizheniya() {
+      const { data } = await db.from('sklad_zapisi')
+        .select(`
+          id, type, quantity, created_at, note, delete_reason,
+          sklad(name),
+          creator:created_by(email)
+        `)
+        .eq('restaurant_id', restaurantId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-  const { data: membership } = await db.from('memberships')
-    .select('role, restaurant_id, restaurants(name)')
-    .eq('user_id', user.id)
-    .single();
+      const tbody = document.querySelector('#sklad_table tbody');
+      tbody.innerHTML = data.map(z => `
+        <tr>
+          <td>${z.sklad?.name || '-'}</td>
+          <td class="${z.type === 'prihod' ? 'badge-prihod' : 'badge-rashod'}">${z.type.toUpperCase()}</td>
+          <td>${z.quantity}</td>
+          <td>${z.creator?.email || '-'}</td>
+          <td>${new Date(z.created_at).toLocaleString('ru')}</td>
+          <td>
+            ${z.type === 'prihod' ? 
+              `<button class="btn-red" onclick="softDeleteSklad('${z.id}')">Снять</button>` 
+              : '-'}
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="6">Нет движений</td></tr>';
+    }
 
-  if (!membership || membership.role !== 'owner') {
-    window.location.href = '/chef.html';
-    return;
-  }
+    async function softDeleteSklad(id) {
+      const reason = prompt('Причина снятия с прихода. Минимум 5 символов:\nПример: гнилой товар, ошибка прихода');
+      if (!reason || reason.length < 5) return alert('Напиши причину');
 
-  restaurantId = membership.restaurant_id;
-  userRole = membership.role;
-  document.getElementById('rest_name').innerText = membership.restaurants.name + ' 👑';
+      const { error } = await db.from('sklad_zapisi')
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          deleted_by: userId,
+          delete_reason: reason 
+        })
+        .eq('id', id);
 
-  loadMembers();
-  loadZadaniya();
-  loadSklad();
-}
+      if (error) alert('Ошибка: ' + error.message);
+      else {
+        alert('Запись снята. Остатки пересчитались.');
+        loadDvizheniya();
+        loadOstatki();
+      }
+    }
 
-async function loadMembers() {
-  const { data } = await db.from('memberships')
-    .select('role, user_id, profiles(email)')
-    .eq('restaurant_id', restaurantId);
+    async function loadOstatki() {
+      const { data: products } = await db.from('sklad')
+        .select('id, name')
+        .eq('restaurant_id', restaurantId);
 
-  let html = '';
-  data.forEach(m => {
-    html += `<div class="member">
-      <span>${m.profiles?.email || m.user_id}</span>
-      <span>${m.role}</span>
-    </div>`;
-  });
-  document.getElementById('members_list').innerHTML = html || 'Пусто';
-}
+      const tbody = document.querySelector('#ostatki_table tbody');
+      tbody.innerHTML = '';
 
-async function loadZadaniya() {
-  const { data } = await db.from('zadaniya')
-    .select('id, title, description, created_at, created_by')
-    .eq('restaurant_id', restaurantId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+      for (let p of products) {
+        const { data: zapisi } = await db.from('sklad_zapisi')
+          .select('type, quantity')
+          .eq('product_id', p.id)
+          .is('deleted_at', null);
 
-  let html = '';
-  data.forEach(z => {
-    html += `<div class="item">
-      <div class="item-info">
-        <strong>${z.title}</strong><br>
-        <small>${z.description || ''}</small>
-      </div>
-      <button class="btn btn-small" onclick="softDelete('zadaniya', '${z.id}')">Удалить</button>
-    </div>`;
-  });
-  document.getElementById('zadaniya_list').innerHTML = html || 'Нет заданий';
-}
+        let ostatok = 0;
+        zapisi?.forEach(z => {
+          ostatok += z.type === 'prihod' ? parseFloat(z.quantity) : -parseFloat(z.quantity);
+        });
 
-async function loadSklad() {
-  const { data } = await db.from('sklad_zapisi')
-    .select('id, type, quantity, created_at')
-    .eq('restaurant_id', restaurantId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+        if (ostatok > 0) {
+          tbody.innerHTML += `
+            <tr>
+              <td>${p.name}</td>
+              <td>${ostatok.toFixed(2)}</td>
+            </tr>
+          `;
+        }
+      }
 
-  let html = '';
-  data.forEach(s => {
-    html += `<div class="item">
-      <div class="item-info">
-        <strong>${s.type}</strong><br>
-        <small>Кол-во: ${s.quantity}</small>
-      </div>
-      <button class="btn btn-small" onclick="softDelete('sklad_zapisi', '${s.id}')">Удалить</button>
-    </div>`;
-  });
-  document.getElementById('sklad_list').innerHTML = html || 'Нет записей';
-}
+      if (!tbody.innerHTML) {
+        tbody.innerHTML = '<tr><td colspan="2">Склад пуст</td></tr>';
+      }
+    }
 
-async function softDelete(table, id) {
-  const reason = prompt('Укажи причину удаления. Минимум 5 символов:');
-  if (!reason || reason.length < 5) {
-    alert('Причина обязательна');
-    return;
-  }
-  
-  const { error } = await db.from(table)
-    .update({ 
-      deleted_at: new Date().toISOString(),
-      deleted_by: userId,
-      delete_reason: reason 
-    })
-    .eq('id', id);
-    
-  if (error) {
-    alert('Ошибка: ' + error.message);
-  } else {
-    alert('Удалено');
-    if (table === 'zadaniya') loadZadaniya();
-    if (table === 'sklad_zapisi') loadSklad();
-  }
-}
+    async function logout() {
+      await db.auth.signOut();
+      localStorage.clear();
+      window.location.href = '/index.html';
+    }
 
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
-  document.getElementById(`tab_${tab}`).classList.add('active');
-}
-
-function generateLink() {
-  const link = `${window.location.origin}/join.html?token=${restaurantId}`;
-  document.getElementById('invite_link').innerText = link;
-  document.getElementById('link_box').style.display = 'block';
-}
-
-function copyLink() {
-  navigator.clipboard.writeText(document.getElementById('invite_link').innerText);
-  alert('Скопировано!');
-}
-
-function goChef() {
-  window.location.href = '/chef.html';
-}
-
-async function logout() {
-  await db.auth.signOut();
-  window.location.href = '/index.html';
-}
-
-init();
-</script>
+    init();
+  </script>
 </body>
-  </html>
+</html>
