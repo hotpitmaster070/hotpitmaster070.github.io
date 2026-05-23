@@ -31,9 +31,12 @@ async function create() {
   const { data: { user }, error: userErr } = await db.auth.getUser();
   if (userErr || !user) return alert('Сессия умерла. Зайди заново');
 
-  // 1. Создаём ресторан
+  // 1. Создаём ресторан с user_id
   const { data: rest, error } = await db.from('restaurants')
-    .insert({ name: name })
+    .insert({ 
+      name: name,
+      user_id: user.id  // <-- вот это добавил
+    })
     .select()
     .single();
   
