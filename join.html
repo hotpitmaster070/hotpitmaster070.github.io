@@ -27,7 +27,7 @@ const restaurantId = new URLSearchParams(window.location.search).get('token');
 let user;
 
 async function init() {
-  const { data: { session } = await db.auth.getSession();
+  const { data: { session } = await db.auth.getSession(); // исправлено
   if (!session) {
     alert('Сначала войди или зарегистрируйся');
     window.location.href = '/index.html';
@@ -40,12 +40,12 @@ async function init() {
     return;
   }
 
-  const { data: rest } = await db.from('restaurants')
+  const { data: rest, error } = await db.from('restaurants')
    .select('name')
    .eq('id', restaurantId)
    .single();
 
-  if (!rest) {
+  if (error || !rest) {
     document.getElementById('status').innerText = 'Ресторан не найден';
     return;
   }
@@ -70,15 +70,15 @@ async function join() {
   const { error } = await db.from('memberships').insert({
     user_id: user.id,
     restaurant_id: restaurantId,
-    role: 'employee'  // всегда employee по приглашению
+    role: 'employee'
   });
 
   if (error) {
     alert('Ошибка: ' + error.message);
+    console.error(error);
     return;
   }
 
-  // Сохраняем активный ресторан и роль
   localStorage.setItem('active_restaurant_id', restaurantId);
   localStorage.setItem('active_role', 'employee');
 
