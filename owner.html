@@ -81,11 +81,7 @@
 
     async function loadDvizheniya() {
       const { data } = await db.from('sklad_zapisi')
-        .select(`
-          id, type, quantity, created_at, note, delete_reason,
-          sklad(name),
-          creator:created_by(email)
-        `)
+        .select(`id, type, quantity, created_at, note, delete_reason, sklad(name), creator:created_by(email)`)
         .eq('restaurant_id', restaurantId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
@@ -100,26 +96,18 @@
             <td>${z.quantity}</td>
             <td>${z.creator?.email || '-'}</td>
             <td>${new Date(z.created_at).toLocaleString('ru')}</td>
-            <td>
-              ${z.type === 'prihod' ? 
-                `<button class="btn-red" onclick="softDeleteSklad('${z.id}')">Снять</button>` 
-                : '-'}
-            </td>
+            <td>${z.type === 'prihod' ? `<button class="btn-red" onclick="softDeleteSklad('${z.id}')">Снять</button>` : '-'}</td>
           </tr>
         `).join('')
         : '<tr><td colspan="6">Нет движений</td></tr>';
     }
 
     async function softDeleteSklad(id) {
-      const reason = prompt('Причина снятия с прихода. Минимум 5 символов:\nПример: гнилой товар, ошибка прихода');
+      const reason = prompt('Причина снятия с прихода. Минимум 5 символов:');
       if (!reason || reason.length < 5) return alert('Напиши причину');
 
       const { error } = await db.from('sklad_zapisi')
-        .update({ 
-          deleted_at: new Date().toISOString(),
-          deleted_by: userId,
-          delete_reason: reason 
-        })
+        .update({ deleted_at: new Date().toISOString(), deleted_by: userId, delete_reason: reason })
         .eq('id', id);
 
       if (error) alert('Ошибка: ' + error.message);
@@ -131,10 +119,7 @@
     }
 
     async function loadOstatki() {
-      const { data: products } = await db.from('sklad')
-        .select('id, name')
-        .eq('restaurant_id', restaurantId);
-
+      const { data: products } = await db.from('sklad').select('id, name').eq('restaurant_id', restaurantId);
       const tbody = document.querySelector('#ostatki_table tbody');
       tbody.innerHTML = '';
 
@@ -150,12 +135,7 @@
         });
 
         if (ostatok > 0) {
-          tbody.innerHTML += `
-            <tr>
-              <td>${p.name}</td>
-              <td>${ostatok.toFixed(2)}</td>
-            </tr>
-          `;
+          tbody.innerHTML += `<tr><td>${p.name}</td><td>${ostatok.toFixed(2)}</td></tr>`;
         }
       }
 
