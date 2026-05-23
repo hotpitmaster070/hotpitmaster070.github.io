@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Выбор ресторана</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { 
+      background: #1a1a1a; 
+      color: white; 
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+      margin: 0; 
+      padding: 30px 20px; 
+    }
+    h1 { 
+      text-align: center; 
+      margin-bottom: 30px; 
+      font-size: 24px;
+    }
+    .rest { 
+      background: #2c2c2e; 
+      padding: 18px; 
+      border-radius: 12px; 
+      margin: 12px 0; 
+      cursor: pointer; 
+      transition: 0.2s;
+    }
+    .rest:hover { 
+      background: #3a3a3c; 
+      transform: translateX(5px);
+    }
+    .rest-name {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .rest-role {
+      font-size: 14px;
+      color: #aaa;
+      text-transform: uppercase;
+    }
+    .btn { 
+      background: #ff3b30; 
+      color: white; 
+      border: none; 
+      padding: 16px; 
+      width: 100%; 
+      border-radius: 12px; 
+      margin-top: 25px; 
+      cursor: pointer; 
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .btn-secondary {
+      background: #555;
+      margin-top: 12px;
+    }
+    .empty {
+      text-align: center;
+      color: #888;
+      margin: 40px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Выбери ресторан</h1>
+  <div id="list">Загрузка...</div>
+  <button class="btn" onclick="window.location.href='/onboarding.html'">+ Создать новый ресторан</button>
+  <button class="btn btn-secondary" onclick="logout()">Выйти из аккаунта</button>
+
+  <script>
+    const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function load() {
+      const { data: { user }, error } = await db.auth.getUser();
+      if (error || !user) {
+        window.location.href = '/index.html';
+        return;
+      }
+
+      const { data, error: memError } = await db.from('memberships')
+        .select('restaurant_id, role, restaurants(name)')
+        .eq('user_id', user.id);
+
+      const list = document.getElementById('list');
+      
+      if (memError) {
+        list.innerHTML = '<div class="empty">Ошибка загрузки: ' + memError.message + '</div>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div class="empty">У тебя пока нет ресторанов<br>Создай первый</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(m => `
+        <div class="rest" onclick="select('${m.restaurant_id}', '${m.role}')">
+          <div class="rest-name">${m.restaurants.name}</div>
+          <div class="rest-role">${m.role === 'owner' ? 'Владелец' : 'Повар'}</div>
+        </div>
+      `).join('');
+    }
+
+    function select(id, role) {
+      localStorage.setItem('active_restaurant_id', id);
+      localStorage.setItem('active_role', role);
+      window.location.href = role === 'owner' ? '/owner.html' : '/chef.html';
+    }
+
+    async function logout() {
+      await db.auth.signOut();
+      localStorage.clear();
+      window.location.href = '/index.html';
+    }
+
+    load();
+  </script>
+</body>
+</html>
