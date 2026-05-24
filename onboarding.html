@@ -43,7 +43,7 @@ async function createRestaurant() {
 
   if (rErr) return alert('Ошибка: ' + rErr.message);
 
-  // 2. Обновляем профиль: привязываем ресторан и ставим роль owner
+  // 2. Обновляем профиль
   const { error: pErr } = await db
     .from('profiles')
     .update({ 
@@ -54,7 +54,6 @@ async function createRestaurant() {
 
   if (pErr) return alert('Ошибка: ' + pErr.message);
 
-  // 3. Сохраняем в localStorage и идём в панель
   localStorage.setItem('active_restaurant_id', restaurant.id);
   localStorage.setItem('active_role', 'owner');
   
