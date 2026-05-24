@@ -3,21 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Настройка</title>
+  <title>ШТАБ УСТА</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 40px 20px; text-align: center; }
-    .box { max-width: 400px; margin: 0 auto; }
-    input { width: 100%; padding: 15px; margin: 15px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
-    .btn:disabled { background: #555; cursor: not-allowed; }
+    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+   .box { width: 100%; max-width: 400px; }
+   .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
+    input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
+    h1 { text-align: center; margin-bottom: 30px; }
+   .link { text-align: center; margin-top: 15px; color: #aaa; cursor: pointer; }
   </style>
 </head>
 <body>
 <div class="box">
-  <h1>Создай свой ресторан</h1>
-  <input id="rest_name" type="text" placeholder="Название ресторана" />
-  <button class="btn" id="create_btn" onclick="create()">СОЗДАТЬ</button>
+  <h1 id="title">ШТАБ УСТА 🧱</h1>
+  <input id="email" type="email" placeholder="Email" />
+  <input id="password" type="password" placeholder="Пароль" />
+  <input id="fullname" type="text" placeholder="Имя Фамилия" style="display:none;" />
+  <button class="btn" id="btn" onclick="auth()">ВОЙТИ</button>
+  <div class="link" onclick="toggle()">Нет аккаунта? Зарегистрироваться</div>
 </div>
 
 <script>
@@ -25,45 +29,74 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function create() {
-  const name = document.getElementById('rest_name').value.trim();
-  const btn = document.getElementById('create_btn');
-  
-  if (!name) return alert('Введи название');
-  
-  btn.disabled = true;
-  btn.innerText = 'СОЗДАЮ...';
+let isLogin = true;
 
-  const { data: { user }, error: userErr } = await db.auth.getUser();
-  if (userErr || !user) {
-    alert('Сессия умерла. Зайди заново');
-    window.location.href = '/index.html';
-    return;
-  }
-
-  // Вызываем нашу SQL функцию. Она создаст ресторан и сделает тебя owner
-  const { data: restaurantId, error } = await db.rpc('create_restaurant', {
-    restaurant_name: name
-  });
-
-  if (error) {
-    alert('Ошибка: ' + error.message);
-    btn.disabled = false;
-    btn.innerText = 'СОЗДАТЬ';
-    return;
-  }
-
-  // Сохраняем в localStorage и кидаем на экран owner
-  localStorage.setItem('active_restaurant_id', restaurantId);
-  localStorage.setItem('active_role', 'owner');
-
-  alert('Ресторан создан!');
-  window.location.href = '/owner.html';
+function toggle() {
+  isLogin = !isLogin;
+  document.getElementById('title').innerText = isLogin ? 'ШТАБ УСТА 🧱' : 'РЕГИСТРАЦИЯ';
+  document.getElementById('btn').innerText = isLogin ? 'ВОЙТИ' : 'СОЗДАТЬ';
+  document.querySelector('.link').innerText = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти';
+  document.getElementById('fullname').style.display = isLogin ? 'none' : 'block';
 }
 
-// Проверка сессии при загрузке
+async function auth() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const fullname = document.getElementById('fullname').value.trim();
+  
+  if (!email || !password) return alert('Заполни поля');
+  if (!isLogin && !fullname) return alert('Введи имя');
+
+  let res;
+  if (isLogin) {
+    res = await db.auth.signInWithPassword({ email, password });
+  } else {
+    res = await db.auth.signUp({ 
+      email, 
+      password,
+      options: { data: { full_name: fullname } }
+    });
+    if (!res.error) {
+      alert('Аккаунт создан. Проверь почту для подтверждения, потом войди.');
+      toggle();
+      return;
+    }
+  }
+
+  if (res.error) return alert('Ошибка: ' + res.error.message);
+
+  await routeUser(res.data.user);
+}
+
+async function routeUser(user) {
+  // Тянем профиль пользователя из новой таблицы profiles
+  const { data: profile, error } = await db.from('profiles')
+   .select('role, restaurant_id, restaurants(name)')
+   .eq('id', user.id)
+   .single();
+
+  if (error) return alert('Ошибка: ' + error.message);
+
+  if (!profile || !profile.restaurant_id) {
+    // Нет ресторана - на создание
+    window.location.href = '/onboarding.html';
+    return;
+  }
+
+  // Сохраняем и кидаем по роли
+  localStorage.setItem('active_restaurant_id', profile.restaurant_id);
+  localStorage.setItem('active_role', profile.role);
+
+  if (profile.role === 'owner') {
+    window.location.href = '/owner.html';
+  } else {
+    window.location.href = '/chef.html';
+  }
+}
+
+// Если уже залогинен - сразу проверяем и кидаем
 db.auth.getSession().then(({ data: { session } }) => {
-  if (!session) window.location.href = '/index.html';
+  if (session) routeUser(session.user);
 });
 </script>
 </body>
