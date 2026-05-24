@@ -19,6 +19,7 @@
   <h1 id="title">ШТАБ УСТА 🧱</h1>
   <input id="email" type="email" placeholder="Email" />
   <input id="password" type="password" placeholder="Пароль" />
+  <input id="fullname" type="text" placeholder="Имя Фамилия" style="display:none;" />
   <button class="btn" id="btn" onclick="auth()">ВОЙТИ</button>
   <div class="link" onclick="toggle()">Нет аккаунта? Зарегистрироваться</div>
 </div>
@@ -31,23 +32,35 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let isLogin = true;
 
 function toggle() {
-  isLogin =!isLogin;
-  document.getElementById('title').innerText = isLogin? 'ШТАБ УСТА 🧱' : 'РЕГИСТРАЦИЯ';
-  document.getElementById('btn').innerText = isLogin? 'ВОЙТИ' : 'СОЗДАТЬ';
-  document.querySelector('.link').innerText = isLogin? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти';
+  isLogin = !isLogin;
+  document.getElementById('title').innerText = isLogin ? 'ШТАБ УСТА 🧱' : 'РЕГИСТРАЦИЯ';
+  document.getElementById('btn').innerText = isLogin ? 'ВОЙТИ' : 'СОЗДАТЬ';
+  document.querySelector('.link').innerText = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти';
+  document.getElementById('fullname').style.display = isLogin ? 'none' : 'block';
 }
 
 async function auth() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  if (!email ||!password) return alert('Заполни поля');
+  const fullname = document.getElementById('fullname').value.trim();
+  
+  if (!email || !password) return alert('Заполни поля');
+  if (!isLogin && !fullname) return alert('Введи имя');
 
   let res;
   if (isLogin) {
     res = await db.auth.signInWithPassword({ email, password });
   } else {
-    res = await db.auth.signUp({ email, password });
-    if (!res.error) alert('Проверь почту для подтверждения. Потом войди.');
+    res = await db.auth.signUp({ 
+      email, 
+      password,
+      options: { data: { full_name: fullname } }
+    });
+    if (!res.error) {
+      alert('Аккаунт создан. Проверь почту для подтверждения, потом войди.');
+      toggle();
+      return;
+    }
   }
 
   if (res.error) return alert('Ошибка: ' + res.error.message);
@@ -56,32 +69,28 @@ async function auth() {
 }
 
 async function routeUser(user) {
-  // Тянем все членства пользователя
-  const { data: memberships, error } = await db.from('memberships')
+  // Тянем профиль пользователя из новой таблицы profiles
+  const { data: profile, error } = await db.from('profiles')
    .select('role, restaurant_id, restaurants(name)')
-   .eq('user_id', user.id);
+   .eq('id', user.id)
+   .single();
 
   if (error) return alert('Ошибка: ' + error.message);
 
-  if (!memberships || memberships.length === 0) {
+  if (!profile || !profile.restaurant_id) {
     // Нет ресторана - на создание
     window.location.href = '/onboarding.html';
     return;
   }
 
-  if (memberships.length === 1) {
-    // 1 ресторан - сохраняем и кидаем по роли
-    localStorage.setItem('active_restaurant_id', memberships[0].restaurant_id);
-    localStorage.setItem('active_role', memberships[0].role);
+  // Сохраняем и кидаем по роли
+  localStorage.setItem('active_restaurant_id', profile.restaurant_id);
+  localStorage.setItem('active_role', profile.role);
 
-    if (memberships[0].role === 'owner') {
-      window.location.href = '/owner.html';
-    } else {
-      window.location.href = '/chef.html';
-    }
+  if (profile.role === 'owner') {
+    window.location.href = '/owner.html';
   } else {
-    // Если ресторанов несколько - кидаем на выбор
-    window.location.href = '/select-restaurant.html';
+    window.location.href = '/chef.html';
   }
 }
 
