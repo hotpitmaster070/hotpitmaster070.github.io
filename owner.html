@@ -44,22 +44,50 @@
     let restaurantId;
 
     async function init() {
-      const { data: { session } = await db.auth.getSession();
-      if (!session) return window.location.href = '/index.html';
+      alert('1. Запуск init');
+      
+      const { data: { session }, error } = await db.auth.getSession();
+      if (error || !session) {
+        alert('2. Ошибка сессии: ' + JSON.stringify(error));
+        window.location.href = '/index.html';
+        return;
+      }
+      alert('3. Сессия есть: ' + session.user.email);
 
       restaurantId = localStorage.getItem('active_restaurant_id');
       const role = localStorage.getItem('active_role');
-      if (role !== 'owner') return window.location.href = '/chef.html';
+      
+      alert('4. restaurantId: ' + restaurantId + ' role: ' + role);
 
-      const { data: rest } = await db.from('restaurants').select('name').eq('id', restaurantId).single();
+      if (!restaurantId) {
+        alert('5. Ресторан не выбран');
+        window.location.href = '/select-restaurant.html';
+        return;
+      }
+
+      if (role !== 'owner') {
+        alert('6. Роль не owner, роль: ' + role);
+        window.location.href = '/chef.html';
+        return;
+      }
+
+      const { data: rest, error: restErr } = await db.from('restaurants').select('name').eq('id', restaurantId).single();
+      if (restErr) {
+        alert('7. Ошибка ресторана: ' + restErr.message);
+        return;
+      }
+      
       document.getElementById('rest_name').innerText = rest.name + ' 🧱';
+      alert('8. Всё ок, страница загружена');
     }
 
     async function createInvite() {
-      const role = document.getElementById('role_select').value;
+      alert('9. Нажата кнопка СОЗДАТЬ КОД');
       
-      // Генерируем 6-значный код
+      const role = document.getElementById('role_select').value;
       const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+      alert('10. Генерируем код: ' + code + ' для роли: ' + role);
 
       const { error } = await db.from('invites').insert({
         restaurant_id: restaurantId,
@@ -68,12 +96,13 @@
       });
 
       if (error) {
-        alert('Ошибка: ' + error.message);
+        alert('11. ОШИБКА Supabase: ' + error.message);
         return;
       }
 
       document.getElementById('invite_code').innerText = code;
       document.getElementById('code_result').style.display = 'block';
+      alert('12. Код создан успешно!');
     }
 
     async function logout() {
