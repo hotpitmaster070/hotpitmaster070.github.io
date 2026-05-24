@@ -8,46 +8,36 @@
   <style>
     body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
     h1 { font-size: 28px; margin-bottom: 30px; text-align: center; }
-  .btn { width: 90%; max-width: 400px; padding: 18px; margin: 10px auto; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; display: block; cursor: pointer; }
-  .btn-red { background: #ff3333; }
-  .btn-gray { background: #555; }
-  .btn-green { background: #2ecc71; }
-  .btn-small { padding: 8px 12px; font-size: 14px; width: auto; margin: 5px 0; }
-  .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 400px; }
-  .input { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; color: white; margin-bottom: 10px; box-sizing: border-box; }
-  .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #444; text-align: left; }
-  .item-info { flex: 1; }
-  .item-info small { color: #aaa; }
-  .tabs { display: flex; gap: 10px; max-width: 400px; margin: 0 auto 15px; }
-  .tab { flex: 1; padding: 12px; background: #333; border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
-  .tab.active { background: #2ecc71; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+    .btn { width: 90%; max-width: 400px; padding: 18px; margin: 10px auto; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; display: block; cursor: pointer; }
+    .btn-red { background: #ff3333; }
+    .btn-gray { background: #555; }
+    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 400px; }
+    .item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #444; }
+    .item small { color: #aaa; }
+    input, select { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; color: white; margin-bottom: 10px; box-sizing: border-box; }
   </style>
 </head>
 <body>
   <h1 id="rest_name">Экран Шефа 🧱</h1>
 
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('main')">Главное</button>
-    <button class="tab" onclick="switchTab('tasks')">Мои задания</button>
+  <div class="card">
+    <h3>Склад</h3>
+    <div id="inventory_list">Загрузка...</div>
+    <input id="prod_name" placeholder="Название продукта" />
+    <input id="prod_qty" type="number" placeholder="Количество" />
+    <input id="prod_unit" placeholder="Ед. изм: кг, шт" />
+    <button class="btn btn-red" onclick="addInventory()">+ ДОБАВИТЬ НА СКЛАД</button>
   </div>
 
-  <div id="tab_main" class="tab-content active">
-    <button class="btn btn-red" onclick="prihod()">[+ ПРИХОД ТОВАРА]</button>
-    <button class="btn btn-red" onclick="createZadanie()">[СОЗДАТЬ ЗАДАНИЕ]</button>
-    <button class="btn btn-red" onclick="proizvodstvo()">[РАЗДЕЛКА/ПРОИЗВОДСТВО]</button>
-    <button class="btn btn-red" onclick="inventarizatsiya()">[ИНВЕНТАРИЗАЦИЯ]</button>
+  <div class="card">
+    <h3>Акт разделки</h3>
+    <input id="prod_name_out" placeholder="Что готовим: Шашлык" />
+    <input id="prod_qty_out" type="number" placeholder="Сколько получилось" />
+    <input id="ingredients_json" placeholder='{"Говядина": 2, "Лук": 0.5}' />
+    <small>Формат: {"Продукт": количество, "Продукт2": количество}</small>
+    <button class="btn btn-red" onclick="createProduction()">СОЗДАТЬ АКТ</button>
   </div>
 
-  <div id="tab_tasks" class="tab-content">
-    <div class="card">
-      <h3>Мои задания</h3>
-      <div id="my_tasks_list">Загрузка...</div>
-    </div>
-  </div>
-
-  <button class="btn btn-gray" onclick="window.location.href='/select-restaurant.html'">СМЕНИТЬ РЕСТОРАН</button>
   <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
 
   <script>
@@ -55,7 +45,7 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let user, restaurantId;
+    let user, restaurantId, role;
 
     async function init() {
       const { data: { session } = await db.auth.getSession();
@@ -63,91 +53,81 @@
       user = session.user;
 
       restaurantId = localStorage.getItem('active_restaurant_id');
-      const role = localStorage.getItem('active_role');
-      if (role !== 'chef') return window.location.href = '/owner.html';
+      role = localStorage.getItem('active_role');
+      if (!restaurantId) return window.location.href = '/onboarding.html';
 
       const { data: rest } = await db.from('restaurants').select('name').eq('id', restaurantId).single();
       document.getElementById('rest_name').innerText = rest.name + ' 🧱';
 
-      loadMyTasks();
+      loadInventory();
     }
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
-      document.getElementById(`tab_${tab}`).classList.add('active');
-    }
+    async function loadInventory() {
+      const { data, error } = await db.from('inventory')
+        .select('*')
+        .eq('restaurant_id', restaurantId)
+        .order('name');
 
-    async function loadMyTasks() {
-      const { data } = await db.from('zadaniya')
-       .select('id, title, description, status, created_at')
-       .eq('restaurant_id', restaurantId)
-       .eq('created_by', user.id)
-       .is('deleted_at', null)
-       .order('created_at', { ascending: false });
+      if (error) return alert(error.message);
 
       let html = '';
-      data.forEach(z => {
+      data.forEach(i => {
         html += `<div class="item">
-          <div class="item-info">
-            <strong>${z.title}</strong> - ${z.status}<br>
-            <small>${z.description || ''}</small>
-          </div>
-          <div>
-            ${z.status !== 'done' ? `<button class="btn btn-small btn-green" onclick="updateStatus('${z.id}','done')">Готово</button>` : ''}
-            <button class="btn btn-small btn-red" onclick="softDeleteMyTask('${z.id}')">Удалить</button>
-          </div>
+          <div><strong>${i.name}</strong> <small>${i.quantity} ${i.unit}</small></div>
         </div>`;
       });
-      document.getElementById('my_tasks_list').innerHTML = html || 'Нет заданий';
+      document.getElementById('inventory_list').innerHTML = html || 'Склад пуст';
     }
 
-    async function createZadanie() {
-      const title = prompt('Что нужно сделать:');
-      if (!title) return;
-      const desc = prompt('Описание:');
+    async function addInventory() {
+      const name = document.getElementById('prod_name').value.trim();
+      const qty = parseFloat(document.getElementById('prod_qty').value);
+      const unit = document.getElementById('prod_unit').value.trim();
 
-      const { error } = await db.from('zadaniya').insert({
+      if (!name || !qty || !unit) return alert('Заполни все поля');
+
+      const { error } = await db.from('inventory').insert({
         restaurant_id: restaurantId,
-        title: title,
-        description: desc,
-        status: 'new',
+        name: name,
+        quantity: qty,
+        unit: unit
+      });
+
+      if (error) alert(error.message);
+      else {
+        alert('Добавлено');
+        loadInventory();
+      }
+    }
+
+    async function createProduction() {
+      const product_name = document.getElementById('prod_name_out').value.trim();
+      const output_qty = parseFloat(document.getElementById('prod_qty_out').value);
+      const ingredients_used = document.getElementById('ingredients_json').value.trim();
+
+      if (!product_name || !output_qty || !ingredients_used) return alert('Заполни все поля');
+
+      let ingredients;
+      try {
+        ingredients = JSON.parse(ingredients_used);
+      } catch {
+        return alert('Неправильный JSON. Пример: {"Говядина": 2}');
+      }
+
+      const { error } = await db.from('production_logs').insert({
+        restaurant_id: restaurantId,
+        product_name: product_name,
+        output_quantity: output_qty,
+        ingredients_used: ingredients,
         created_by: user.id
       });
 
-      if (error) alert('Ошибка: ' + error.message);
-      else {
-        alert('Задание создано!');
-        loadMyTasks();
-        switchTab('tasks');
-      }
-    }
-
-    async function updateStatus(id, status) {
-      const updateData = { status };
-      if (status === 'done') {
-        updateData.completed_at = new Date().toISOString();
-        updateData.completed_by = user.id;
-      }
-      const { error } = await db.from('zadaniya').update(updateData).eq('id', id);
       if (error) alert(error.message);
-      else loadMyTasks();
+      else {
+        alert('Акт создан');
+        loadInventory();
+      }
     }
-
-    async function softDeleteMyTask(id) {
-      const reason = prompt('Причина удаления. Минимум 5 символов:');
-      if (!reason || reason.length < 5) return alert('Напиши причину');
-      const { error } = await db.from('zadaniya')
-       .update({ deleted_at: new Date().toISOString(), deleted_by: user.id, delete_reason: reason })
-       .eq('id', id);
-      if (error) alert('Ошибка: ' + error.message);
-      else loadMyTasks();
-    }
-
-    async function prihod() { /* твой код прихода без изменений */ }
-    async function proizvodstvo() { /* твой код производства без изменений */ }
-    async function inventarizatsiya() { /* твой код инвентаризации без изменений */ }
 
     async function logout() {
       await db.auth.signOut();
@@ -158,4 +138,4 @@
     init();
   </script>
 </body>
-</html>
+  </html>
