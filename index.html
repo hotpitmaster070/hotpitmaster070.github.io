@@ -72,7 +72,7 @@ async function routeUser(user) {
   const { data: profile, error } = await db.from('profiles')
    .select('role, restaurant_id, restaurants(name)')
    .eq('id', user.id)
-   .single();
+   .maybeSingle(); // <-- заменил single на maybeSingle
 
   if (error) return alert('Ошибка: ' + error.message);
 
