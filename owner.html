@@ -7,146 +7,77 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
-    h1 { text-align: center; }
-    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 600px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
-    th { background: #333; }
-    .btn-gray { background: #555; color: white; border: none; padding: 12px; width: 100%; border-radius: 12px; margin-top: 20px; cursor: pointer; }
-    .btn-red { background: #ff3b30; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-    .badge-prihod { color: #2ecc71; }
-    .badge-rashod { color: #ff3b30; }
+    h1 { font-size: 28px; margin-bottom: 20px; text-align: center; }
+    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 400px; }
+    .btn { width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
+    .btn-red { background: #ff3333; }
+    .btn-green { background: #2ecc71; }
+    .btn-gray { background: #555; }
+    select { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; color: white; margin-bottom: 10px; }
+    .code-box { background: #1a1a1a; padding: 20px; border-radius: 8px; text-align: center; font-size: 32px; letter-spacing: 6px; font-weight: bold; margin: 15px 0; }
   </style>
 </head>
 <body>
-  <h1 id="rest_name">Загрузка...</h1>
+  <h1 id="rest_name">Панель Владельца 🧱</h1>
 
   <div class="card">
-    <h3>Движения склада</h3>
-    <table id="sklad_table">
-      <thead>
-        <tr>
-          <th>Товар</th>
-          <th>Тип</th>
-          <th>Кол-во</th>
-          <th>Кто</th>
-          <th>Дата</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <h3>Пригласить сотрудника</h3>
+    <select id="role_select">
+      <option value="chef">Шеф</option>
+      <option value="staff">Сотрудник</option>
+    </select>
+    <button class="btn btn-green" onclick="createInvite()">СОЗДАТЬ КОД</button>
+    <div id="code_result" style="display:none;">
+      <p>Код для передачи:</p>
+      <div class="code-box" id="invite_code"></div>
+      <small>Действует 7 дней. Отправь его в WhatsApp.</small>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Остатки на складе</h3>
-    <table id="ostatki_table">
-      <thead>
-        <tr>
-          <th>Товар</th>
-          <th>Остаток</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <button class="btn-gray" onclick="window.location.href='/select-restaurant.html'">СМЕНИТЬ РЕСТОРАН</button>
-  <button class="btn-gray" onclick="logout()">ВЫЙТИ</button>
+  <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
 
   <script>
     const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let restaurantId, userId;
+    let restaurantId;
 
     async function init() {
-      const { data: { user } = await db.auth.getUser();
-      if (!user) return window.location.href = '/index.html';
-      userId = user.id;
+      const { data: { session } = await db.auth.getSession();
+      if (!session) return window.location.href = '/index.html';
 
-      const { data: membership } = await db.from('memberships')
-        .select('role, restaurant_id, restaurants(name)')
-        .eq('user_id', user.id).single();
+      restaurantId = localStorage.getItem('active_restaurant_id');
+      const role = localStorage.getItem('active_role');
+      if (role !== 'owner') return window.location.href = '/chef.html';
 
-      if (!membership || membership.role !== 'owner') return window.location.href = '/chef.html';
+      const { data: rest } = await db.from('restaurants').select('name').eq('id', restaurantId).single();
+      document.getElementById('rest_name').innerText = rest.name + ' 🧱';
+    }
+
+    async function createInvite() {
+      const role = document.getElementById('role_select').value;
       
-      restaurantId = membership.restaurant_id;
-      document.getElementById('rest_name').innerText = membership.restaurants.name + ' 👑';
+      // Генерируем 6-значный код
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
 
-      loadDvizheniya();
-      loadOstatki();
-    }
+      const { error } = await db.from('invites').insert({
+        restaurant_id: restaurantId,
+        code: code,
+        role: role
+      });
 
-    async function loadDvizheniya() {
-      const { data } = await db.from('sklad_zapisi')
-        .select(`id, type, quantity, created_at, note, delete_reason, sklad(name), creator:created_by(email)`)
-        .eq('restaurant_id', restaurantId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      const tbody = document.querySelector('#sklad_table tbody');
-      tbody.innerHTML = data && data.length 
-        ? data.map(z => `
-          <tr>
-            <td>${z.sklad?.name || '-'}</td>
-            <td class="${z.type === 'prihod' ? 'badge-prihod' : 'badge-rashod'}">${z.type.toUpperCase()}</td>
-            <td>${z.quantity}</td>
-            <td>${z.creator?.email || '-'}</td>
-            <td>${new Date(z.created_at).toLocaleString('ru')}</td>
-            <td>${z.type === 'prihod' ? `<button class="btn-red" onclick="softDeleteSklad('${z.id}')">Снять</button>` : '-'}</td>
-          </tr>
-        `).join('')
-        : '<tr><td colspan="6">Нет движений</td></tr>';
-    }
-
-    async function softDeleteSklad(id) {
-      const reason = prompt('Причина снятия с прихода. Минимум 5 символов:');
-      if (!reason || reason.length < 5) return alert('Напиши причину');
-
-      const { error } = await db.from('sklad_zapisi')
-        .update({ deleted_at: new Date().toISOString(), deleted_by: userId, delete_reason: reason })
-        .eq('id', id);
-
-      if (error) alert('Ошибка: ' + error.message);
-      else {
-        alert('Запись снята. Остатки пересчитались.');
-        loadDvizheniya();
-        loadOstatki();
-      }
-    }
-
-    async function loadOstatki() {
-      const { data: products } = await db.from('sklad').select('id, name').eq('restaurant_id', restaurantId);
-      const tbody = document.querySelector('#ostatki_table tbody');
-      tbody.innerHTML = '';
-
-      for (let p of products || []) {
-        const { data: zapisi } = await db.from('sklad_zapisi')
-          .select('type, quantity')
-          .eq('product_id', p.id)
-          .is('deleted_at', null);
-
-        let ostatok = 0;
-        zapisi?.forEach(z => {
-          ostatok += z.type === 'prihod' ? parseFloat(z.quantity) : -parseFloat(z.quantity);
-        });
-
-        if (ostatok > 0) {
-          tbody.innerHTML += `<tr><td>${p.name}</td><td>${ostatok.toFixed(2)}</td></tr>`;
-        }
+      if (error) {
+        alert('Ошибка: ' + error.message);
+        return;
       }
 
-      if (!tbody.innerHTML) {
-        tbody.innerHTML = '<tr><td colspan="2">Склад пуст</td></tr>';
-      }
+      document.getElementById('invite_code').innerText = code;
+      document.getElementById('code_result').style.display = 'block';
     }
 
-    window.logout = async function() {
-      const db2 = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      await db2.auth.signOut();
+    async function logout() {
+      await db.auth.signOut();
       localStorage.clear();
       window.location.href = '/index.html';
     }
@@ -154,4 +85,4 @@
     init();
   </script>
 </body>
-  </html>
+</html>
