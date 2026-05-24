@@ -19,7 +19,7 @@
   <h1>Создай свой ресторан 🍖</h1>
   <p>Это займёт 10 секунд</p>
   <input id="restaurant_name" type="text" placeholder="Название ресторана" />
-  <button class="btn" onclick="createRestaurant()">СОЗДАТЬ</button>
+  <button class="btn" id="createBtn">СОЗДАТЬ</button>
 </div>
 
 <script>
@@ -27,39 +27,34 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function createRestaurant() {
+document.getElementById('createBtn').addEventListener('click', async () => {
   const name = document.getElementById('restaurant_name').value.trim();
   if (!name) return alert('Введи название');
 
-  const { data: { user } = await db.auth.getUser();
-  if (!user) return window.location.href = '/index.html';
+  const { data: { user }, error: userErr } = await db.auth.getUser();
+  if (userErr || !user) return window.location.href = '/index.html';
 
-  // 1. Создаём ресторан
   const { data: restaurant, error: rErr } = await db
     .from('restaurants')
     .insert({ name: name })
     .select()
     .single();
 
-  if (rErr) return alert('Ошибка: ' + rErr.message);
+  if (rErr) return alert('Ошибка создания ресторана: ' + rErr.message);
 
-  // 2. Обновляем профиль
   const { error: pErr } = await db
     .from('profiles')
-    .update({ 
-      restaurant_id: restaurant.id, 
-      role: 'owner' 
-    })
+    .update({ restaurant_id: restaurant.id, role: 'owner' })
     .eq('id', user.id);
 
-  if (pErr) return alert('Ошибка: ' + pErr.message);
+  if (pErr) return alert('Ошибка обновления профиля: ' + pErr.message);
 
   localStorage.setItem('active_restaurant_id', restaurant.id);
   localStorage.setItem('active_role', 'owner');
   
   alert('Готово! Ресторан создан.');
   window.location.href = '/owner.html';
-}
+});
 </script>
 </body>
 </html>
