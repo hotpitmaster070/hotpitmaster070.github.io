@@ -3,21 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Настройка</title>
+  <title>Создай ресторан</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 40px 20px; text-align: center; }
-    .box { max-width: 400px; margin: 0 auto; }
-    input { width: 100%; padding: 15px; margin: 15px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-    .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
+    input { width: 100%; max-width: 400px; padding: 15px; background: #2c2c2e; border: 1px solid #444; border-radius: 12px; color: white; font-size: 16px; margin-bottom: 15px; }
+    button { width: 100%; max-width: 400px; padding: 18px; background: #ff3333; border: none; border-radius: 12px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
-<div class="box">
   <h1>Создай свой ресторан</h1>
   <input id="rest_name" type="text" placeholder="Название ресторана" />
-  <button class="btn" onclick="create()">СОЗДАТЬ</button>
-</div>
+  <button onclick="create()">СОЗДАТЬ</button>
 
 <script>
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
@@ -31,31 +28,29 @@ async function create() {
   const { data: { user }, error: userErr } = await db.auth.getUser();
   if (userErr || !user) return alert('Сессия умерла. Зайди заново');
 
-  // 1. Создаём ресторан с user_id
-  const { data: rest, error } = await db.from('restaurants')
-    .insert({ 
-      name: name,
-      user_id: user.id  // <-- вот это добавил
-    })
+  // 1. Создаём ресторан
+  const { data: rest, error: restErr } = await db.from('restaurants')
+    .insert({ name: name, owner_user_id: user.id })
     .select()
     .single();
   
-  if (error) return alert('Ошибка создания ресторана: ' + error.message);
+  if (restErr) return alert('Ошибка создания ресторана: ' + restErr.message);
 
-  // 2. Создаём membership
-  const { error: memErr } = await db.from('memberships').insert({ 
-    user_id: user.id, 
-    restaurant_id: rest.id, 
-    role: 'owner' 
-  });
+  // 2. Обновляем профиль
+  const { error: profileErr } = await db.from('profiles')
+    .update({ 
+      restaurant_id: rest.id, 
+      role: 'owner' 
+    })
+    .eq('id', user.id);
 
-  if (memErr) return alert('Ошибка создания членства: ' + memErr.message);
+  if (profileErr) return alert('Ошибка обновления профиля: ' + profileErr.message);
 
-  // 3. Сохраняем в localStorage
+  // 3. Сохраняем и идём в админку
   localStorage.setItem('active_restaurant_id', rest.id);
   localStorage.setItem('active_role', 'owner');
 
-  alert('Готово!');
+  alert('Готово! Ресторан создан');
   window.location.href = '/owner.html';
 }
 
