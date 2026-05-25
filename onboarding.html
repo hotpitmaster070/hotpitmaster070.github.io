@@ -25,7 +25,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 
 <script>
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR_NEW_ANON_KEY_HERE'; // ВСТАВЬ НОВЫЙ КЛЮЧ СЮДА
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -44,11 +44,9 @@ async function createRestaurant() {
   btn.textContent = 'Создаём...';
   
   try {
-    // 1. Проверяем что юзер залогинен
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) throw new Error('Сначала залогиньтесь на главной странице');
     
-    // 2. Создаём ресторан
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
       .insert({ name: name, owner_user_id: user.id })
@@ -57,7 +55,6 @@ async function createRestaurant() {
     
     if (restaurantError) throw restaurantError;
     
-    // 3. Обновляем профиль: привязываем к ресторану, ставим роль owner
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ restaurant_id: restaurant.id, role: 'owner' })
@@ -67,7 +64,6 @@ async function createRestaurant() {
     
     msg.innerHTML = '<div class="success">Готово! Ресторан создан. Переходим в админку...</div>';
     
-    // 4. Переходим в админку
     setTimeout(() => {
       window.location.href = '/owner.html';
     }, 1500);
