@@ -1,6 +1,3 @@
----
-layout: null
----
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -9,83 +6,36 @@ layout: null
 <title>Создать ресторан</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body { font-family: system-ui, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
-input, button { width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; box-sizing: border-box; }
-button { background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
-.error { color: red; margin-top: 10px; }
-.success { color: green; margin-top: 10px; }
+body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5}
+.box{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);width:320px}
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
+button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
+<div class="box">
 <h2>Создать ресторан</h2>
-<p>После создания вы станете Owner и сможете приглашать сотрудников.</p>
-
-<input type="text" id="restaurantName" placeholder="Название ресторана" required>
-<button id="createBtn" onclick="createRestaurant()">СОЗДАТЬ</button>
-
-<div id="msg"></div>
-
+<p>После создания вы станете Owner</p>
+<input id="name" placeholder="Название ресторана">
+<button onclick="create()">СОЗДАТЬ</button>
+</div>
 <script>
-const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const supabase = supabase.createClient('ТВОЙ_SUPABASE_URL', 'ТВОЙ_SUPABASE_ANON_KEY');
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-async function createRestaurant() {
-  const btn = document.getElementById('createBtn');
-  const msg = document.getElementById('msg');
-  const name = document.getElementById('restaurantName').value.trim();
+async function create(){
+  const {data:{user}} = await supabase.auth.getUser();
+  if(!user) return window.location.href='/index.html';
   
-  msg.innerHTML = '';
-  if (!name) {
-    msg.innerHTML = '<div class="error">Введите название</div>';
-    return;
-  }
+  const {data:rest,error} = await supabase.from('restaurants')
+    .insert({name:name.value, owner_user_id:user.id})
+    .select().single();
+  if(error) return alert(error.message);
   
-  btn.disabled = true;
-  btn.textContent = 'Проверяем логин...';
-  
-  try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+  await supabase.from('profiles')
+    .update({restaurant_id:rest.id, role:'owner'})
+    .eq('id',user.id);
     
-    if (userError || !user) {
-      msg.innerHTML = '<div class="error">Вы не залогинены. Переходим на страницу входа...</div>';
-      setTimeout(() => {
-        window.location.href = '/index.html';
-      }, 1500);
-      return;
-    }
-    
-    btn.textContent = 'Создаём...';
-    
-    const { data: restaurant, error: restaurantError } = await supabase
-      .from('restaurants')
-      .insert({ name: name, owner_user_id: user.id })
-      .select()
-      .single();
-    
-    if (restaurantError) throw restaurantError;
-    
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ restaurant_id: restaurant.id, role: 'owner' })
-      .eq('id', user.id);
-    
-    if (profileError) throw profileError;
-    
-    msg.innerHTML = '<div class="success">Готово! Переходим в админку...</div>';
-    
-    setTimeout(() => {
-      window.location.href = '/owner.html';
-    }, 1500);
-    
-  } catch (error) {
-    msg.innerHTML = `<div class="error">Ошибка: ${error.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'СОЗДАТЬ';
-  }
+  window.location.href='/owner.html';
 }
 </script>
 </body>
