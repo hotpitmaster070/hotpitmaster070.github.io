@@ -1,60 +1,85 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Создание ресторана</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-   .box { width: 100%; max-width: 400px; }
-   .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
-    input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-    h1 { text-align: center; margin-bottom: 10px; }
-    p { text-align: center; color: #aaa; margin-bottom: 30px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Создать ресторан</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body { font-family: system-ui, sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
+input, button { width: 100%; padding: 12px; margin-top: 10px; font-size: 16px; box-sizing: border-box; }
+button { background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+.error { color: red; margin-top: 10px; }
+.success { color: green; margin-top: 10px; }
+</style>
 </head>
 <body>
-<div class="box">
-  <h1>Создай свой ресторан 🍖</h1>
-  <p>Это займёт 10 секунд</p>
-  <input id="restaurant_name" type="text" placeholder="Название ресторана" />
-  <button class="btn" id="createBtn">СОЗДАТЬ</button>
-</div>
+<h2>Создать ресторан</h2>
+<p>После создания вы станете Owner и сможете приглашать сотрудников.</p>
+
+<input type="text" id="restaurantName" placeholder="Название ресторана" required>
+<button id="createBtn" onclick="createRestaurant()">СОЗДАТЬ</button>
+
+<div id="msg"></div>
 
 <script>
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_ANON_KEY = 'YOUR_NEW_ANON_KEY_HERE'; // ВСТАВЬ НОВЫЙ КЛЮЧ СЮДА
 
-document.getElementById('createBtn').addEventListener('click', async () => {
-  const name = document.getElementById('restaurant_name').value.trim();
-  if (!name) return alert('Введи название');
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const { data: { user }, error: userErr } = await db.auth.getUser();
-  if (userErr || !user) return window.location.href = '/index.html';
-
-  const { data: restaurant, error: rErr } = await db
-    .from('restaurants')
-    .insert({ name: name })
-    .select()
-    .single();
-
-  if (rErr) return alert('Ошибка создания ресторана: ' + rErr.message);
-
-  const { error: pErr } = await db
-    .from('profiles')
-    .update({ restaurant_id: restaurant.id, role: 'owner' })
-    .eq('id', user.id);
-
-  if (pErr) return alert('Ошибка обновления профиля: ' + pErr.message);
-
-  localStorage.setItem('active_restaurant_id', restaurant.id);
-  localStorage.setItem('active_role', 'owner');
+async function createRestaurant() {
+  const btn = document.getElementById('createBtn');
+  const msg = document.getElementById('msg');
+  const name = document.getElementById('restaurantName').value.trim();
   
-  alert('Готово! Ресторан создан.');
-  window.location.href = '/owner.html';
-});
+  msg.innerHTML = '';
+  if (!name) {
+    msg.innerHTML = '<div class="error">Введите название</div>';
+    return;
+  }
+  
+  btn.disabled = true;
+  btn.textContent = 'Создаём...';
+  
+  try {
+    // 1. Проверяем что юзер залогинен
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) throw new Error('Сначала залогиньтесь на главной странице');
+    
+    // 2. Создаём ресторан
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .insert({ name: name, owner_user_id: user.id })
+      .select()
+      .single();
+    
+    if (restaurantError) throw restaurantError;
+    
+    // 3. Обновляем профиль: привязываем к ресторану, ставим роль owner
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ restaurant_id: restaurant.id, role: 'owner' })
+      .eq('id', user.id);
+    
+    if (profileError) throw profileError;
+    
+    msg.innerHTML = '<div class="success">Готово! Ресторан создан. Переходим в админку...</div>';
+    
+    // 4. Переходим в админку
+    setTimeout(() => {
+      window.location.href = '/owner.html';
+    }, 1500);
+    
+  } catch (error) {
+    msg.innerHTML = `<div class="error">Ошибка: ${error.message}</div>`;
+    console.error(error);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'СОЗДАТЬ';
+  }
+}
 </script>
 </body>
 </html>
