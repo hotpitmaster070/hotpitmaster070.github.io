@@ -64,7 +64,7 @@
 </div>
 
 <script>
-const supabase = supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   'https://xljogkyropyocvuuodfl.supabase.co', 
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
@@ -91,10 +91,10 @@ async function setup() {
   document.getElementById('errorBox').classList.add('hidden');
 
   try {
-    const { data: rest, error: restErr } = await supabase.from('restaurants').insert({name: restName}).select().single();
+    const { data: rest, error: restErr } = await supabaseClient.from('restaurants').insert({name: restName}).select().single();
     if (restErr) throw restErr;
 
-    const { data: owner, error: ownerErr } = await supabase.from('staff').insert({
+    const { data: owner, error: ownerErr } = await supabaseClient.from('staff').insert({
       restaurant_id: rest.id,
       name: ownerName,
       role: 'owner'
@@ -106,7 +106,7 @@ async function setup() {
       name: name,
       role: 'staff'
     }));
-    const { data: staff, error: staffErr } = await supabase.from('staff').insert(staffToInsert).select();
+    const { data: staff, error: staffErr } = await supabaseClient.from('staff').insert(staffToInsert).select();
     if (staffErr) throw staffErr;
 
     document.getElementById('loading').classList.add('hidden');
@@ -116,8 +116,9 @@ async function setup() {
     document.getElementById('ownerLink').textContent = scheduleUrl;
 
     const qrsDiv = document.getElementById('qrs');
-    const allStaff = [owner,...staff];
+    const allStaff = [owner, ...staff];
     
+    qrsDiv.innerHTML = '';
     for (let person of allStaff) {
       const canvas = document.createElement('canvas');
       await QRCode.toCanvas(canvas, person.id, { width: 200, margin: 1 });
