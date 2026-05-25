@@ -7,15 +7,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<style>
-  body { font-family: system-ui, -apple-system, sans-serif; }
-</style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 p-6">
 
 <div class="max-w-2xl mx-auto">
   <h1 class="text-3xl font-bold mb-2">Запуск HotPit</h1>
   <p class="text-zinc-400 mb-8">Введи данные, остальное сделаю я. 3 минуты и готово.</p>
+
+  <div id="errorBox" class="hidden bg-red-900/50 border-red-700 rounded-lg p-4 mb-4">
+    <p class="font-semibold">Ошибка:</p>
+    <p id="errorText" class="text-sm"></p>
+  </div>
 
   <div id="form" class="space-y-4">
     <div>
@@ -33,7 +35,7 @@
       <input id="staffNames" placeholder="Марат, Азамат, Рустам" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
     </div>
     
-    <button onclick="setup()" class="w-full bg-blue-600 hover:bg-blue-700 rounded-lg p-4 font-semibold text-lg mt-4">
+    <button onclick="setup()" class="w-full bg-orange-500 hover:bg-orange-600 rounded-lg p-4 font-semibold text-lg mt-4">
       Создать систему
     </button>
   </div>
@@ -46,19 +48,12 @@
 
     <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
       <h3 class="font-semibold mb-2">1. Твоя ссылка — управление поварами и графиком</h3>
-      <p class="text-sm text-zinc-400 mb-2">Открой на компе или телефоне. Добавь/удали поваров, назначь смены.</p>
-      <p id="ownerLink" class="text-blue-400 break-all bg-zinc-950 p-3 rounded"></p>
+      <p id="ownerLink" class="text-orange-400 break-all bg-zinc-950 p-3 rounded"></p>
     </div>
 
     <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
-      <h3 class="font-semibold mb-4">2. QR-коды для поваров. Распечатай и повесь на кухне</h3>
+      <h3 class="font-semibold mb-4">2. QR-коды для поваров</h3>
       <div id="qrs" class="grid grid-cols-2 gap-4"></div>
-    </div>
-
-    <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
-      <h3 class="font-semibold mb-2">3. Ссылка для отметки смены</h3>
-      <p class="text-sm text-zinc-400 mb-2">Открой на телефоне повара. Он сканирует QR и отмечает приход/уход.</p>
-      <p id="checkinLink" class="text-blue-400 bg-zinc-950 p-3 rounded">https://hotpitmaster070.github.io/checkin.html</p>
     </div>
   </div>
 
@@ -69,7 +64,17 @@
 </div>
 
 <script>
-const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyV');
+const supabase = supabase.createClient(
+  'https://xljogkyropyocvuuodfl.supabase.co', 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+);
+
+function showError(msg) {
+  document.getElementById('errorBox').classList.remove('hidden');
+  document.getElementById('errorText').textContent = msg;
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('form').classList.remove('hidden');
+}
 
 async function setup() {
   const restName = document.getElementById('restName').value.trim();
@@ -77,19 +82,18 @@ async function setup() {
   const staffNames = document.getElementById('staffNames').value.split(',').map(s => s.trim()).filter(s => s);
 
   if (!restName || !ownerName || staffNames.length === 0) {
-    alert('Заполни все поля');
+    showError('Заполни все поля');
     return;
   }
 
   document.getElementById('form').classList.add('hidden');
   document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('errorBox').classList.add('hidden');
 
   try {
-    // 1. Создаем ресторан
     const { data: rest, error: restErr } = await supabase.from('restaurants').insert({name: restName}).select().single();
     if (restErr) throw restErr;
 
-    // 2. Создаем шефа
     const { data: owner, error: ownerErr } = await supabase.from('staff').insert({
       restaurant_id: rest.id,
       name: ownerName,
@@ -97,7 +101,6 @@ async function setup() {
     }).select().single();
     if (ownerErr) throw ownerErr;
 
-    // 3. Создаем поваров
     const staffToInsert = staffNames.map(name => ({
       restaurant_id: rest.id,
       name: name,
@@ -106,7 +109,6 @@ async function setup() {
     const { data: staff, error: staffErr } = await supabase.from('staff').insert(staffToInsert).select();
     if (staffErr) throw staffErr;
 
-    // 4. Показываем результат
     document.getElementById('loading').classList.add('hidden');
     document.getElementById('result').classList.remove('hidden');
     
@@ -125,18 +127,14 @@ async function setup() {
         <div class="text-center bg-zinc-950 p-4 rounded-lg">
           ${canvas.outerHTML}
           <p class="mt-2 font-semibold">${person.name}</p>
-          <p class="text-xs text-zinc-500">${person.role === 'owner' ? 'Шеф' : 'Повар'}</p>
         </div>
       `;
     }
 
   } catch(e) {
-    alert('Ошибка: ' + e.message);
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('form').classList.remove('hidden');
-    console.error(e);
+    showError(e.message || e);
   }
 }
 </script>
 </body>
-      </html>
+</html>
