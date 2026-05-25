@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Панель сотрудника</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:sans-serif;margin:0;background:#f5f5f5}
+.header{background:white;padding:15px 20px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.header h2{margin:0;font-size:18px}
+.container{padding:20px}
+.card{background:white;padding:20px;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+.card h3{margin:0 0 10px;font-size:16px}
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px;text-align:left;border-bottom:1px solid #eee}
+th{color:#666;font-weight:500;font-size:14px}
+.logout{color:#ef4444;background:none;border:none;padding:0;font-size:14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+  <h2 id="restaurantName">Загрузка...</h2>
+  <button class="logout" onclick="logout()">Выйти</button>
+</div>
+
+<div class="container">
+  <div class="card">
+    <h3>Склад</h3>
+    <table id="inventoryTable">
+      <thead>
+        <tr><th>Товар</th><th>Кол-во</th><th>Ед. изм</th></tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3">Пусто</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Заказы</h3>
+    <table id="ordersTable">
+      <thead>
+        <tr><th>№</th><th>Статус</th><th>Сумма</th></tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3">Пусто</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const supabaseClient = supabase.createClient(
+  'https://xljogkyropyocvuuodfl.supabase.co', 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+);
+
+let userRestaurantId = null;
+
+async function init(){
+  const {data:{user}} = await supabaseClient.auth.getUser();
+  if(!user){ 
+    window.location.href = '/index.html';
+    return;
+  }
+  
+  // Получаем профиль и restaurant_id
+  const {data:profile} = await supabaseClient
+    .from('profiles')
+    .select('restaurant_id, role')
+    .eq('id', user.id)
+    .single();
+  
+  if(!profile?.restaurant_id){
+    alert('Ты не привязан к ресторану. Введи код на /join.html');
+    window.location.href = '/join.html';
+    return;
+  }
+  
+  userRestaurantId = profile.restaurant_id;
+  
+  // Получаем название ресторана
+  const {data:restaurant} = await supabaseClient
+    .from('restaurants')
+    .select('name')
+    .eq('id', userRestaurantId)
+    .single();
+  
+  document.getElementById('restaurantName').textContent = restaurant?.name || 'Ресторан';
+  
+  loadInventory();
+  loadOrders();
+}
+
+async function loadInventory(){
+  const {data} = await supabaseClient
+    .from('inventory')
+    .select('*')
+    .eq('restaurant_id', userRestaurantId);
+  
+  const tbody = document.querySelector('#inventoryTable tbody');
+  if(!data || data.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3">Пусто</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = data.map(item => 
+    `<tr><td>${item.name}</td><td>${item.qty}</td><td>${item.unit}</td></tr>`
+  ).join('');
+}
+
+async function loadOrders(){
+  const {data} = await supabaseClient
+    .from('orders')
+    .select('*')
+    .eq('restaurant_id', userRestaurantId)
+    .order('created_at', {ascending: false})
+    .limit(10);
+  
+  const tbody = document.querySelector('#ordersTable tbody');
+  if(!data || data.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3">Пусто</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = data.map(order => 
+    `<tr><td>#${order.id.slice(0,6)}</td><td>${order.status}</td><td>${order.total}₽</td></tr>`
+  ).join('');
+}
+
+async function logout(){
+  await supabaseClient.auth.signOut();
+  window.location.href = '/index.html';
+}
+
+init();
+</script>
+</body>
+  </html>
