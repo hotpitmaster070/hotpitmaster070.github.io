@@ -6,7 +6,12 @@
 <title>Отметка смены - HotPit</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
+  :root {
+    --accent: #f97316; /* оранжевый HotPit */
+    --accent-dark: #ea580c;
+  }
   body {
     font-family: system-ui, -apple-system, sans-serif;
     background: #0a0a0a;
@@ -14,38 +19,85 @@
     text-align: center;
     padding: 20px;
     margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .logo {
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 24px;
+    margin-bottom: 8px;
   }
   #reader {
     width: 100%;
     max-width: 400px;
     margin: 20px auto;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
+    border: 2px solid #27272a;
   }
- .msg {
-    padding: 20px;
-    border-radius: 12px;
+  .msg {
+    padding: 24px;
+    border-radius: 16px;
     margin-top: 20px;
     font-size: 18px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    animation: slideUp 0.3s ease;
   }
- .success { background: #10b981; }
- .error { background: #ef4444; }
-  h2 { margin-bottom: 10px; }
-  p { color: #a1a1aa; }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .success { background: #10b981; }
+  .error { background: #ef4444; }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+  .btn-primary:hover {
+    background: var(--accent-dark);
+  }
+  h2 { margin-bottom: 10px; font-size: 24px; }
+  p { color: #a1a1aa; margin: 0; }
 </style>
 </head>
 <body>
+  <div class="logo">HotPit</div>
   <h2>Отметка смены</h2>
-  <p>Наведи камеру на QR-код</p>
+  <p>Наведи камеру на свой QR-код</p>
   <div id="reader"></div>
   <div id="result"></div>
 
 <script>
 const supabase = supabase.createClient('ТВОЙ_URL', 'ТВОЙ_KEY');
+lucide.createIcons();
 
-function showMsg(text, type) {
-  document.getElementById('result').innerHTML = `<div class="msg ${type}">${text}</div>`;
+function showMsg(text, type, icon) {
+  document.getElementById('result').innerHTML = `
+    <div class="msg ${type}">
+      <i data-lucide="${icon}"></i>
+      <span>${text}</span>
+    </div>
+  `;
+  lucide.createIcons();
+  
+  // Автоскрытие через 4 сек
+  setTimeout(() => {
+    document.getElementById('result').innerHTML = '';
+  }, 4000);
 }
 
 async function onScanSuccess(decodedText) {
@@ -53,54 +105,60 @@ async function onScanSuccess(decodedText) {
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
 
-  // 1. Проверяем график
-  const { data: schedule } = await supabase
-  .from('work_schedules')
-  .select('*')
-  .eq('user_id', userId)
-  .eq('work_date', today)
-  .eq('status', 'scheduled')
-  .single();
+  try {
+    // 1. Проверяем график
+    const { data: schedule } = await supabase
+    .from('work_schedules')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('work_date', today)
+    .eq('status', 'scheduled')
+    .maybeSingle();
 
-  if (!schedule) {
-    showMsg('Ты сегодня не в графике. Обратись к шефу.', 'error');
-    return;
-  }
+    if (!schedule) {
+      showMsg('Ты сегодня не в графике', 'error', 'alert-circle');
+      return;
+    }
 
-  // 2. Проверяем есть ли открытая смена
-  const { data: shift } = await supabase
-  .from('shifts')
-  .select('*')
-  .eq('user_id', userId)
-  .eq('schedule_id', schedule.id)
-  .single();
+    // 2. Проверяем есть ли открытая смена
+    const { data: shift } = await supabase
+    .from('shifts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('schedule_id', schedule.id)
+    .maybeSingle();
 
-  if (!shift) {
-    // Отмечаем приход
-    await supabase.from('shifts').insert({
-      restaurant_id: schedule.restaurant_id,
-      user_id: userId,
-      schedule_id: schedule.id,
-      check_in: now.toISOString()
-    });
-    showMsg(`Приход зафиксирован: ${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`, 'success');
-  } else if (!shift.check_out) {
-    // Отмечаем уход
-    await supabase.from('shifts').update({
-      check_out: now.toISOString()
-    }).eq('id', shift.id);
-    showMsg(`Уход зафиксирован: ${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`, 'success');
-  } else {
-    showMsg('Смена уже закрыта', 'error');
+    const time = now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+
+    if (!shift) {
+      // Отмечаем приход
+      await supabase.from('shifts').insert({
+        restaurant_id: schedule.restaurant_id,
+        user_id: userId,
+        schedule_id: schedule.id,
+        check_in: now.toISOString()
+      });
+      showMsg(`Приход зафиксирован ${time}`, 'success', 'check-circle');
+    } else if (!shift.check_out) {
+      // Отмечаем уход
+      await supabase.from('shifts').update({
+        check_out: now.toISOString()
+      }).eq('id', shift.id);
+      showMsg(`Уход зафиксирован ${time}`, 'success', 'log-out');
+    } else {
+      showMsg('Смена уже закрыта', 'error', 'x-circle');
+    }
+  } catch(e) {
+    showMsg('Ошибка сети', 'error', 'wifi-off');
   }
 }
 
 const html5QrCode = new Html5Qrcode("reader");
 html5QrCode.start(
   { facingMode: "environment" },
-  { fps: 10, qrbox: 250 },
+  { fps: 10, qrbox: {width: 250, height: 250} },
   onScanSuccess,
-  (errorMessage) => {}
+  () => {}
 );
 </script>
 </body>
