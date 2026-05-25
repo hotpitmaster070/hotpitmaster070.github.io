@@ -20,7 +20,7 @@ button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer
 <button onclick="create()">СОЗДАТЬ</button>
 </div>
 <script>
-const supabase = supabase.createClient('ТВОЙ_SUPABASE_URL', 'ТВОЙ_SUPABASE_ANON_KEY');
+const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'ТВОЙ_SUPABASE_ANON_KEY');
 
 async function create(){
   const {data:{user}} = await supabase.auth.getUser();
