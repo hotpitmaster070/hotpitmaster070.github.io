@@ -10,6 +10,7 @@ body{font-family:sans-serif;display:flex;align-items:center;justify-content:cent
 .box{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);width:320px}
 input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
 button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer}
+button:disabled{opacity:0.6;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -17,19 +18,39 @@ button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer
 <h2>Создать ресторан</h2>
 <p>После создания вы станете Owner</p>
 <input id="name" placeholder="Название ресторана">
-<button onclick="create()">СОЗДАТЬ</button>
+<button id="btn" onclick="create()">СОЗДАТЬ</button>
 </div>
 <script>
-const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+const supabase = supabase.createClient(
+  'https://xljogkyropyocvuuodfl.supabase.co', 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+);
 
 async function create(){
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  
   const {data:{user}} = await supabase.auth.getUser();
-  if(!user) return window.location.href='/index.html';
+  if(!user) {
+    window.location.href='/index.html';
+    return;
+  }
+  
+  if(!name.value.trim()){
+    alert('Введи название ресторана');
+    btn.disabled = false;
+    return;
+  }
   
   const {data:rest,error} = await supabase.from('restaurants')
-    .insert({name:name.value, owner_user_id:user.id})
+    .insert({name:name.value.trim(), owner_user_id:user.id})
     .select().single();
-  if(error) return alert(error.message);
+    
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    btn.disabled = false;
+    return;
+  }
   
   await supabase.from('profiles')
     .update({restaurant_id:rest.id, role:'owner'})
