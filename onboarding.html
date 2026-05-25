@@ -44,12 +44,20 @@ async function createRestaurant() {
   }
   
   btn.disabled = true;
-  btn.textContent = 'Создаём...';
+  btn.textContent = 'Проверяем логин...';
   
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw new Error('Auth error: ' + userError.message);
-    if (!user) throw new Error('Сначала залогиньтесь на главной странице');
+    
+    if (userError || !user) {
+      msg.innerHTML = '<div class="error">Вы не залогинены. Переходим на страницу входа...</div>';
+      setTimeout(() => {
+        window.location.href = '/index.html';
+      }, 1500);
+      return;
+    }
+    
+    btn.textContent = 'Создаём...';
     
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
@@ -57,24 +65,23 @@ async function createRestaurant() {
       .select()
       .single();
     
-    if (restaurantError) throw new Error('Insert error: ' + restaurantError.message + ' | Code: ' + restaurantError.code);
+    if (restaurantError) throw restaurantError;
     
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ restaurant_id: restaurant.id, role: 'owner' })
       .eq('id', user.id);
     
-    if (profileError) throw new Error('Update error: ' + profileError.message + ' | Code: ' + profileError.code);
+    if (profileError) throw profileError;
     
-    msg.innerHTML = '<div class="success">Готово! Ресторан создан. Переходим в админку...</div>';
+    msg.innerHTML = '<div class="success">Готово! Переходим в админку...</div>';
     
     setTimeout(() => {
       window.location.href = '/owner.html';
     }, 1500);
     
   } catch (error) {
-    msg.innerHTML = `<div class="error">${error.message}</div>`;
-    alert(error.message);
+    msg.innerHTML = `<div class="error">Ошибка: ${error.message}</div>`;
   } finally {
     btn.disabled = false;
     btn.textContent = 'СОЗДАТЬ';
