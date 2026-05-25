@@ -1,98 +1,58 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ШТАБ УСТА</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: -apple-system, sans-serif; background: #1a1a1a; color: #fff; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-   .box { width: 100%; max-width: 400px; }
-   .btn { background: #ff3b30; color: #fff; border: none; padding: 18px; margin: 8px 0; width: 100%; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; }
-    input { width: 100%; padding: 15px; margin: 8px 0; font-size: 16px; border-radius: 8px; border: 1px solid #48484a; background: #2c2c2e; color: #fff; box-sizing: border-box; }
-    h1 { text-align: center; margin-bottom: 30px; }
-   .link { text-align: center; margin-top: 15px; color: #aaa; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Вход</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5}
+.box{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);width:320px}
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
+button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer}
+button:hover{background:#1d4ed8}
+h2{text-align:center;margin:0 0 20px}
+</style>
 </head>
 <body>
 <div class="box">
-  <h1 id="title">ШТАБ УСТА 🧱</h1>
-  <input id="email" type="email" placeholder="Email" />
-  <input id="password" type="password" placeholder="Пароль" />
-  <input id="fullname" type="text" placeholder="Имя Фамилия" style="display:none;" />
-  <button class="btn" id="btn" onclick="auth()">ВОЙТИ</button>
-  <div class="link" onclick="toggle()">Нет аккаунта? Зарегистрироваться</div>
+<h2>Вход в систему</h2>
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Пароль">
+<button onclick="login()">Войти</button>
+<button onclick="register()" style="background:#10b981">Регистрация</button>
 </div>
-
 <script>
-const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = supabase.createClient('ТВОЙ_SUPABASE_URL', 'ТВОЙ_SUPABASE_ANON_KEY');
 
-let isLogin = true;
-
-function toggle() {
-  isLogin = !isLogin;
-  document.getElementById('title').innerText = isLogin ? 'ШТАБ УСТА 🧱' : 'РЕГИСТРАЦИЯ';
-  document.getElementById('btn').innerText = isLogin ? 'ВОЙТИ' : 'СОЗДАТЬ';
-  document.querySelector('.link').innerText = isLogin ? 'Нет аккаунта? Зарегистрироваться' : 'Есть аккаунт? Войти';
-  document.getElementById('fullname').style.display = isLogin ? 'none' : 'block';
+async function login(){
+  const {error} = await supabase.auth.signInWithPassword({
+    email: email.value, password: password.value
+  });
+  if(error) return alert(error.message);
+  checkRedirect();
 }
 
-async function auth() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  const fullname = document.getElementById('fullname').value.trim();
-  
-  if (!email || !password) return alert('Заполни поля');
-  if (!isLogin && !fullname) return alert('Введи имя');
-
-  let res;
-  if (isLogin) {
-    res = await db.auth.signInWithPassword({ email, password });
-  } else {
-    res = await db.auth.signUp({ 
-      email, 
-      password,
-      options: { data: { full_name: fullname } }
-    });
-    if (!res.error) {
-      alert('Аккаунт создан. Проверь почту для подтверждения, потом войди.');
-      toggle();
-      return;
-    }
-  }
-
-  if (res.error) return alert('Ошибка: ' + res.error.message);
-
-  await routeUser(res.data.user);
+async function register(){
+  const {error} = await supabase.auth.signUp({
+    email: email.value, password: password.value
+  });
+  if(error) return alert(error.message);
+  alert('Проверь почту или войди сразу');
 }
 
-async function routeUser(user) {
-  const { data: profile, error } = await db.from('profiles')
-   .select('role, restaurant_id, restaurants(name)')
-   .eq('id', user.id)
-   .maybeSingle(); // <-- заменил single на maybeSingle
-
-  if (error) return alert('Ошибка: ' + error.message);
-
-  if (!profile || !profile.restaurant_id) {
-    window.location.href = '/onboarding.html';
-    return;
-  }
-
-  localStorage.setItem('active_restaurant_id', profile.restaurant_id);
-  localStorage.setItem('active_role', profile.role);
-
-  if (profile.role === 'owner') {
-    window.location.href = '/owner.html';
-  } else {
-    window.location.href = '/chef.html';
+async function checkRedirect(){
+  const {data:{user}} = await supabase.auth.getUser();
+  const {data:profile} = await supabase.from('profiles').select('restaurant_id').eq('id',user.id).single();
+  if(!profile || !profile.restaurant_id){
+    window.location.href='/onboarding.html';
+  }else{
+    window.location.href='/owner.html';
   }
 }
 
-db.auth.getSession().then(({ data: { session } }) => {
-  if (session) routeUser(session.user);
+supabase.auth.onAuthStateChange((event,session)=>{
+  if(session) checkRedirect();
 });
 </script>
 </body>
