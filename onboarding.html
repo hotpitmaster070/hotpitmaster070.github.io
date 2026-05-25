@@ -15,7 +15,7 @@ button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer
 <body>
 <div class="box">
 <h2>Создать ресторан</h2>
-<input id="name" placeholder="Название ресторана">
+<input id="name" type="text" placeholder="Название ресторана">
 <button onclick="create()">СОЗДАТЬ</button>
 </div>
 <script>
@@ -26,15 +26,18 @@ const supabaseClient = supabase.createClient(
 
 async function create(){
   try {
+    const nameValue = document.getElementById('name').value;
+    if(!nameValue.trim()) return alert('Введи название ресторана');
+    
     const {data:{user}, error:authError} = await supabaseClient.auth.getUser();
     if(authError) return alert('Ошибка auth: ' + authError.message);
     if(!user) return alert('Ты не авторизован. Подтверди email в почте');
     
     const {data:rest, error} = await supabaseClient.from('restaurants')
-      .insert({name:name.value.trim(), owner_user_id:user.id})
+      .insert({name: nameValue.trim(), owner_user_id: user.id})
       .select().single();
       
-    if(error) return alert('Ошибка создания ресторана: ' + error.message + '\nКод: ' + error.code);
+    if(error) return alert('Ошибка создания ресторана: ' + error.message);
     
     await supabaseClient.from('profiles')
       .update({restaurant_id:rest.id, role:'owner'})
