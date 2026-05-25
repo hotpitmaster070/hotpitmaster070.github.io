@@ -6,36 +6,72 @@
 <title>Управление - HotPit</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --accent: #f97316;
+    --accent-dark: #ea580c;
+  }
+ .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+ .btn-primary:hover {
+    background: var(--accent-dark);
+  }
+ .btn-danger {
+    background: #ef4444;
+    color: white;
+  }
+ .btn-danger:hover {
+    background: #dc2626;
+  }
+</style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 p-6">
+<body class="bg-zinc-950 text-zinc-100 p-4 md:p-6">
 
-<div class="max-w-5xl mx-auto space-y-8">
+<div class="max-w-5xl mx-auto space-y-6">
+
+  <div class="flex items-center gap-3">
+    <div class="text-2xl font-extrabold text-orange-500">HotPit</div>
+    <div class="text-zinc-500">|</div>
+    <div class="text-lg text-zinc-300">Управление</div>
+  </div>
 
   <!-- Блок 1: Повара -->
   <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
-    <h2 class="text-xl font-bold mb-4">Повара</h2>
+    <div class="flex items-center gap-2 mb-4">
+      <i data-lucide="users" class="text-orange-500"></i>
+      <h2 class="text-xl font-bold">Повара</h2>
+    </div>
 
     <div class="flex gap-3 mb-4">
-      <input id="newStaffName" placeholder="Имя повара" class="flex-1 bg-zinc-800 rounded-lg p-3 border-zinc-700">
-      <button onclick="addStaff()" class="bg-blue-600 hover:bg-blue-700 px-6 rounded-lg font-semibold">Добавить</button>
+      <input id="newStaffName" placeholder="Имя повара"
+        class="flex-1 bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+      <button onclick="addStaff()" class="btn-primary px-6 rounded-lg font-semibold">
+        <i data-lucide="plus" class="inline w-4 h-4"></i> Добавить
+      </button>
     </div>
 
     <div id="staffList" class="space-y-2"></div>
   </div>
 
   <!-- Блок 2: График -->
-  <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
-    <h2 class="text-xl font-bold mb-4">График на сегодня</h2>
+  <div class="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+    <div class="flex items-center gap-2 mb-4">
+      <i data-lucide="calendar" class="text-orange-500"></i>
+      <h2 class="text-xl font-bold">График на сегодня</h2>
+    </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-      <select id="staffSelect" class="bg-zinc-800 rounded-lg p-3 border-zinc-700"></select>
-      <input type="date" id="dateInput" class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
-      <input type="time" id="timeIn" value="09:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
-      <input type="time" id="timeOut" value="18:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
+      <select id="staffSelect" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none"></select>
+      <input type="date" id="dateInput" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+      <input type="time" id="timeIn" value="09:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+      <input type="time" id="timeOut" value="18:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
     </div>
 
     <button onclick="addShift()" class="w-full bg-green-600 hover:bg-green-700 rounded-lg p-3 font-semibold">
-      Добавить в график
+      <i data-lucide="calendar-plus" class="inline w-4 h-4"></i> Добавить в график
     </button>
 
     <div id="todayShifts" class="mt-6 space-y-2"></div>
@@ -45,13 +81,13 @@
 
 <script>
 const supabase = supabase.createClient('ТВОЙ_URL', 'ТВОЙ_KEY');
+lucide.createIcons();
 
-// Берем restaurant_id из ссылки: schedule.html?rest=uuid
 const urlParams = new URLSearchParams(window.location.search);
 const restaurantId = urlParams.get('rest');
 
 if (!restaurantId) {
-  alert('Ошибка: не указан ресторан в ссылке. Открой ссылку из onboarding.html');
+  document.body.innerHTML = '<div class="text-center py-20 text-red-400">Ошибка: не указан ресторан. Открой ссылку из onboarding.html</div>';
 }
 
 document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
@@ -59,7 +95,6 @@ document.getElementById('dateInput').value = new Date().toISOString().split('T')
 loadStaff();
 loadTodayShifts();
 
-// Добавить повара
 async function addStaff() {
   const name = document.getElementById('newStaffName').value.trim();
   if (!name) return;
@@ -74,37 +109,44 @@ async function addStaff() {
   loadStaff();
 }
 
-// Удалить повара
 async function deleteStaff(id) {
   if (!confirm('Удалить повара?')) return;
   await supabase.from('staff').delete().eq('id', id);
   loadStaff();
 }
 
-// Загрузить список поваров
 async function loadStaff() {
   const { data } = await supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
 
-  // Список с кнопкой удалить
   document.getElementById('staffList').innerHTML = data.map(s => `
-    <div class="flex justify-between items-center bg-zinc-800 rounded-lg p-3">
-      <span>${s.name} <span class="text-zinc-500 text-sm">${s.role}</span></span>
-      <button onclick="deleteStaff('${s.id}')" class="text-red-400 hover:text-red-300">Удалить</button>
+    <div class="flex justify-between items-center bg-zinc-800 rounded-lg p-3 border-zinc-700">
+      <div class="flex items-center gap-2">
+        <i data-lucide="user" class="w-4 h-4 text-zinc-400"></i>
+        <span>${s.name} <span class="text-zinc-500 text-sm">${s.role === 'owner'? 'Шеф' : 'Повар'}</span></span>
+      </div>
+      ${s.role!== 'owner'? `<button onclick="deleteStaff('${s.id}')" class="text-red-400 hover:text-red-300">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>` : ''}
     </div>
-  `).join('');
+  `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
 
-  // Список для select в графике
-  document.getElementById('staffSelect').innerHTML = data.map(s =>
-    `<option value="${s.id}">${s.name}</option>`
-  ).join('');
+  document.getElementById('staffSelect').innerHTML = data
+   .filter(s => s.role!== 'owner')
+   .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  lucide.createIcons();
 }
 
-// Добавить смену
 async function addShift() {
   const userId = document.getElementById('staffSelect').value;
   const date = document.getElementById('dateInput').value;
   const timeIn = document.getElementById('timeIn').value;
   const timeOut = document.getElementById('timeOut').value;
+
+  if (!userId) {
+    alert('Выбери повара');
+    return;
+  }
 
   await supabase.from('work_schedules').insert({
     restaurant_id: restaurantId,
@@ -116,24 +158,28 @@ async function addShift() {
   });
 
   loadTodayShifts();
-  alert('Смена добавлена');
 }
 
-// Показать смены на сегодня
 async function loadTodayShifts() {
   const today = new Date().toISOString().split('T')[0];
   const { data } = await supabase
-.from('work_schedules')
-.select('*, staff(name)')
-.eq('work_date', today)
-.eq('restaurant_id', restaurantId);
+   .from('work_schedules')
+   .select('*, staff(name)')
+   .eq('work_date', today)
+   .eq('restaurant_id', restaurantId)
+   .order('shift_start');
 
   document.getElementById('todayShifts').innerHTML = data.map(s => `
-    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between">
-      <span>${s.staff.name}</span>
-      <span class="text-zinc-400">${s.shift_start.split('T')[1].slice(0,5)} - ${s.shift_end.split('T')[1].slice(0,5)}</span>
+    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center border-zinc-700">
+      <div class="flex items-center gap-2">
+        <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
+        <span>${s.staff.name}</span>
+      </div>
+      <span class="text-zinc-400 text-sm">${s.shift_start.split('T')[1].slice(0,5)} - ${s.shift_end.split('T')[1].slice(0,5)}</span>
     </div>
-  `).join('') || '<p class="text-zinc-400">На сегодня смен нет</p>';
+  `).join('') || '<p class="text-zinc-500 text-sm text-center py-4">На сегодня смен нет</p>';
+
+  lucide.createIcons();
 }
 </script>
 </body>
