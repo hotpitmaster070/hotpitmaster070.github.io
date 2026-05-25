@@ -70,6 +70,7 @@ const supabaseClient = window.supabase.createClient(
 );
 
 function showError(msg) {
+  alert('Ошибка: ' + msg); // алерт для телефона
   document.getElementById('errorBox').classList.remove('hidden');
   document.getElementById('errorText').textContent = msg;
   document.getElementById('loading').classList.add('hidden');
@@ -77,23 +78,27 @@ function showError(msg) {
 }
 
 async function setup() {
-  const restName = document.getElementById('restName').value.trim();
-  const ownerName = document.getElementById('ownerName').value.trim();
-  const staffNames = document.getElementById('staffNames').value.split(',').map(s => s.trim()).filter(s => s);
-
-  if (!restName || !ownerName || staffNames.length === 0) {
-    showError('Заполни все поля');
-    return;
-  }
-
-  document.getElementById('form').classList.add('hidden');
-  document.getElementById('loading').classList.remove('hidden');
-  document.getElementById('errorBox').classList.add('hidden');
-
   try {
+    console.log('Start setup');
+    const restName = document.getElementById('restName').value.trim();
+    const ownerName = document.getElementById('ownerName').value.trim();
+    const staffNames = document.getElementById('staffNames').value.split(',').map(s => s.trim()).filter(s => s);
+
+    if (!restName || !ownerName || staffNames.length === 0) {
+      showError('Заполни все поля');
+      return;
+    }
+
+    document.getElementById('form').classList.add('hidden');
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('errorBox').classList.add('hidden');
+
+    console.log('Insert restaurant');
     const { data: rest, error: restErr } = await supabaseClient.from('restaurants').insert({name: restName}).select().single();
     if (restErr) throw restErr;
+    console.log('Restaurant created:', rest);
 
+    console.log('Insert owner');
     const { data: owner, error: ownerErr } = await supabaseClient.from('staff').insert({
       restaurant_id: rest.id,
       name: ownerName,
@@ -101,6 +106,7 @@ async function setup() {
     }).select().single();
     if (ownerErr) throw ownerErr;
 
+    console.log('Insert staff');
     const staffToInsert = staffNames.map(name => ({
       restaurant_id: rest.id,
       name: name,
@@ -116,9 +122,9 @@ async function setup() {
     document.getElementById('ownerLink').textContent = scheduleUrl;
 
     const qrsDiv = document.getElementById('qrs');
+    qrsDiv.innerHTML = '';
     const allStaff = [owner, ...staff];
     
-    qrsDiv.innerHTML = '';
     for (let person of allStaff) {
       const canvas = document.createElement('canvas');
       await QRCode.toCanvas(canvas, person.id, { width: 200, margin: 1 });
@@ -133,6 +139,7 @@ async function setup() {
     }
 
   } catch(e) {
+    console.error(e);
     showError(e.message || e);
   }
 }
