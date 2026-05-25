@@ -1,19 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: system-ui; background: #0a0a0a; color: white; text-align: center; padding: 20px; }
-    #reader { width: 100%; max-width: 400px; margin: 20px auto; }
-   .msg { padding: 20px; border-radius: 12px; margin-top: 20px; font-size: 18px; }
-   .success { background: #10b981; }
-   .error { background: #ef4444; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Отметка смены - HotPit</title>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0a0a0a;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+  }
+  #reader {
+    width: 100%;
+    max-width: 400px;
+    margin: 20px auto;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+ .msg {
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+ .success { background: #10b981; }
+ .error { background: #ef4444; }
+  h2 { margin-bottom: 10px; }
+  p { color: #a1a1aa; }
+</style>
 </head>
 <body>
   <h2>Отметка смены</h2>
+  <p>Наведи камеру на QR-код</p>
   <div id="reader"></div>
   <div id="result"></div>
 
@@ -25,18 +49,18 @@ function showMsg(text, type) {
 }
 
 async function onScanSuccess(decodedText) {
-  const userId = decodedText; // В QR лежит UUID повара
+  const userId = decodedText;
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
 
   // 1. Проверяем график
   const { data: schedule } = await supabase
-   .from('work_schedules')
-   .select('*')
-   .eq('user_id', userId)
-   .eq('work_date', today)
-   .eq('status', 'scheduled')
-   .single();
+  .from('work_schedules')
+  .select('*')
+  .eq('user_id', userId)
+  .eq('work_date', today)
+  .eq('status', 'scheduled')
+  .single();
 
   if (!schedule) {
     showMsg('Ты сегодня не в графике. Обратись к шефу.', 'error');
@@ -45,33 +69,39 @@ async function onScanSuccess(decodedText) {
 
   // 2. Проверяем есть ли открытая смена
   const { data: shift } = await supabase
-   .from('shifts')
-   .select('*')
-   .eq('user_id', userId)
-   .eq('schedule_id', schedule.id)
-   .single();
+  .from('shifts')
+  .select('*')
+  .eq('user_id', userId)
+  .eq('schedule_id', schedule.id)
+  .single();
 
   if (!shift) {
     // Отмечаем приход
     await supabase.from('shifts').insert({
+      restaurant_id: schedule.restaurant_id,
       user_id: userId,
       schedule_id: schedule.id,
       check_in: now.toISOString()
     });
-    showMsg(`Приход зафиксирован: ${now.toLocaleTimeString()}`, 'success');
+    showMsg(`Приход зафиксирован: ${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`, 'success');
   } else if (!shift.check_out) {
     // Отмечаем уход
     await supabase.from('shifts').update({
       check_out: now.toISOString()
     }).eq('id', shift.id);
-    showMsg(`Уход зафиксирован: ${now.toLocaleTimeString()}`, 'success');
+    showMsg(`Уход зафиксирован: ${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}`, 'success');
   } else {
     showMsg('Смена уже закрыта', 'error');
   }
 }
 
 const html5QrCode = new Html5Qrcode("reader");
-html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+html5QrCode.start(
+  { facingMode: "environment" },
+  { fps: 10, qrbox: 250 },
+  onScanSuccess,
+  (errorMessage) => {}
+);
 </script>
 </body>
 </html>
