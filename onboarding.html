@@ -3,22 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Создать ресторан</title>
+<title>Вход в систему</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5}
 .box{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);width:320px}
 input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
 button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer}
-button:disabled{opacity:0.6;cursor:not-allowed}
+button:nth-child(4){background:#10b981}
+button:disabled{opacity:0.6}
 </style>
 </head>
 <body>
 <div class="box">
-<h2>Создать ресторан</h2>
-<p>После создания вы станете Owner</p>
-<input id="name" placeholder="Название ресторана">
-<button id="btn" onclick="create()">СОЗДАТЬ</button>
+<h2>Вход в систему</h2>
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Пароль">
+<button onclick="login()">Войти</button>
+<button onclick="signup()">Регистрация</button>
 </div>
 <script>
 const supabase = supabase.createClient(
@@ -26,37 +28,30 @@ const supabase = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
 
-async function create(){
-  const btn = document.getElementById('btn');
-  btn.disabled = true;
-  
-  const {data:{user}} = await supabase.auth.getUser();
-  if(!user) {
-    window.location.href='/index.html';
-    return;
+async function login(){
+  try{
+    const {error} = await supabase.auth.signInWithPassword({
+      email: email.value,
+      password: password.value
+    });
+    if(error) return alert('Ошибка входа: ' + error.message);
+    window.location.href='/onboarding.html';
+  }catch(e){
+    alert('JS ошибка: ' + e.message);
   }
-  
-  if(!name.value.trim()){
-    alert('Введи название ресторана');
-    btn.disabled = false;
-    return;
+}
+
+async function signup(){
+  try{
+    const {error} = await supabase.auth.signUp({
+      email: email.value,
+      password: password.value
+    });
+    if(error) return alert('Ошибка регистрации: ' + error.message);
+    alert('Проверь почту и подтверди регистрацию!');
+  }catch(e){
+    alert('JS ошибка: ' + e.message);
   }
-  
-  const {data:rest,error} = await supabase.from('restaurants')
-    .insert({name:name.value.trim(), owner_user_id:user.id})
-    .select().single();
-    
-  if(error) {
-    alert('Ошибка: ' + error.message);
-    btn.disabled = false;
-    return;
-  }
-  
-  await supabase.from('profiles')
-    .update({restaurant_id:rest.id, role:'owner'})
-    .eq('id',user.id);
-    
-  window.location.href='/owner.html';
 }
 </script>
 </body>
