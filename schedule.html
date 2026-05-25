@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Управление - HotPit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 p-6">
+
+<div class="max-w-5xl mx-auto space-y-8">
+
+  <!-- Блок 1: Повара -->
+  <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+    <h2 class="text-xl font-bold mb-4">Повара</h2>
+
+    <div class="flex gap-3 mb-4">
+      <input id="newStaffName" placeholder="Имя повара" class="flex-1 bg-zinc-800 rounded-lg p-3 border-zinc-700">
+      <button onclick="addStaff()" class="bg-blue-600 hover:bg-blue-700 px-6 rounded-lg font-semibold">Добавить</button>
+    </div>
+
+    <div id="staffList" class="space-y-2"></div>
+  </div>
+
+  <!-- Блок 2: График -->
+  <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+    <h2 class="text-xl font-bold mb-4">График на сегодня</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+      <select id="staffSelect" class="bg-zinc-800 rounded-lg p-3 border-zinc-700"></select>
+      <input type="date" id="dateInput" class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
+      <input type="time" id="timeIn" value="09:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
+      <input type="time" id="timeOut" value="18:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
+    </div>
+
+    <button onclick="addShift()" class="w-full bg-green-600 hover:bg-green-700 rounded-lg p-3 font-semibold">
+      Добавить в график
+    </button>
+
+    <div id="todayShifts" class="mt-6 space-y-2"></div>
+  </div>
+
+</div>
+
+<script>
+const supabase = supabase.createClient('ТВОЙ_URL', 'ТВОЙ_KEY');
+
+// Берем restaurant_id из ссылки: schedule.html?rest=uuid
+const urlParams = new URLSearchParams(window.location.search);
+const restaurantId = urlParams.get('rest');
+
+if (!restaurantId) {
+  alert('Ошибка: не указан ресторан в ссылке. Открой ссылку из onboarding.html');
+}
+
+document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+loadStaff();
+loadTodayShifts();
+
+// Добавить повара
+async function addStaff() {
+  const name = document.getElementById('newStaffName').value.trim();
+  if (!name) return;
+
+  await supabase.from('staff').insert({
+    restaurant_id: restaurantId,
+    name: name,
+    role: 'staff'
+  });
+
+  document.getElementById('newStaffName').value = '';
+  loadStaff();
+}
+
+// Удалить повара
+async function deleteStaff(id) {
+  if (!confirm('Удалить повара?')) return;
+  await supabase.from('staff').delete().eq('id', id);
+  loadStaff();
+}
+
+// Загрузить список поваров
+async function loadStaff() {
+  const { data } = await supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+
+  // Список с кнопкой удалить
+  document.getElementById('staffList').innerHTML = data.map(s => `
+    <div class="flex justify-between items-center bg-zinc-800 rounded-lg p-3">
+      <span>${s.name} <span class="text-zinc-500 text-sm">${s.role}</span></span>
+      <button onclick="deleteStaff('${s.id}')" class="text-red-400 hover:text-red-300">Удалить</button>
+    </div>
+  `).join('');
+
+  // Список для select в графике
+  document.getElementById('staffSelect').innerHTML = data.map(s =>
+    `<option value="${s.id}">${s.name}</option>`
+  ).join('');
+}
+
+// Добавить смену
+async function addShift() {
+  const userId = document.getElementById('staffSelect').value;
+  const date = document.getElementById('dateInput').value;
+  const timeIn = document.getElementById('timeIn').value;
+  const timeOut = document.getElementById('timeOut').value;
+
+  await supabase.from('work_schedules').insert({
+    restaurant_id: restaurantId,
+    user_id: userId,
+    work_date: date,
+    shift_start: `${date}T${timeIn}:00`,
+    shift_end: `${date}T${timeOut}:00`,
+    status: 'scheduled'
+  });
+
+  loadTodayShifts();
+  alert('Смена добавлена');
+}
+
+// Показать смены на сегодня
+async function loadTodayShifts() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await supabase
+.from('work_schedules')
+.select('*, staff(name)')
+.eq('work_date', today)
+.eq('restaurant_id', restaurantId);
+
+  document.getElementById('todayShifts').innerHTML = data.map(s => `
+    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between">
+      <span>${s.staff.name}</span>
+      <span class="text-zinc-400">${s.shift_start.split('T')[1].slice(0,5)} - ${s.shift_end.split('T')[1].slice(0,5)}</span>
+    </div>
+  `).join('') || '<p class="text-zinc-400">На сегодня смен нет</p>';
+}
+</script>
+</body>
+</html>
