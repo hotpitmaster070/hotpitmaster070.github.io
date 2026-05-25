@@ -1,116 +1,56 @@
----
-layout: null
----
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Панель Владельца</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { background: #1a1a1a; color: white; font-family: -apple-system, sans-serif; margin: 0; padding: 20px; }
-    h1 { font-size: 28px; margin-bottom: 20px; text-align: center; }
-    .card { background: #2c2c2e; padding: 20px; border-radius: 12px; margin: 15px auto; max-width: 400px; }
-    .btn { width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; color: white; cursor: pointer; }
-    .btn-red { background: #ff3333; }
-    .btn-green { background: #2ecc71; }
-    .btn-gray { background: #555; }
-    select { width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; color: white; margin-bottom: 10px; }
-    .code-box { background: #1a1a1a; padding: 20px; border-radius: 8px; text-align: center; font-size: 32px; letter-spacing: 6px; font-weight: bold; margin: 15px 0; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Панель владельца</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:sans-serif;padding:20px;max-width:800px;margin:0 auto}
+.card{background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px}
+button{padding:10px 20px;border-radius:8px;border:none;background:#2563eb;color:white;cursor:pointer}
+input{padding:10px;border-radius:8px;border:1px solid #ddd;margin-right:10px}
+</style>
 </head>
 <body>
-  <h1 id="rest_name">Панель Владельца 🧱</h1>
+<h1>Панель ресторана</h1>
+<div class="card">
+<h3>Пригласить сотрудника</h3>
+<select id="role"><option value="chef">Шеф</option><option value="staff">Сотрудник</option></select>
+<button onclick="createInvite()">Создать код</button>
+<p id="code"></p>
+</div>
+<div class="card">
+<h3>Склад</h3>
+<div id="inventory">Загрузка...</div>
+</div>
+<script>
+const supabase = supabase.createClient('ТВОЙ_SUPABASE_URL', 'ТВОЙ_SUPABASE_ANON_KEY');
 
-  <div class="card">
-    <h3>Пригласить сотрудника</h3>
-    <select id="role_select">
-      <option value="chef">Шеф</option>
-      <option value="staff">Сотрудник</option>
-    </select>
-    <button class="btn btn-green" onclick="createInvite()">СОЗДАТЬ КОД</button>
-    <div id="code_result" style="display:none;">
-      <p>Код для передачи:</p>
-      <div class="code-box" id="invite_code"></div>
-      <small>Действует 7 дней. Отправь его в WhatsApp.</small>
-    </div>
-  </div>
+async function load(){
+  const {data:{user}} = await supabase.auth.getUser();
+  if(!user) return window.location.href='/index.html';
+  
+  const {data:profile} = await supabase.from('profiles').select('restaurant_id').eq('id',user.id).single();
+  
+  const {data:inv} = await supabase.from('inventory').select('*').eq('restaurant_id',profile.restaurant_id);
+  inventory.innerHTML = inv.map(i=>`<p>${i.name} - ${i.quantity} ${i.unit}</p>`).join('') || 'Пусто';
+}
 
-  <button class="btn btn-gray" onclick="logout()">ВЫЙТИ</button>
+async function createInvite(){
+  const {data:{user}} = await supabase.auth.getUser();
+  const {data:profile} = await supabase.from('profiles').select('restaurant_id').eq('id',user.id).single();
+  const code = Math.floor(100000+Math.random()*900000).toString();
+  
+  await supabase.from('invites').insert({
+    restaurant_id:profile.restaurant_id,
+    code:code,
+    role:role.value
+  });
+  code.innerText = 'Код: '+code;
+}
 
-  <script>
-    const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    let restaurantId;
-
-    async function init() {
-      try {
-        const { data: { session }, error } = await db.auth.getSession();
-        if (error || !session) {
-          alert('Ошибка сессии: залогиньтесь заново');
-          window.location.href = '/index.html';
-          return;
-        }
-
-        restaurantId = localStorage.getItem('active_restaurant_id');
-        const role = localStorage.getItem('active_role');
-
-        if (!restaurantId) {
-          window.location.href = '/select-restaurant.html';
-          return;
-        }
-
-        if (role !== 'owner') {
-          window.location.href = '/chef.html';
-          return;
-        }
-
-        const { data: rest, error: restErr } = await db.from('restaurants').select('name').eq('id', restaurantId).single();
-        if (restErr) {
-          alert('Ошибка загрузки ресторана: ' + restErr.message);
-          return;
-        }
-        
-        document.getElementById('rest_name').innerText = rest.name + ' 🧱';
-      } catch (err) {
-        alert('Ошибка init: ' + err.message);
-      }
-    }
-
-    async function createInvite() {
-      try {
-        const role = document.getElementById('role_select').value;
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-        const { error } = await db.from('invites').insert({
-          restaurant_id: restaurantId,
-          code: code,
-          role: role
-        });
-
-        if (error) {
-          alert('Ошибка создания кода: ' + error.message);
-          return;
-        }
-
-        document.getElementById('invite_code').innerText = code;
-        document.getElementById('code_result').style.display = 'block';
-        alert('Код создан!');
-      } catch (err) {
-        alert('Ошибка: ' + err.message);
-      }
-    }
-
-    async function logout() {
-      await db.auth.signOut();
-      localStorage.clear();
-      window.location.href = '/index.html';
-    }
-
-    init();
-  </script>
+load();
+</script>
 </body>
 </html>
