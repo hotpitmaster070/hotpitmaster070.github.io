@@ -2,54 +2,141 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Создать ресторан</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Запуск HotPit за 3 минуты</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <style>
-body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5}
-.box{background:white;padding:30px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);width:320px}
-input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #ddd;box-sizing:border-box}
-button{background:#2563eb;color:white;border:none;font-weight:600;cursor:pointer}
+  body { font-family: system-ui, -apple-system, sans-serif; }
 </style>
 </head>
-<body>
-<div class="box">
-<h2>Создать ресторан</h2>
-<input id="name" type="text" placeholder="Название ресторана">
-<button onclick="create()">СОЗДАТЬ</button>
-</div>
-<script>
-const supabaseClient = supabase.createClient(
-  'https://xljogkyropyocvuuodfl.supabase.co', 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
-);
+<body class="bg-zinc-950 text-zinc-100 p-6">
 
-async function create(){
+<div class="max-w-2xl mx-auto">
+  <h1 class="text-3xl font-bold mb-2">Запуск HotPit</h1>
+  <p class="text-zinc-400 mb-8">Введи данные, остальное сделаю я. 3 минуты и готово.</p>
+
+  <div id="form" class="space-y-4">
+    <div>
+      <label class="text-sm text-zinc-400">Название ресторана</label>
+      <input id="restName" placeholder="Шашлык у Али" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
+    </div>
+    
+    <div>
+      <label class="text-sm text-zinc-400">Твое имя</label>
+      <input id="ownerName" placeholder="Али" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
+    </div>
+
+    <div>
+      <label class="text-sm text-zinc-400">Повара через запятую</label>
+      <input id="staffNames" placeholder="Марат, Азамат, Рустам" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
+    </div>
+    
+    <button onclick="setup()" class="w-full bg-blue-600 hover:bg-blue-700 rounded-lg p-4 font-semibold text-lg mt-4">
+      Создать систему
+    </button>
+  </div>
+
+  <div id="result" class="hidden mt-8 space-y-6">
+    <div class="bg-green-900/30 border-green-700 rounded-lg p-6">
+      <h2 class="text-xl font-bold mb-2">Готово! Система запущена</h2>
+      <p class="text-green-200">Сохрани эти ссылки. Их больше не увидишь.</p>
+    </div>
+
+    <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
+      <h3 class="font-semibold mb-2">1. Твоя ссылка — управление поварами и графиком</h3>
+      <p class="text-sm text-zinc-400 mb-2">Открой на компе или телефоне. Добавь/удали поваров, назначь смены.</p>
+      <p id="ownerLink" class="text-blue-400 break-all bg-zinc-950 p-3 rounded"></p>
+    </div>
+
+    <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
+      <h3 class="font-semibold mb-4">2. QR-коды для поваров. Распечатай и повесь на кухне</h3>
+      <div id="qrs" class="grid grid-cols-2 gap-4"></div>
+    </div>
+
+    <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
+      <h3 class="font-semibold mb-2">3. Ссылка для отметки смены</h3>
+      <p class="text-sm text-zinc-400 mb-2">Открой на телефоне повара. Он сканирует QR и отмечает приход/уход.</p>
+      <p id="checkinLink" class="text-blue-400 bg-zinc-950 p-3 rounded">https://hotpitmaster070.github.io/checkin.html</p>
+    </div>
+  </div>
+
+  <div id="loading" class="hidden text-center py-12">
+    <p class="text-lg">Создаю базу...</p>
+    <p class="text-zinc-400">Не закрывай страницу</p>
+  </div>
+</div>
+
+<script>
+const supabase = supabase.createClient('ТВОЙ_URL', 'ТВОЙ_KEY');
+
+async function setup() {
+  const restName = document.getElementById('restName').value.trim();
+  const ownerName = document.getElementById('ownerName').value.trim();
+  const staffNames = document.getElementById('staffNames').value.split(',').map(s => s.trim()).filter(s => s);
+
+  if (!restName || !ownerName || staffNames.length === 0) {
+    alert('Заполни все поля');
+    return;
+  }
+
+  document.getElementById('form').classList.add('hidden');
+  document.getElementById('loading').classList.remove('hidden');
+
   try {
-    const nameValue = document.getElementById('name').value;
-    if(!nameValue.trim()) return alert('Введи название ресторана');
+    // 1. Создаем ресторан
+    const { data: rest, error: restErr } = await supabase.from('restaurants').insert({name: restName}).select().single();
+    if (restErr) throw restErr;
+
+    // 2. Создаем шефа
+    const { data: owner, error: ownerErr } = await supabase.from('staff').insert({
+      restaurant_id: rest.id,
+      name: ownerName,
+      role: 'owner'
+    }).select().single();
+    if (ownerErr) throw ownerErr;
+
+    // 3. Создаем поваров
+    const staffToInsert = staffNames.map(name => ({
+      restaurant_id: rest.id,
+      name: name,
+      role: 'staff'
+    }));
+    const { data: staff, error: staffErr } = await supabase.from('staff').insert(staffToInsert).select();
+    if (staffErr) throw staffErr;
+
+    // 4. Показываем результат
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('result').classList.remove('hidden');
     
-    const {data:{user}, error:authError} = await supabaseClient.auth.getUser();
-    if(authError) return alert('Ошибка auth: ' + authError.message);
-    if(!user) return alert('Ты не авторизован. Подтверди email в почте');
+    const scheduleUrl = `https://hotpitmaster070.github.io/schedule.html?rest=${rest.id}`;
+    document.getElementById('ownerLink').textContent = scheduleUrl;
+
+    const qrsDiv = document.getElementById('qrs');
+    const allStaff = [owner,...staff];
     
-    const {data:rest, error} = await supabaseClient.from('restaurants')
-      .insert({name: nameValue.trim(), owner_user_id: user.id})
-      .select().single();
+    for (let person of allStaff) {
+      const canvas = document.createElement('canvas');
+      await QRCode.toCanvas(canvas, person.id, { width: 200, margin: 1 });
+      canvas.classList.add('rounded-lg', 'bg-white', 'p-2');
       
-    if(error) return alert('Ошибка создания ресторана: ' + error.message);
-    
-    await supabaseClient.from('profiles')
-      .update({restaurant_id:rest.id, role:'owner'})
-      .eq('id',user.id);
-      
-    alert('Ресторан создан!');
-    window.location.href='/owner.html';
-    
+      qrsDiv.innerHTML += `
+        <div class="text-center bg-zinc-950 p-4 rounded-lg">
+          ${canvas.outerHTML}
+          <p class="mt-2 font-semibold">${person.name}</p>
+          <p class="text-xs text-zinc-500">${person.role === 'owner' ? 'Шеф' : 'Повар'}</p>
+        </div>
+      `;
+    }
+
   } catch(e) {
-    alert('JS ошибка: ' + e.message);
+    alert('Ошибка: ' + e.message);
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('form').classList.remove('hidden');
+    console.error(e);
   }
 }
 </script>
 </body>
-</html>
+      </html>
