@@ -45,7 +45,8 @@ async function createRestaurant() {
   
   try {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) throw new Error('Сначала залогиньтесь на главной странице');
+    if (userError) throw new Error('Auth error: ' + userError.message);
+    if (!user) throw new Error('Сначала залогиньтесь на главной странице');
     
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
@@ -53,14 +54,14 @@ async function createRestaurant() {
       .select()
       .single();
     
-    if (restaurantError) throw restaurantError;
+    if (restaurantError) throw new Error('Insert error: ' + restaurantError.message + ' | Code: ' + restaurantError.code);
     
     const { error: profileError } = await supabase
       .from('profiles')
       .update({ restaurant_id: restaurant.id, role: 'owner' })
       .eq('id', user.id);
     
-    if (profileError) throw profileError;
+    if (profileError) throw new Error('Update error: ' + profileError.message + ' | Code: ' + profileError.code);
     
     msg.innerHTML = '<div class="success">Готово! Ресторан создан. Переходим в админку...</div>';
     
@@ -69,8 +70,8 @@ async function createRestaurant() {
     }, 1500);
     
   } catch (error) {
-    msg.innerHTML = `<div class="error">Ошибка: ${error.message}</div>`;
-    console.error(error);
+    msg.innerHTML = `<div class="error">${error.message}</div>`;
+    alert(error.message);
   } finally {
     btn.disabled = false;
     btn.textContent = 'СОЗДАТЬ';
