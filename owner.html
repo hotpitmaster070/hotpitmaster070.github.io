@@ -9,14 +9,17 @@
 body{font-family:sans-serif;padding:20px;max-width:800px;margin:0 auto}
 .card{background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px}
 button{padding:10px 20px;border-radius:8px;border:none;background:#2563eb;color:white;cursor:pointer}
-input{padding:10px;border-radius:8px;border:1px solid #ddd;margin-right:10px}
+input,select{padding:10px;border-radius:8px;border:1px solid #ddd;margin-right:10px}
 </style>
 </head>
 <body>
 <h1>Панель ресторана</h1>
 <div class="card">
 <h3>Пригласить сотрудника</h3>
-<select id="role"><option value="chef">Шеф</option><option value="staff">Сотрудник</option></select>
+<select id="role">
+  <option value="chef">Шеф</option>
+  <option value="staff">Сотрудник</option>
+</select>
 <button onclick="createInvite()">Создать код</button>
 <p id="code"></p>
 </div>
@@ -25,29 +28,44 @@ input{padding:10px;border-radius:8px;border:1px solid #ddd;margin-right:10px}
 <div id="inventory">Загрузка...</div>
 </div>
 <script>
-const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+const supabaseClient = supabase.createClient(
+  'https://xljogkyropyocvuuodfl.supabase.co', 
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+);
 
 async function load(){
-  const {data:{user}} = await supabase.auth.getUser();
+  const {data:{user}, error:authError} = await supabaseClient.auth.getUser();
+  if(authError) return alert('Ошибка auth: ' + authError.message);
   if(!user) return window.location.href='/index.html';
   
-  const {data:profile} = await supabase.from('profiles').select('restaurant_id').eq('id',user.id).single();
+  const {data:profile, error:profError} = await supabaseClient.from('profiles')
+    .select('restaurant_id').eq('id',user.id).single();
+  if(profError) return alert('Ошибка профиля: ' + profError.message);
   
-  const {data:inv} = await supabase.from('inventory').select('*').eq('restaurant_id',profile.restaurant_id);
-  inventory.innerHTML = inv.map(i=>`<p>${i.name} - ${i.quantity} ${i.unit}</p>`).join('') || 'Пусто';
+  const {data:inv, error:invError} = await supabaseClient.from('inventory')
+    .select('*').eq('restaurant_id',profile.restaurant_id);
+  if(invError) return alert('Ошибка склада: ' + invError.message);
+  
+  inventory.innerHTML = inv.length ? inv.map(i=>`<p>${i.name} - ${i.quantity} ${i.unit}</p>`).join('') : 'Пусто';
 }
 
 async function createInvite(){
-  const {data:{user}} = await supabase.auth.getUser();
-  const {data:profile} = await supabase.from('profiles').select('restaurant_id').eq('id',user.id).single();
+  const {data:{user}} = await supabaseClient.auth.getUser();
+  if(!user) return alert('Ты не авторизован');
+  
+  const {data:profile} = await supabaseClient.from('profiles')
+    .select('restaurant_id').eq('id',user.id).single();
+  
   const code = Math.floor(100000+Math.random()*900000).toString();
   
-  await supabase.from('invites').insert({
+  const {error} = await supabaseClient.from('invites').insert({
     restaurant_id:profile.restaurant_id,
     code:code,
     role:role.value
   });
-  code.innerText = 'Код: '+code;
+  
+  if(error) return alert('Ошибка: ' + error.message);
+  document.getElementById('code').innerText = 'Код: '+code;
 }
 
 load();
