@@ -23,7 +23,7 @@ h2{text-align:center;margin:0 0 20px}
 <button onclick="register()" style="background:#10b981">Регистрация</button>
 </div>
 <script>
-const supabase = supabase.createClient('ТВОЙ_SUPABASE_URL', 'ТВОЙ_SUPABASE_ANON_KEY');
+const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'ТВОЙ_SUPABASE_ANON_KEY');
 
 async function login(){
   const {error} = await supabase.auth.signInWithPassword({
