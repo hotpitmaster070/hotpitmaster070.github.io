@@ -2,73 +2,81 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Панель владельца</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-body{font-family:sans-serif;padding:20px;max-width:800px;margin:0 auto}
-.card{background:white;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px}
-button{padding:10px 20px;border-radius:8px;border:none;background:#2563eb;color:white;cursor:pointer}
-input,select{padding:10px;border-radius:8px;border:1px solid #ddd;margin-right:10px}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контроль смены - HotPit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
-<body>
-<h1>Панель ресторана</h1>
-<div class="card">
-<h3>Пригласить сотрудника</h3>
-<select id="role">
-  <option value="chef">Шеф</option>
-  <option value="staff">Сотрудник</option>
-</select>
-<button onclick="createInvite()">Создать код</button>
-<p id="code"></p>
+<body class="bg-zinc-950 text-zinc-100 p-6">
+
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold mb-2">Контроль смены</h1>
+  <p class="text-zinc-400 mb-6" id="dateNow"></p>
+
+  <div id="shiftsList" class="space-y-3">
+    <p class="text-zinc-400">Загрузка...</p>
+  </div>
 </div>
-<div class="card">
-<h3>Склад</h3>
-<div id="inventory">Загрузка...</div>
-</div>
+
 <script>
-const supabaseClient = supabase.createClient(
-  'https://xljogkyropyocvuuodfl.supabase.co', 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
-);
+const supabase = supabase.createClient('ТВОЙ_URL', 'ТВОЙ_KEY');
+const restaurantId = new URLSearchParams(window.location.search).get('rest');
+const today = new Date().toISOString().split('T')[0];
 
-async function load(){
-  const {data:{user}, error:authError} = await supabaseClient.auth.getUser();
-  if(authError) return alert('Ошибка auth: ' + authError.message);
-  if(!user) return window.location.href='/index.html';
-  
-  const {data:profile, error:profError} = await supabaseClient.from('profiles')
-    .select('restaurant_id').eq('id',user.id).single();
-  if(profError) return alert('Ошибка профиля: ' + profError.message);
-  
-  const {data:inv, error:invError} = await supabaseClient.from('inventory')
-    .select('*').eq('restaurant_id',profile.restaurant_id);
-  if(invError) return alert('Ошибка склада: ' + invError.message);
-  
-  inventory.innerHTML = inv.length ? inv.map(i=>`<p>${i.name} - ${i.quantity} ${i.unit}</p>`).join('') : 'Пусто';
+document.getElementById('dateNow').textContent = new Date().toLocaleDateString('ru-RU', {
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
+
+async function loadShifts() {
+  const { data } = await supabase
+.from('work_schedules')
+.select(`
+  *,
+  staff(name),
+  shifts(check_in, check_out)
+`)
+.eq('work_date', today)
+.eq('restaurant_id', restaurantId)
+.order('shift_start');
+
+  const html = data.map(s => {
+    const shift = s.shifts[0];
+    let status, color, time;
+
+    if (!shift ||!shift.check_in) {
+      status = 'Не пришел';
+      color = 'bg-zinc-800 text-zinc-400';
+    } else if (shift.check_in &&!shift.check_out) {
+      status = 'На смене';
+      color = 'bg-green-900/40 text-green-400';
+      time = `Пришел в ${new Date(shift.check_in).toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'})}`;
+    } else {
+      status = 'Смена закрыта';
+      color = 'bg-zinc-800 text-zinc-400';
+      time = `Пришел ${new Date(shift.check_in).toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'})} • Ушел ${new Date(shift.check_out).toLocaleTimeString('ru-RU', {hour:'2-digit',minute:'2-digit'})}`;
+    }
+
+    return `
+      <div class="bg-zinc-900 rounded-lg p-4 border-zinc-800">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <p class="font-semibold">${s.staff.name}</p>
+            <p class="text-sm text-zinc-400">
+              Смена: ${s.shift_start.split('T')[1].slice(0,5)} - ${s.shift_end.split('T')[1].slice(0,5)}
+            </p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-sm ${color}">${status}</span>
+        </div>
+        ${time? `<p class="text-sm text-zinc-300">${time}</p>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('shiftsList').innerHTML = html || '<p class="text-zinc-400">На сегодня смен нет</p>';
 }
 
-async function createInvite(){
-  const {data:{user}} = await supabaseClient.auth.getUser();
-  if(!user) return alert('Ты не авторизован');
-  
-  const {data:profile} = await supabaseClient.from('profiles')
-    .select('restaurant_id').eq('id',user.id).single();
-  
-  const code = Math.floor(100000+Math.random()*900000).toString();
-  
-  const {error} = await supabaseClient.from('invites').insert({
-    restaurant_id:profile.restaurant_id,
-    code:code,
-    role:role.value
-  });
-  
-  if(error) return alert('Ошибка: ' + error.message);
-  document.getElementById('code').innerText = 'Код: '+code;
-}
-
-load();
+loadShifts();
+setInterval(loadShifts, 30000); // Автообновление каждые 30 сек
 </script>
 </body>
 </html>
