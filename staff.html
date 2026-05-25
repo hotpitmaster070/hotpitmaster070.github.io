@@ -2,139 +2,111 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Панель сотрудника</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-body{font-family:sans-serif;margin:0;background:#f5f5f5}
-.header{background:white;padding:15px 20px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
-.header h2{margin:0;font-size:18px}
-.container{padding:20px}
-.card{background:white;padding:20px;border-radius:12px;margin-bottom:15px;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
-.card h3{margin:0 0 10px;font-size:16px}
-table{width:100%;border-collapse:collapse}
-td,th{padding:10px;text-align:left;border-bottom:1px solid #eee}
-th{color:#666;font-weight:500;font-size:14px}
-.logout{color:#ef4444;background:none;border:none;padding:0;font-size:14px;cursor:pointer}
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotPit Kitchen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-<div class="header">
-  <h2 id="restaurantName">Загрузка...</h2>
-  <button class="logout" onclick="logout()">Выйти</button>
-</div>
+<body class="bg-zinc-950 text-zinc-100">
+<div class="max-w-6xl mx-auto p-6">
 
-<div class="container">
-  <div class="card">
-    <h3>Склад</h3>
-    <table id="inventoryTable">
-      <thead>
-        <tr><th>Товар</th><th>Кол-во</th><th>Ед. изм</th></tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="3">Пусто</td></tr>
-      </tbody>
-    </table>
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold">HotPit</h1>
+    <p class="text-zinc-400">Добро пожаловать, <span id="userName">Шеф</span></p>
   </div>
 
-  <div class="card">
-    <h3>Заказы</h3>
-    <table id="ordersTable">
-      <thead>
-        <tr><th>№</th><th>Статус</th><th>Сумма</th></tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="3">Пусто</td></tr>
-      </tbody>
-    </table>
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-zinc-400 text-sm">На складе</p>
+          <p class="text-2xl font-bold">12</p>
+          <p class="text-red-400 text-sm">3 на исходе</p>
+        </div>
+        <i data-lucide="package" class="w-8 h-8 text-zinc-600"></i>
+      </div>
+    </div>
+
+    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-zinc-400 text-sm">Задачи</p>
+          <p class="text-2xl font-bold">5</p>
+          <p class="text-yellow-400 text-sm">2 в работе</p>
+        </div>
+        <i data-lucide="clipboard-list" class="w-8 h-8 text-zinc-600"></i>
+      </div>
+    </div>
+
+    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-zinc-400 text-sm">На смене</p>
+          <p class="text-2xl font-bold">3</p>
+          <p class="text-green-400 text-sm">Все вовремя</p>
+        </div>
+        <i data-lucide="users" class="w-8 h-8 text-zinc-600"></i>
+      </div>
+    </div>
+
+    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-zinc-400 text-sm">Сегодня</p>
+          <p class="text-2xl font-bold">47</p>
+          <p class="text-zinc-400 text-sm">порций выдано</p>
+        </div>
+        <i data-lucide="trending-up" class="w-8 h-8 text-zinc-600"></i>
+      </div>
+    </div>
   </div>
+
+  <!-- Main Actions -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <a href="/inventory.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
+      <i data-lucide="warehouse" class="w-10 h-10 mb-3 text-blue-400"></i>
+      <h3 class="font-semibold mb-1">Склад</h3>
+      <p class="text-zinc-400 text-sm">Приход, списание, остатки</p>
+    </a>
+
+    <a href="/tasks.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
+      <i data-lucide="check-square" class="w-10 h-10 mb-3 text-green-400"></i>
+      <h3 class="font-semibold mb-1">Задачи</h3>
+      <p class="text-zinc-400 text-sm">Назначить и отследить</p>
+    </a>
+
+    <a href="/checkin.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
+      <i data-lucide="qr-code" class="w-10 h-10 mb-3 text-purple-400"></i>
+      <h3 class="font-semibold mb-1">Отметка смены</h3>
+      <p class="text-zinc-400 text-sm">Сканируй QR</p>
+    </a>
+
+    <a href="/reports.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
+      <i data-lucide="bar-chart-3" class="w-10 h-10 mb-3 text-orange-400"></i>
+      <h3 class="font-semibold mb-1">Отчеты</h3>
+      <p class="text-zinc-400 text-sm">Аналитика и экспорт</p>
+    </a>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="mt-8 bg-zinc-900 rounded-xl p-6 border-zinc-800">
+    <h3 class="font-semibold mb-4">Последние действия</h3>
+    <div id="activity" class="space-y-3 text-sm">
+      <div class="text-zinc-400">Загрузка...</div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-const supabaseClient = supabase.createClient(
-  'https://xljogkyropyocvuuodfl.supabase.co', 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
-);
+const supabase = supabase.createClient('ТВОЙ_URL', 'ТВОЙ_KEY');
+lucide.createIcons();
 
-let userRestaurantId = null;
-
-async function init(){
-  const {data:{user}} = await supabaseClient.auth.getUser();
-  if(!user){ 
-    window.location.href = '/index.html';
-    return;
-  }
-  
-  // Получаем профиль и restaurant_id
-  const {data:profile} = await supabaseClient
-    .from('profiles')
-    .select('restaurant_id, role')
-    .eq('id', user.id)
-    .single();
-  
-  if(!profile?.restaurant_id){
-    alert('Ты не привязан к ресторану. Введи код на /join.html');
-    window.location.href = '/join.html';
-    return;
-  }
-  
-  userRestaurantId = profile.restaurant_id;
-  
-  // Получаем название ресторана
-  const {data:restaurant} = await supabaseClient
-    .from('restaurants')
-    .select('name')
-    .eq('id', userRestaurantId)
-    .single();
-  
-  document.getElementById('restaurantName').textContent = restaurant?.name || 'Ресторан';
-  
-  loadInventory();
-  loadOrders();
-}
-
-async function loadInventory(){
-  const {data} = await supabaseClient
-    .from('inventory')
-    .select('*')
-    .eq('restaurant_id', userRestaurantId);
-  
-  const tbody = document.querySelector('#inventoryTable tbody');
-  if(!data || data.length === 0){
-    tbody.innerHTML = '<tr><td colspan="3">Пусто</td></tr>';
-    return;
-  }
-  
-  tbody.innerHTML = data.map(item => 
-    `<tr><td>${item.name}</td><td>${item.qty}</td><td>${item.unit}</td></tr>`
-  ).join('');
-}
-
-async function loadOrders(){
-  const {data} = await supabaseClient
-    .from('orders')
-    .select('*')
-    .eq('restaurant_id', userRestaurantId)
-    .order('created_at', {ascending: false})
-    .limit(10);
-  
-  const tbody = document.querySelector('#ordersTable tbody');
-  if(!data || data.length === 0){
-    tbody.innerHTML = '<tr><td colspan="3">Пусто</td></tr>';
-    return;
-  }
-  
-  tbody.innerHTML = data.map(order => 
-    `<tr><td>#${order.id.slice(0,6)}</td><td>${order.status}</td><td>${order.total}₽</td></tr>`
-  ).join('');
-}
-
-async function logout(){
-  await supabaseClient.auth.signOut();
-  window.location.href = '/index.html';
-}
-
-init();
+// Тут позже подтянем реальные данные из Supabase
+// Пока цифры статичные для вида
 </script>
 </body>
-  </html>
+</html>
