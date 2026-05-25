@@ -25,23 +25,27 @@ const supabaseClient = supabase.createClient(
 );
 
 async function create(){
-  const {data:{user}} = await supabaseClient.auth.getUser();
-  if(!user) {
-    window.location.href='/index.html';
-    return;
+  try {
+    const {data:{user}, error:authError} = await supabaseClient.auth.getUser();
+    if(authError) return alert('Ошибка auth: ' + authError.message);
+    if(!user) return alert('Ты не авторизован. Подтверди email в почте');
+    
+    const {data:rest, error} = await supabaseClient.from('restaurants')
+      .insert({name:name.value.trim(), owner_user_id:user.id})
+      .select().single();
+      
+    if(error) return alert('Ошибка создания ресторана: ' + error.message + '\nКод: ' + error.code);
+    
+    await supabaseClient.from('profiles')
+      .update({restaurant_id:rest.id, role:'owner'})
+      .eq('id',user.id);
+      
+    alert('Ресторан создан!');
+    window.location.href='/owner.html';
+    
+  } catch(e) {
+    alert('JS ошибка: ' + e.message);
   }
-  
-  const {data:rest,error} = await supabaseClient.from('restaurants')
-    .insert({name:name.value.trim(), owner_user_id:user.id})
-    .select().single();
-    
-  if(error) return alert('Ошибка: ' + error.message);
-  
-  await supabaseClient.from('profiles')
-    .update({restaurant_id:rest.id, role:'owner'})
-    .eq('id',user.id);
-    
-  window.location.href='/owner.html';
 }
 </script>
 </body>
