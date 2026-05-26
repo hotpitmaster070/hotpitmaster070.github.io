@@ -12,18 +12,18 @@
     --accent: #f97316;
     --accent-dark: #ea580c;
   }
- .btn-primary {
+.btn-primary {
     background: var(--accent);
     color: white;
   }
- .btn-primary:hover {
+.btn-primary:hover {
     background: var(--accent-dark);
   }
- .btn-danger {
+.btn-danger {
     background: #ef4444;
     color: white;
   }
- .btn-danger:hover {
+.btn-danger:hover {
     background: #dc2626;
   }
 </style>
@@ -58,9 +58,15 @@
 
   <!-- Блок 2: График -->
   <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
-    <div class="flex items-center gap-2 mb-4">
-      <i data-lucide="calendar" class="text-orange-500"></i>
-      <h2 class="text-xl font-bold">График</h2>
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <i data-lucide="calendar" class="text-orange-500"></i>
+        <h2 class="text-xl font-bold" id="scheduleTitle">График</h2>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="setView('day')" id="btnDay" class="px-3 py-1 rounded-lg bg-orange-600 text-sm">День</button>
+        <button onclick="setView('week')" id="btnWeek" class="px-3 py-1 rounded-lg bg-zinc-700 text-sm">Неделя</button>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
@@ -72,6 +78,10 @@
 
     <button onclick="addShift()" class="w-full bg-green-600 hover:bg-green-700 rounded-lg p-3 font-semibold">
       <i data-lucide="calendar-plus" class="inline w-4 h-4"></i> Добавить в график
+    </button>
+
+    <button onclick="showTodayReport()" class="w-full mt-3 bg-orange-600 hover:bg-orange-700 rounded-lg p-3 font-semibold">
+      <i data-lucide="clipboard-list" class="inline w-4 h-4"></i> Табель на сегодня
     </button>
 
     <div id="todayShifts" class="mt-6 space-y-2"></div>
@@ -86,6 +96,8 @@ lucide.createIcons();
 const urlParams = new URLSearchParams(window.location.search);
 const restaurantId = urlParams.get('rest');
 
+let currentView = 'day';
+
 if (!restaurantId) {
   document.body.innerHTML = '<div class="text-center py-20 text-red-400">Ошибка: не указан ресторан. Открой ссылку из onboarding.html</div>';
 }
@@ -96,21 +108,18 @@ document.getElementById('dateInput').addEventListener('change', loadShifts);
 loadStaff();
 loadShifts();
 
+function setView(view) {
+  currentView = view;
+  document.getElementById('btnDay').className = view === 'day'? 'px-3 py-1 rounded-lg bg-orange-600 text-sm' : 'px-3 py-1 rounded-lg bg-zinc-700 text-sm';
+  document.getElementById('btnWeek').className = view === 'week'? 'px-3 py-1 rounded-lg bg-orange-600 text-sm' : 'px-3 py-1 rounded-lg bg-zinc-700 text-sm';
+  loadShifts();
+}
+
 async function addStaff() {
   const name = document.getElementById('newStaffName').value.trim();
   if (!name) return;
-
-  const { error } = await _supabase.from('staff').insert({
-    restaurant_id: restaurantId,
-    name: name,
-    role: 'staff'
-  });
-
-  if (error) {
-    alert('Ошибка: ' + error.message);
-    return;
-  }
-
+  const { error } = await _supabase.from('staff').insert({ restaurant_id: restaurantId, name: name, role: 'staff' });
+  if (error) { alert('Ошибка: ' + error.message); return; }
   document.getElementById('newStaffName').value = '';
   loadStaff();
 }
@@ -123,11 +132,7 @@ async function deleteStaff(id) {
 
 async function loadStaff() {
   const { data, error } = await _supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
-
-  if (error) {
-    alert('Ошибка загрузки поваров: ' + error.message);
-    return;
-  }
+  if (error) { alert('Ошибка загрузки поваров: ' + error.message); return; }
 
   document.getElementById('staffList').innerHTML = data.map(s => `
     <div class="flex justify-between items-center bg-zinc-800 rounded-lg p-3 border-zinc-700">
@@ -142,8 +147,8 @@ async function loadStaff() {
   `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
 
   document.getElementById('staffSelect').innerHTML = data
-   .filter(s => s.role!== 'owner')
-   .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+ .filter(s => s.role!== 'owner')
+ .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
   lucide.createIcons();
 }
@@ -153,26 +158,14 @@ async function addShift() {
   const date = document.getElementById('dateInput').value;
   const timeIn = document.getElementById('timeIn').value;
   const timeOut = document.getElementById('timeOut').value;
-
-  if (!staffId) {
-    alert('Выбери повара');
-    return;
-  }
+  if (!staffId) { alert('Выбери повара'); return; }
 
   const { error } = await _supabase.from('work_schedules').insert({
-    restaurant_id: restaurantId,
-    staff_id: staffId,
-    date: date,
-    start_time: timeIn,
-    end_time: timeOut,
-    status: 'active'
+    restaurant_id: restaurantId, staff_id: staffId, date: date,
+    start_time: timeIn, end_time: timeOut, status: 'active'
   });
 
-  if (error) {
-    alert('Ошибка: ' + error.message);
-    return;
-  }
-
+  if (error) { alert('Ошибка: ' + error.message); return; }
   loadShifts();
 }
 
@@ -190,38 +183,119 @@ async function toggleShiftStatus(id, currentStatus) {
 
 async function loadShifts() {
   const selectedDate = document.getElementById('dateInput').value;
-  document.querySelector('h2').innerText = `График на ${selectedDate.split('-').reverse().join('.')}`;
+
+  let startDate, endDate, title;
+
+  if (currentView === 'day') {
+    startDate = selectedDate;
+    endDate = selectedDate;
+    title = `График на ${selectedDate.split('-').reverse().join('.')}`;
+  } else {
+    const date = new Date(selectedDate);
+    const day = date.getDay();
+    const diff = day === 0? 6 : day - 1;
+    date.setDate(date.getDate() - diff);
+    startDate = date.toISOString().split('T')[0];
+    date.setDate(date.getDate() + 6);
+    endDate = date.toISOString().split('T')[0];
+    title = `График ${startDate.split('-').reverse().join('.')} - ${endDate.split('-').reverse().join('.')}`;
+  }
+
+  document.getElementById('scheduleTitle').innerText = title;
 
   const { data, error } = await _supabase
-   .from('work_schedules')
-   .select('*, staff(name)')
-   .eq('date', selectedDate)
-   .eq('restaurant_id', restaurantId)
-   .order('start_time');
+ .from('work_schedules')
+ .select('*, staff(name)')
+ .gte('date', startDate)
+ .lte('date', endDate)
+ .eq('restaurant_id', restaurantId)
+ .order('date')
+ .order('start_time');
 
-  if (error) {
-    alert('Ошибка загрузки графика: ' + error.message);
-    return;
-  }
+  if (error) { alert('Ошибка загрузки графика: ' + error.message); return; }
+
+  const monthStart = selectedDate.slice(0,7) + '-01';
+  const { data: monthData } = await _supabase
+ .from('work_schedules')
+ .select('staff_id')
+ .eq('restaurant_id', restaurantId)
+ .gte('date', monthStart)
+ .eq('status', 'active');
+
+  const shiftCount = {};
+  monthData?.forEach(s => { shiftCount[s.staff_id] = (shiftCount[s.staff_id] || 0) + 1; });
 
   document.getElementById('todayShifts').innerHTML = data.map(s => `
     <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center border-zinc-700 ${s.status === 'cancelled'? 'opacity-50' : ''}">
       <div class="flex items-center gap-2">
-        <button onclick="toggleShiftStatus('${s.id}', '${s.status}')" class="w-5 h-5 rounded-full ${s.status === 'active'? 'bg-green-500' : 'bg-zinc-600'}"></button>
+        <button onclick="toggleShiftStatus('${s.id}', '${s.status}')"
+          class="w-5 h-5 rounded-full ${s.status === 'active'? 'bg-green-500' : 'bg-zinc-600'}"
+          title="${s.status === 'active'? 'Активна' : 'Отменена'}"></button>
         <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
-        <span>${s.staff.name}</span>
+        <div>
+          <div>${s.staff.name}</div>
+          <div class="text-xs text-zinc-400">${s.date.split('-').reverse().join('.')} • ${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</div>
+          <div class="text-xs text-zinc-500">Смен в месяце: ${shiftCount[s.staff_id] || 0}</div>
+        </div>
       </div>
       <div class="flex items-center gap-3">
-        <span class="text-zinc-400 text-sm">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
         <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300">
           <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
       </div>
     </div>
-  `).join('') || '<p class="text-zinc-500 text-sm text-center py-4">На эту дату смен нет</p>';
+  `).join('') || '<p class="text-zinc-500 text-sm text-center py-4">На этот период смен нет</p>';
 
   lucide.createIcons();
 }
+
+async function showTodayReport() {
+  const today = new Date().toISOString().split('T')[0];
+  const monthStart = today.slice(0,7) + '-01';
+
+  const { data } = await _supabase
+ .from('work_schedules')
+ .select('*, staff(name)')
+ .eq('date', today)
+ .eq('restaurant_id', restaurantId)
+ .eq('status', 'active');
+
+  const { data: monthData } = await _supabase
+ .from('work_schedules')
+ .select('staff_id')
+ .eq('restaurant_id', restaurantId)
+ .gte('date', monthStart)
+ .eq('status', 'active');
+
+  const shiftCount = {};
+  monthData?.forEach(s => { shiftCount[s.staff_id] = (shiftCount[s.staff_id] || 0) + 1; });
+
+  let html = `<div class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onclick="this.remove()">
+    <div class="bg-zinc-900 rounded-xl p-6 max-w-md w-full" onclick="event.stopPropagation()">
+      <h3 class="text-xl font-bold mb-4">Табель на ${today.split('-').reverse().join('.')}</h3>
+      <div class="space-y-2">`;
+
+  if (!data || data.length === 0) {
+    html += '<p class="text-zinc-500">Сегодня никто не работает</p>';
+  } else {
+    html += data.map(s => {
+      const startHour = parseInt(s.start_time.split(':')[0]);
+      const endHour = parseInt(s.end_time.split(':')[0]);
+      const hours = endHour - startHour;
+      return `
+      <div class="bg-zinc-800 rounded-lg p-3">
+        <div class="font-semibold">${s.staff.name}</div>
+        <div class="text-sm text-zinc-400">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)} | ${hours}ч</div>
+        <div class="text-xs text-zinc-500">Смен в месяце: ${shiftCount[s.staff_id] || 0}</div>
+      </div>`;
+    }).join('');
+  }
+
+  html += `</div><button onclick="this.closest('.fixed').remove()"
+    class="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg p-2">Закрыть</button></div></div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+}
 </script>
 </body>
-</html>
+  </html>
