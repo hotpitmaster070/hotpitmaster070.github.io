@@ -39,11 +39,12 @@ button{
 .btn-primary:hover{background:#ea580c;}
 .btn-secondary{background:#262626;color:#fff;}
 .btn-secondary:hover{background:#333;}
-.error{
-  background:#7f1d1d;color:#fca5a5;padding:12px;
-  border-radius:8px;margin-bottom:16px;font-size:14px;
+.msg{
+  padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px;
   display:none;
 }
+.error{background:#7f1d1d;color:#fca5a5;}
+.success{background:#14532d;color:#86efac;}
 </style>
 </head>
 <body>
@@ -53,13 +54,13 @@ button{
     <p>Управление кухней</p>
   </div>
   
-  <div id="error" class="error"></div>
+  <div id="msg" class="msg"></div>
   
   <input id="email" type="email" placeholder="Email" autocomplete="email">
   <input id="password" type="password" placeholder="Пароль" autocomplete="current-password">
   
-  <button class="btn-primary" onclick="login()">Войти</button>
-  <button class="btn-secondary" onclick="signup()">Создать аккаунт</button>
+  <button type="button" class="btn-primary" id="loginBtn">Войти</button>
+  <button type="button" class="btn-secondary" id="signupBtn">Создать аккаунт</button>
 </div>
 
 <script>
@@ -68,21 +69,21 @@ const supabaseClient = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
 
-function showError(msg){
-  const err = document.getElementById('error');
-  err.innerText = msg;
-  err.style.display = 'block';
+function showMsg(msg, type){
+  const el = document.getElementById('msg');
+  el.innerText = msg;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
 }
 
-function hideError(){
-  document.getElementById('error').style.display = 'none';
+function hideMsg(){
+  document.getElementById('msg').style.display = 'none';
 }
 
 async function redirectAfterLogin(){
   const { data: { user } = await supabaseClient.auth.getUser();
   if(!user) return;
   
-  // 1. Проверяем шеф ли это
   const { data: restaurant } = await supabaseClient
     .from('restaurants')
     .select('id')
@@ -95,7 +96,6 @@ async function redirectAfterLogin(){
     return;
   }
   
-  // 2. Если не шеф, проверяем повар ли это
   const { data: staff } = await supabaseClient
     .from('staff')
     .select('id, restaurant_id')
@@ -108,24 +108,23 @@ async function redirectAfterLogin(){
     return;
   }
   
-  // 3. Если ни то ни се - на onboarding
   window.location.href = '/onboarding.html';
 }
 
 async function login(){
-  hideError();
+  hideMsg();
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   
   if(!email || !password){
-    showError('Заполни email и пароль');
+    showMsg('Заполни email и пароль', 'error');
     return;
   }
   
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   
   if(error){
-    showError('Неверный email или пароль');
+    showMsg('Неверный email или пароль', 'error');
     return;
   }
   
@@ -133,29 +132,40 @@ async function login(){
 }
 
 async function signup(){
-  hideError();
+  hideMsg();
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   
   if(!email || !password){
-    showError('Заполни email и пароль');
+    showMsg('Заполни email и пароль', 'error');
     return;
   }
   
   if(password.length < 6){
-    showError('Пароль должен быть минимум 6 символов');
+    showMsg('Пароль должен быть минимум 6 символов', 'error');
     return;
   }
   
   const { error } = await supabaseClient.auth.signUp({ email, password });
   
   if(error){
-    showError(error.message);
+    showMsg(error.message, 'error');
     return;
   }
   
-  alert('Готово! Проверь почту и подтверди регистрацию, затем войди в систему.');
+  showMsg('Готово! Ты красавчик 🔥 Проверь почту, подтверди регистрацию и жми "Войти". Добро пожаловать в HotPit!', 'success');
+  document.getElementById('password').value = '';
 }
+
+// Навешиваем события после загрузки DOM
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginBtn').addEventListener('click', login);
+  document.getElementById('signupBtn').addEventListener('click', signup);
+  
+  document.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') login();
+  });
+});
 
 // Если уже залогинен - сразу перекидываем
 supabaseClient.auth.getSession().then(({ data: { session } }) => {
@@ -163,11 +173,6 @@ supabaseClient.auth.getSession().then(({ data: { session } }) => {
     redirectAfterLogin();
   }
 });
-
-// Enter для входа
-document.addEventListener('keypress', (e) => {
-  if(e.key === 'Enter') login();
-});
 </script>
 </body>
-</html>
+  </html>
