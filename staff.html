@@ -3,110 +3,194 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HotPit Kitchen</title>
+<title>HotPit - Отметка</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-zinc-950 text-zinc-100">
-<div class="max-w-6xl mx-auto p-6">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex items-center justify-center p-4">
 
-  <!-- Header -->
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold">HotPit</h1>
-    <p class="text-zinc-400">Добро пожаловать, <span id="userName">Шеф</span></p>
+<div class="w-full max-w-md space-y-6">
+
+  <!-- Приветствие после сканирования -->
+  <div id="messageBlock" class="text-center hidden">
+    <i id="messageIcon" data-lucide="sun" class="w-16 h-16 text-orange-500 mx-auto mb-4"></i>
+    <div id="messageTitle" class="text-2xl font-bold mb-2">Хорошего рабочего дня!</div>
+    <div class="text-lg text-zinc-300" id="staffName">Вася</div>
+    <div class="text-sm text-zinc-500 mt-4" id="messageSub">Переходим к задачам...</div>
   </div>
 
-  <!-- Stats Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-zinc-400 text-sm">На складе</p>
-          <p class="text-2xl font-bold">12</p>
-          <p class="text-red-400 text-sm">3 на исходе</p>
-        </div>
-        <i data-lucide="package" class="w-8 h-8 text-zinc-600"></i>
-      </div>
+  <!-- Блок сканирования -->
+  <div id="scanBlock">
+    <div class="text-center mb-4">
+      <div class="text-3xl font-extrabold text-orange-500">HotPit</div>
+      <div class="text-zinc-400">Отсканируй QR на входе</div>
     </div>
+    <div id="qr-reader" class="rounded-xl overflow-hidden"></div>
 
-    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-zinc-400 text-sm">Задачи</p>
-          <p class="text-2xl font-bold">5</p>
-          <p class="text-yellow-400 text-sm">2 в работе</p>
-        </div>
-        <i data-lucide="clipboard-list" class="w-8 h-8 text-zinc-600"></i>
-      </div>
-    </div>
-
-    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-zinc-400 text-sm">На смене</p>
-          <p class="text-2xl font-bold">3</p>
-          <p class="text-green-400 text-sm">Все вовремя</p>
-        </div>
-        <i data-lucide="users" class="w-8 h-8 text-zinc-600"></i>
-      </div>
-    </div>
-
-    <div class="bg-zinc-900 rounded-xl p-5 border-zinc-800">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-zinc-400 text-sm">Сегодня</p>
-          <p class="text-2xl font-bold">47</p>
-          <p class="text-zinc-400 text-sm">порций выдано</p>
-        </div>
-        <i data-lucide="trending-up" class="w-8 h-8 text-zinc-600"></i>
-      </div>
+    <div id="manualButtons" class="space-y-3 mt-4 hidden">
+      <button onclick="logTime('in')" class="w-full bg-green-600 hover:bg-green-700 rounded-lg p-4 font-semibold text-lg">
+        <i data-lucide="log-in" class="inline w-5 h-5"></i> Пришел на работу
+      </button>
+      <button onclick="logTime('out')" class="w-full bg-red-600 hover:bg-red-700 rounded-lg p-4 font-semibold text-lg">
+        <i data-lucide="log-out" class="inline w-5 h-5"></i> Ушел с работы
+      </button>
     </div>
   </div>
-
-  <!-- Main Actions -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-    <a href="/inventory.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
-      <i data-lucide="warehouse" class="w-10 h-10 mb-3 text-blue-400"></i>
-      <h3 class="font-semibold mb-1">Склад</h3>
-      <p class="text-zinc-400 text-sm">Приход, списание, остатки</p>
-    </a>
-
-    <a href="/tasks.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
-      <i data-lucide="check-square" class="w-10 h-10 mb-3 text-green-400"></i>
-      <h3 class="font-semibold mb-1">Задачи</h3>
-      <p class="text-zinc-400 text-sm">Назначить и отследить</p>
-    </a>
-
-    <a href="/checkin.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
-      <i data-lucide="qr-code" class="w-10 h-10 mb-3 text-purple-400"></i>
-      <h3 class="font-semibold mb-1">Отметка смены</h3>
-      <p class="text-zinc-400 text-sm">Сканируй QR</p>
-    </a>
-
-    <a href="/reports.html" class="bg-zinc-900 hover:bg-zinc-800 rounded-xl p-6 border-zinc-800 transition">
-      <i data-lucide="bar-chart-3" class="w-10 h-10 mb-3 text-orange-400"></i>
-      <h3 class="font-semibold mb-1">Отчеты</h3>
-      <p class="text-zinc-400 text-sm">Аналитика и экспорт</p>
-    </a>
-  </div>
-
-  <!-- Recent Activity -->
-  <div class="mt-8 bg-zinc-900 rounded-xl p-6 border-zinc-800">
-    <h3 class="font-semibold mb-4">Последние действия</h3>
-    <div id="activity" class="space-y-3 text-sm">
-      <div class="text-zinc-400">Загрузка...</div>
-    </div>
-  </div>
-
 </div>
 
 <script>
-const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+const _supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 lucide.createIcons();
 
-// Тут позже подтянем реальные данные из Supabase
-// Пока цифры статичные для вида
+const urlParams = new URLSearchParams(window.location.search);
+const staffId = urlParams.get('staff');
+const restaurantId = urlParams.get('rest');
+
+if (!staffId ||!restaurantId) {
+  document.body.innerHTML = '<div class="text-center p-10 text-red-400">Ошибка: неправильная ссылка</div>';
+}
+
+loadStaff();
+
+async function loadStaff() {
+  const { data } = await _supabase.from('staff').select('name').eq('id', staffId).single();
+  if (data) document.getElementById('staffName').innerText = data.name;
+  startQRScanner();
+}
+
+function startQRScanner() {
+  const html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      if (decodedText === 'checkin' || decodedText === 'checkout') {
+        html5QrCode.stop();
+        const type = decodedText === 'checkin'? 'in' : 'out';
+        logTime(type);
+      }
+    },
+    () => {}
+  ).catch(() => {
+    document.getElementById('manualButtons').classList.remove('hidden');
+  });
+}
+
+async function getGreeting(type) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  // Проверяем есть ли смена завтра
+  const { data: tomorrowShift } = await _supabase
+   .from('work_schedules')
+   .select('id')
+   .eq('staff_id', staffId)
+   .eq('date', tomorrowStr)
+   .eq('status', 'active')
+   .single();
+
+  const hasShiftTomorrow =!!tomorrowShift;
+
+  if (type === 'in') {
+    return {
+      title: "Хорошего рабочего дня!",
+      icon: "sun",
+      sub: "Переходим к задачам..."
+    };
+  } else {
+    // Уход с работы
+    if (hasShiftTomorrow) {
+      return {
+        title: "Хорошего вечера!",
+        icon: "moon",
+        sub: "До встречи завтра"
+      };
+    } else {
+      return {
+        title: "Хорошего отдыха!",
+        icon: "coffee",
+        sub: "Завтра выходной"
+      };
+    }
+  }
+}
+
+async function logTime(type) {
+  const today = new Date().toISOString().split('T')[0];
+
+  // Ищем смену на сегодня
+  let { data: schedule } = await _supabase
+  .from('work_schedules')
+  .select('id')
+  .eq('staff_id', staffId)
+  .eq('date', today)
+  .single();
+
+  // Если смены нет - создаём на лету при приходе
+  if (!schedule && type === 'in') {
+    const now = new Date();
+    const { data: newSchedule } = await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: today,
+      start_time: now.toTimeString().slice(0,5),
+      end_time: now.toTimeString().slice(0,5),
+      status: 'active'
+    }).select('id').single();
+    schedule = newSchedule;
+  }
+
+  if (!schedule) {
+    alert('Нет смены на сегодня. Скажи шефу чтобы добавил тебя в график.');
+    return;
+  }
+
+  // Пишем отметку
+  await _supabase.from('time_logs').insert({
+    restaurant_id: restaurantId,
+    staff_id: staffId,
+    schedule_id: schedule.id,
+    type: type
+  });
+
+  // Если это уход - обновляем время окончания смены
+  if (type === 'out') {
+    const now = new Date();
+    await _supabase.from('work_schedules')
+    .update({
+        end_time: now.toTimeString().slice(0,5),
+        status: 'active'
+      })
+    .eq('id', schedule.id);
+  }
+
+  if (navigator.vibrate) navigator.vibrate(200);
+  new Audio('https://cdn.freesound.org/previews/270/270404_5123851-lq.mp3').play();
+
+  const greeting = await getGreeting(type);
+
+  document.getElementById('scanBlock').classList.add('hidden');
+  document.getElementById('messageBlock').classList.remove('hidden');
+  document.getElementById('messageTitle').innerText = greeting.title;
+  document.getElementById('messageIcon').setAttribute('data-lucide', greeting.icon);
+  document.getElementById('messageSub').innerText = greeting.sub;
+  lucide.createIcons();
+
+  // Если приход - кидаем на задачи через 2 сек
+  if (type === 'in') {
+    setTimeout(() => {
+      window.location.href = `tasks.html?staff=${staffId}&rest=${restaurantId}`;
+    }, 2000);
+  } else {
+    setTimeout(() => {
+      document.getElementById('messageSub').innerText = "Смена закрыта. Можно закрыть страницу";
+    }, 3000);
+  }
+}
 </script>
 </body>
-</html>
+  </html>
