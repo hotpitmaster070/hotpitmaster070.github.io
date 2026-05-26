@@ -141,30 +141,29 @@ async function loadStaff() {
   `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
 
   document.getElementById('staffSelect').innerHTML = data
- .filter(s => s.role!== 'owner')
- .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+.filter(s => s.role!== 'owner')
+.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
   lucide.createIcons();
 }
 
 async function addShift() {
-  const userId = document.getElementById('staffSelect').value;
+  const staffId = document.getElementById('staffSelect').value;
   const date = document.getElementById('dateInput').value;
   const timeIn = document.getElementById('timeIn').value;
   const timeOut = document.getElementById('timeOut').value;
 
-  if (!userId) {
+  if (!staffId) {
     alert('Выбери повара');
     return;
   }
 
   const { error } = await _supabase.from('work_schedules').insert({
     restaurant_id: restaurantId,
-    user_id: userId,
-    work_date: date,
-    shift_start: `${date}T${timeIn}:00`,
-    shift_end: `${date}T${timeOut}:00`,
-    status: 'scheduled'
+    staff_id: staffId,
+    date: date,
+    start_time: timeIn,
+    end_time: timeOut
   });
 
   if (error) {
@@ -178,11 +177,11 @@ async function addShift() {
 async function loadTodayShifts() {
   const today = new Date().toISOString().split('T')[0];
   const { data, error } = await _supabase
- .from('work_schedules')
- .select('*, staff(name)')
- .eq('work_date', today)
- .eq('restaurant_id', restaurantId)
- .order('shift_start');
+.from('work_schedules')
+.select('*, staff(name)')
+.eq('date', today)
+.eq('restaurant_id', restaurantId)
+.order('start_time');
 
   if (error) {
     alert('Ошибка загрузки графика: ' + error.message);
@@ -195,7 +194,7 @@ async function loadTodayShifts() {
         <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
         <span>${s.staff.name}</span>
       </div>
-      <span class="text-zinc-400 text-sm">${s.shift_start.split('T')[1].slice(0,5)} - ${s.shift_end.split('T')[1].slice(0,5)}</span>
+      <span class="text-zinc-400 text-sm">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
     </div>
   `).join('') || '<p class="text-zinc-500 text-sm text-center py-4">На сегодня смен нет</p>';
 
@@ -203,4 +202,4 @@ async function loadTodayShifts() {
 }
 </script>
 </body>
-</html>
+      </html>
