@@ -12,18 +12,18 @@
     --accent: #f97316;
     --accent-dark: #ea580c;
   }
-.btn-primary {
+ .btn-primary {
     background: var(--accent);
     color: white;
   }
-.btn-primary:hover {
+ .btn-primary:hover {
     background: var(--accent-dark);
   }
-.btn-danger {
+ .btn-danger {
     background: #ef4444;
     color: white;
   }
-.btn-danger:hover {
+ .btn-danger:hover {
     background: #dc2626;
   }
 </style>
@@ -60,7 +60,7 @@
   <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
     <div class="flex items-center gap-2 mb-4">
       <i data-lucide="calendar" class="text-orange-500"></i>
-      <h2 class="text-xl font-bold">График на сегодня</h2>
+      <h2 class="text-xl font-bold">График</h2>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
@@ -91,9 +91,10 @@ if (!restaurantId) {
 }
 
 document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+document.getElementById('dateInput').addEventListener('change', loadShifts);
 
 loadStaff();
-loadTodayShifts();
+loadShifts();
 
 async function addStaff() {
   const name = document.getElementById('newStaffName').value.trim();
@@ -141,8 +142,8 @@ async function loadStaff() {
   `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
 
   document.getElementById('staffSelect').innerHTML = data
-.filter(s => s.role!== 'owner')
-.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+   .filter(s => s.role!== 'owner')
+   .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
   lucide.createIcons();
 }
@@ -163,7 +164,8 @@ async function addShift() {
     staff_id: staffId,
     date: date,
     start_time: timeIn,
-    end_time: timeOut
+    end_time: timeOut,
+    status: 'active'
   });
 
   if (error) {
@@ -171,17 +173,31 @@ async function addShift() {
     return;
   }
 
-  loadTodayShifts();
+  loadShifts();
 }
 
-async function loadTodayShifts() {
-  const today = new Date().toISOString().split('T')[0];
+async function deleteShift(id) {
+  if (!confirm('Удалить смену?')) return;
+  await _supabase.from('work_schedules').delete().eq('id', id);
+  loadShifts();
+}
+
+async function toggleShiftStatus(id, currentStatus) {
+  const newStatus = currentStatus === 'active'? 'cancelled' : 'active';
+  await _supabase.from('work_schedules').update({ status: newStatus }).eq('id', id);
+  loadShifts();
+}
+
+async function loadShifts() {
+  const selectedDate = document.getElementById('dateInput').value;
+  document.querySelector('h2').innerText = `График на ${selectedDate.split('-').reverse().join('.')}`;
+
   const { data, error } = await _supabase
-.from('work_schedules')
-.select('*, staff(name)')
-.eq('date', today)
-.eq('restaurant_id', restaurantId)
-.order('start_time');
+   .from('work_schedules')
+   .select('*, staff(name)')
+   .eq('date', selectedDate)
+   .eq('restaurant_id', restaurantId)
+   .order('start_time');
 
   if (error) {
     alert('Ошибка загрузки графика: ' + error.message);
@@ -189,17 +205,23 @@ async function loadTodayShifts() {
   }
 
   document.getElementById('todayShifts').innerHTML = data.map(s => `
-    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center border-zinc-700">
+    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center border-zinc-700 ${s.status === 'cancelled'? 'opacity-50' : ''}">
       <div class="flex items-center gap-2">
+        <button onclick="toggleShiftStatus('${s.id}', '${s.status}')" class="w-5 h-5 rounded-full ${s.status === 'active'? 'bg-green-500' : 'bg-zinc-600'}"></button>
         <i data-lucide="clock" class="w-4 h-4 text-orange-500"></i>
         <span>${s.staff.name}</span>
       </div>
-      <span class="text-zinc-400 text-sm">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
+      <div class="flex items-center gap-3">
+        <span class="text-zinc-400 text-sm">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
+        <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
     </div>
-  `).join('') || '<p class="text-zinc-500 text-sm text-center py-4">На сегодня смен нет</p>';
+  `).join('') || '<p class="text-zinc-500 text-sm text-center py-4">На эту дату смен нет</p>';
 
   lucide.createIcons();
 }
 </script>
 </body>
-      </html>
+</html>
