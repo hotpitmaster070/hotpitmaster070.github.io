@@ -12,18 +12,18 @@
     --accent: #f97316;
     --accent-dark: #ea580c;
   }
- .btn-primary {
+.btn-primary {
     background: var(--accent);
     color: white;
   }
- .btn-primary:hover {
+.btn-primary:hover {
     background: var(--accent-dark);
   }
- .btn-danger {
+.btn-danger {
     background: #ef4444;
     color: white;
   }
- .btn-danger:hover {
+.btn-danger:hover {
     background: #dc2626;
   }
 </style>
@@ -57,7 +57,7 @@
   </div>
 
   <!-- Блок 2: График -->
-  <div class="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+  <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
     <div class="flex items-center gap-2 mb-4">
       <i data-lucide="calendar" class="text-orange-500"></i>
       <h2 class="text-xl font-bold">График на сегодня</h2>
@@ -99,11 +99,16 @@ async function addStaff() {
   const name = document.getElementById('newStaffName').value.trim();
   if (!name) return;
 
-  await supabase.from('staff').insert({
+  const { error } = await supabase.from('staff').insert({
     restaurant_id: restaurantId,
     name: name,
     role: 'staff'
   });
+
+  if (error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
 
   document.getElementById('newStaffName').value = '';
   loadStaff();
@@ -116,7 +121,12 @@ async function deleteStaff(id) {
 }
 
 async function loadStaff() {
-  const { data } = await supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+  const { data, error } = await supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+
+  if (error) {
+    alert('Ошибка загрузки поваров: ' + error.message);
+    return;
+  }
 
   document.getElementById('staffList').innerHTML = data.map(s => `
     <div class="flex justify-between items-center bg-zinc-800 rounded-lg p-3 border-zinc-700">
@@ -131,8 +141,8 @@ async function loadStaff() {
   `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
 
   document.getElementById('staffSelect').innerHTML = data
-   .filter(s => s.role!== 'owner')
-   .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  .filter(s => s.role!== 'owner')
+  .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 
   lucide.createIcons();
 }
@@ -148,7 +158,7 @@ async function addShift() {
     return;
   }
 
-  await supabase.from('work_schedules').insert({
+  const { error } = await supabase.from('work_schedules').insert({
     restaurant_id: restaurantId,
     user_id: userId,
     work_date: date,
@@ -157,17 +167,27 @@ async function addShift() {
     status: 'scheduled'
   });
 
+  if (error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+
   loadTodayShifts();
 }
 
 async function loadTodayShifts() {
   const today = new Date().toISOString().split('T')[0];
-  const { data } = await supabase
-   .from('work_schedules')
-   .select('*, staff(name)')
-   .eq('work_date', today)
-   .eq('restaurant_id', restaurantId)
-   .order('shift_start');
+  const { data, error } = await supabase
+  .from('work_schedules')
+  .select('*, staff(name)')
+  .eq('work_date', today)
+  .eq('restaurant_id', restaurantId)
+  .order('shift_start');
+
+  if (error) {
+    alert('Ошибка загрузки графика: ' + error.message);
+    return;
+  }
 
   document.getElementById('todayShifts').innerHTML = data.map(s => `
     <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center border-zinc-700">
@@ -183,4 +203,4 @@ async function loadTodayShifts() {
 }
 </script>
 </body>
-</html>
+      </html>
