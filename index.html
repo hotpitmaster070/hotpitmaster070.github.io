@@ -44,6 +44,7 @@ button{
 .error{background:#7f1d1d;color:#fca5a5;}
 .success{background:#14532d;color:#86efac;}
 .hidden{display:none;}
+.restaurant-info{background:#262626;padding:16px;border-radius:10px;margin-bottom:20px;}
 </style>
 </head>
 <body>
@@ -64,7 +65,7 @@ button{
   <button type="button" class="btn-secondary" id="signupBtn">Создать аккаунт</button>
 </div>
 
-<!-- Форма создания ресторана -->
+<!-- Панель ресторана -->
 <div class="box hidden" id="restaurantBox">
   <div class="logo">
     <h1>HotPit</h1>
@@ -73,8 +74,7 @@ button{
   
   <button type="button" class="btn-logout" id="logoutBtn">Выйти</button>
   
-  <h2 style="margin-bottom:20px;">Создать ресторан</h2>
-  <p style="color:#71717a;">Тут будет твоя форма создания ресторана</p>
+  <div id="restaurantContent"></div>
 </div>
 
 <script>
@@ -106,7 +106,7 @@ function showRestaurantForm(){
 }
 
 async function checkSession(){
-  const { data: { session } }= await supabaseClient.auth.getSession(); // <- тут была ошибка
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if(session){
     await redirectAfterLogin();
   } else {
@@ -120,13 +120,26 @@ async function redirectAfterLogin(){
   
   const { data: restaurant } = await supabaseClient
     .from('restaurants')
-    .select('id')
+    .select('id, name')
     .eq('owner_id', user.id)
     .limit(1)
     .maybeSingle();
   
   if(restaurant){
-    window.location.href = `/index.html?rest=${restaurant.id}`;
+    // Показываем панель на этой же странице
+    document.getElementById('restaurantContent').innerHTML = `
+      <div class="restaurant-info">
+        <h2 style="margin-bottom:8px;">${restaurant.name || 'Мой ресторан'}</h2>
+        <p style="color:#71717a;font-size:14px;">ID: ${restaurant.id}</p>
+      </div>
+      <button class="btn-primary" onclick="window.location.href='/dashboard.html?rest=${restaurant.id}'">
+        Открыть панель
+      </button>
+      <button class="btn-secondary" onclick="window.location.href='/onboarding.html'">
+        Настройки
+      </button>
+    `;
+    showRestaurantForm();
     return;
   }
   
@@ -142,6 +155,11 @@ async function redirectAfterLogin(){
     return;
   }
   
+  // Если ресторана нет - показываем форму создания
+  document.getElementById('restaurantContent').innerHTML = `
+    <h2 style="margin-bottom:20px;">Создать ресторан</h2>
+    <p style="color:#71717a;">Тут будет твоя форма создания ресторана</p>
+  `;
   showRestaurantForm();
 }
 
@@ -190,7 +208,7 @@ async function signup(){
 
 async function logout(){
   await supabaseClient.auth.signOut();
-  location.reload(); // <- перезагружаем чтобы сбросить сессию
+  location.reload();
 }
 
 document.getElementById('loginBtn').addEventListener('click', login);
