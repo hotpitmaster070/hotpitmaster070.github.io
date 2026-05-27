@@ -29,17 +29,39 @@
 .toggle-active {
     background: var(--accent);
   }
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:24px;
+  font-size:18px;
+}
+.logo-link{
+  color:#f97316;
+  font-weight:800;
+  text-decoration:none;
+  font-size:24px;
+}
+.logo-link:hover{opacity:0.8;}
+.divider{color:#71717a;}
+.nav-link{
+  color:#d4d4d8;
+  text-decoration:none;
+  font-size:18px;
+}
+.nav-link:hover{color:#f97316;}
 </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 p-4 md:p-6">
 
 <div class="max-w-5xl mx-auto space-y-6">
 
-  <div class="flex items-center gap-3">
-    <div class="text-2xl font-extrabold text-orange-500">HotPit</div>
-    <div class="text-zinc-500">|</div>
-    <div class="text-lg text-zinc-300">Управление</div>
-  </div>
+  <!-- Кликабельная шапка -->
+  <header class="topbar">
+    <a href="/" class="logo-link">HotPit</a>
+    <span class="divider">|</span>
+    <a href="#" onclick="window.scrollTo({top:0, behavior:'smooth'});return false;" class="nav-link">Управление</a>
+  </header>
 
   <!-- Блок 1: Повара -->
   <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
