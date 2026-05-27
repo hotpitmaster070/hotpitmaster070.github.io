@@ -16,12 +16,8 @@ body{
   background:#171717;padding:40px;border-radius:16px;
   box-shadow:0 20px 50px rgba(0,0,0,0.5);width:100%;max-width:380px;
 }
-.logo{
-  text-align:center;margin-bottom:32px;
-}
-.logo h1{
-  font-size:32px;font-weight:800;color:#f97316;margin-bottom:8px;
-}
+.logo{text-align:center;margin-bottom:32px;}
+.logo h1{font-size:32px;font-weight:800;color:#f97316;margin-bottom:8px;}
 .logo p{color:#71717a;font-size:14px;}
 input{
   width:100%;padding:14px;margin:8px 0;
@@ -80,11 +76,8 @@ function showMsg(msg, type){
   el.innerText = msg;
   el.className = 'msg ' + type;
   el.style.display = 'block';
-  
   clearTimeout(msgTimer);
-  msgTimer = setTimeout(() => {
-    el.style.display = 'none';
-  }, 4000);
+  msgTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 function hideMsg(){
@@ -93,13 +86,11 @@ function hideMsg(){
 
 function formatError(error){
   if(!error) return 'Что-то пошло не так';
-  
   const msg = error.message.toLowerCase();
   if(msg.includes('invalid login')) return 'Неверный email или пароль';
   if(msg.includes('email not confirmed')) return 'Подтверди почту перед входом';
   if(msg.includes('user already registered')) return 'Этот email уже зарегистрирован';
   if(msg.includes('failed to fetch')) return 'Нет соединения с сервером. Проверь интернет';
-  
   return error.message;
 }
 
@@ -107,30 +98,33 @@ async function redirectAfterLogin(){
   const { data: { user } = await supabaseClient.auth.getUser();
   if(!user) return;
   
-  const { data: restaurant } = await supabaseClient
+  // Ищем ресторан владельца
+  const { data: restaurant, error: restError } = await supabaseClient
     .from('restaurants')
     .select('id')
     .eq('owner_id', user.id)
     .limit(1)
-    .single();
+    .maybeSingle(); // <- вот это важно, не падает если нет записи
   
   if(restaurant){
     window.location.href = `/index.html?rest=${restaurant.id}`;
     return;
   }
   
-  const { data: staff } = await supabaseClient
+  // Ищем если пользователь повар
+  const { data: staff, error: staffError } = await supabaseClient
     .from('staff')
     .select('id, restaurant_id')
     .eq('user_id', user.id)
     .limit(1)
-    .single();
+    .maybeSingle();
   
   if(staff){
     window.location.href = `/staff.html?staff=${staff.id}&rest=${staff.restaurant_id}`;
     return;
   }
   
+  // Если ничего нет - на онбординг
   window.location.href = '/onboarding.html';
 }
 
@@ -145,7 +139,6 @@ async function login(){
   }
   
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  
   if(error){
     showMsg(formatError(error), 'error');
     return;
@@ -163,14 +156,12 @@ async function signup(){
     showMsg('Заполни email и пароль', 'error');
     return;
   }
-  
   if(password.length < 6){
     showMsg('Пароль должен быть минимум 6 символов', 'error');
     return;
   }
   
   const { error } = await supabaseClient.auth.signUp({ email, password });
-  
   if(error){
     showMsg(formatError(error), 'error');
     return;
@@ -183,12 +174,12 @@ async function signup(){
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginBtn').addEventListener('click', login);
   document.getElementById('signupBtn').addEventListener('click', signup);
-  
   document.addEventListener('keypress', (e) => {
     if(e.key === 'Enter') login();
   });
 });
 
+// Автовход если сессия есть
 supabaseClient.auth.getSession().then(({ data: { session } }) => {
   if(session){
     redirectAfterLogin();
@@ -196,4 +187,4 @@ supabaseClient.auth.getSession().then(({ data: { session } }) => {
 });
 </script>
 </body>
-</html>
+  </html>
