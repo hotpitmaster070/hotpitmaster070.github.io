@@ -41,7 +41,11 @@ button{
 .btn-secondary:hover{background:#333;}
 .msg{
   padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px;
-  display:none;
+  display:none;animation:fadeIn 0.3s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(-8px);}
+  to{opacity:1;transform:translateY(0);}
 }
 .error{background:#7f1d1d;color:#fca5a5;}
 .success{background:#14532d;color:#86efac;}
@@ -69,15 +73,34 @@ const supabaseClient = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
 
+let msgTimer = null;
+
 function showMsg(msg, type){
   const el = document.getElementById('msg');
   el.innerText = msg;
   el.className = 'msg ' + type;
   el.style.display = 'block';
+  
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => {
+    el.style.display = 'none';
+  }, 4000);
 }
 
 function hideMsg(){
   document.getElementById('msg').style.display = 'none';
+}
+
+function formatError(error){
+  if(!error) return 'Что-то пошло не так';
+  
+  const msg = error.message.toLowerCase();
+  if(msg.includes('invalid login')) return 'Неверный email или пароль';
+  if(msg.includes('email not confirmed')) return 'Подтверди почту перед входом';
+  if(msg.includes('user already registered')) return 'Этот email уже зарегистрирован';
+  if(msg.includes('failed to fetch')) return 'Нет соединения с сервером. Проверь интернет';
+  
+  return error.message;
 }
 
 async function redirectAfterLogin(){
@@ -113,7 +136,7 @@ async function redirectAfterLogin(){
 
 async function login(){
   hideMsg();
-  const email = document.getElementById('email').value;
+  const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   
   if(!email || !password){
@@ -124,7 +147,7 @@ async function login(){
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   
   if(error){
-    showMsg('Неверный email или пароль', 'error');
+    showMsg(formatError(error), 'error');
     return;
   }
   
@@ -133,7 +156,7 @@ async function login(){
 
 async function signup(){
   hideMsg();
-  const email = document.getElementById('email').value;
+  const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   
   if(!email || !password){
@@ -149,11 +172,11 @@ async function signup(){
   const { error } = await supabaseClient.auth.signUp({ email, password });
   
   if(error){
-    showMsg(error.message, 'error');
+    showMsg(formatError(error), 'error');
     return;
   }
   
-  showMsg('Готово! Проверь почту, подтверди регистрацию и жми "Войти". Добро пожаловать в HotPit!', 'success');
+  showMsg('Готово! Проверь почту, подтверди регистрацию и жми "Войти"', 'success');
   document.getElementById('password').value = '';
 }
 
