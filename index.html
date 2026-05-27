@@ -37,11 +37,7 @@ button{
 .btn-secondary:hover{background:#333;}
 .msg{
   padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px;
-  display:none;animation:fadeIn 0.3s ease;
-}
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(-8px);}
-  to{opacity:1;transform:translateY(0);}
+  display:none;
 }
 .error{background:#7f1d1d;color:#fca5a5;}
 .success{background:#14532d;color:#86efac;}
@@ -69,50 +65,35 @@ const supabaseClient = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
 
-let msgTimer = null;
-
 function showMsg(msg, type){
   const el = document.getElementById('msg');
   el.innerText = msg;
   el.className = 'msg ' + type;
   el.style.display = 'block';
-  clearTimeout(msgTimer);
-  msgTimer = setTimeout(() => { el.style.display = 'none'; }, 4000);
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 function hideMsg(){
   document.getElementById('msg').style.display = 'none';
 }
 
-function formatError(error){
-  if(!error) return 'Что-то пошло не так';
-  const msg = error.message.toLowerCase();
-  if(msg.includes('invalid login')) return 'Неверный email или пароль';
-  if(msg.includes('email not confirmed')) return 'Подтверди почту перед входом';
-  if(msg.includes('user already registered')) return 'Этот email уже зарегистрирован';
-  if(msg.includes('failed to fetch')) return 'Нет соединения с сервером. Проверь интернет';
-  return error.message;
-}
-
 async function redirectAfterLogin(){
   const { data: { user } = await supabaseClient.auth.getUser();
   if(!user) return;
   
-  // Ищем ресторан владельца
-  const { data: restaurant, error: restError } = await supabaseClient
+  const { data: restaurant } = await supabaseClient
     .from('restaurants')
     .select('id')
     .eq('owner_id', user.id)
     .limit(1)
-    .maybeSingle(); // <- вот это важно, не падает если нет записи
+    .maybeSingle();
   
   if(restaurant){
     window.location.href = `/index.html?rest=${restaurant.id}`;
     return;
   }
   
-  // Ищем если пользователь повар
-  const { data: staff, error: staffError } = await supabaseClient
+  const { data: staff } = await supabaseClient
     .from('staff')
     .select('id, restaurant_id')
     .eq('user_id', user.id)
@@ -124,7 +105,6 @@ async function redirectAfterLogin(){
     return;
   }
   
-  // Если ничего нет - на онбординг
   window.location.href = '/onboarding.html';
 }
 
@@ -139,8 +119,9 @@ async function login(){
   }
   
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  
   if(error){
-    showMsg(formatError(error), 'error');
+    showMsg('Неверный email или пароль', 'error');
     return;
   }
   
@@ -163,23 +144,16 @@ async function signup(){
   
   const { error } = await supabaseClient.auth.signUp({ email, password });
   if(error){
-    showMsg(formatError(error), 'error');
+    showMsg('Этот email уже зарегистрирован', 'error');
     return;
   }
   
   showMsg('Готово! Проверь почту, подтверди регистрацию и жми "Войти"', 'success');
-  document.getElementById('password').value = '';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('loginBtn').addEventListener('click', login);
-  document.getElementById('signupBtn').addEventListener('click', signup);
-  document.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') login();
-  });
-});
+document.getElementById('loginBtn').addEventListener('click', login);
+document.getElementById('signupBtn').addEventListener('click', signup);
 
-// Автовход если сессия есть
 supabaseClient.auth.getSession().then(({ data: { session } }) => {
   if(session){
     redirectAfterLogin();
@@ -187,4 +161,4 @@ supabaseClient.auth.getSession().then(({ data: { session } }) => {
 });
 </script>
 </body>
-  </html>
+</html>
