@@ -159,7 +159,7 @@ function showLaunchScreen(restaurantId){
 }
 
 async function checkSession(){
-  const { data: { session }= await supabaseClient.auth.getSession();
+  const { data: { session } }= await supabaseClient.auth.getSession();
   if(session){
     await redirectAfterLogin();
   } else {
@@ -168,7 +168,7 @@ async function checkSession(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data: { user } }= await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
