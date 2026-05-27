@@ -96,7 +96,7 @@ button{
   <header class="topbar">
     <a href="#" onclick="location.reload();return false;" class="logo-link">HotPit</a>
     <span class="divider">|</span>
-    <a href="#management" onclick="document.getElementById('management')?.scrollIntoView({behavior:'smooth'});return false;" class="nav-link">Управление</a>
+    <a href="#" onclick="scrollToManagement();return false;" class="nav-link">Управление</a>
   </header>
   
   <button type="button" class="btn-logout" id="logoutBtn">Выйти</button>
@@ -109,6 +109,17 @@ const supabaseClient = supabase.createClient(
   'https://xljogkyropyocvuuodfl.supabase.co', 
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
+
+function scrollToManagement(){
+  const el = document.getElementById('management');
+  if(el){
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+  } else {
+    setTimeout(() => {
+      document.getElementById('management')?.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 100);
+  }
+}
 
 function showMsg(msg, type){
   const el = document.getElementById('msg');
@@ -168,7 +179,7 @@ async function checkSession(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } }= await supabaseClient.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
@@ -215,7 +226,7 @@ async function createRestaurant(){
     return;
   }
   
-  const { data: { user }= await supabaseClient.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   const { data, error } = await supabaseClient.from('restaurants')
     .insert({ name: name, owner_id: user.id })
     .select()
@@ -295,4 +306,4 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
 checkSession();
 </script>
 </body>
-</html>
+  </html>
