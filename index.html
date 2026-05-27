@@ -16,6 +16,27 @@ body{
   background:#171717;padding:40px;border-radius:16px;
   box-shadow:0 20px 50px rgba(0,0,0,0.5);width:100%;max-width:380px;
 }
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:24px;
+  font-size:18px;
+}
+.logo-link{
+  color:#f97316;
+  font-weight:800;
+  text-decoration:none;
+  font-size:22px;
+}
+.logo-link:hover{opacity:0.8;}
+.divider{color:#71717a;}
+.nav-link{
+  color:#fff;
+  text-decoration:none;
+}
+.nav-link:hover{color:#f97316;}
 .logo{text-align:center;margin-bottom:32px;}
 .logo h1{font-size:32px;font-weight:800;color:#f97316;margin-bottom:8px;}
 .logo p{color:#71717a;font-size:14px;}
@@ -72,10 +93,11 @@ button{
 
 <!-- Панель ресторана -->
 <div class="box hidden" id="restaurantBox">
-  <div class="logo">
-    <h1>HotPit</h1>
-    <p>Управление кухней</p>
-  </div>
+  <header class="topbar">
+    <a href="#" onclick="location.reload();return false;" class="logo-link">HotPit</a>
+    <span class="divider">|</span>
+    <a href="#management" onclick="document.getElementById('management')?.scrollIntoView({behavior:'smooth'});return false;" class="nav-link">Управление</a>
+  </header>
   
   <button type="button" class="btn-logout" id="logoutBtn">Выйти</button>
   
@@ -115,7 +137,7 @@ function showLaunchScreen(restaurantId){
   const scheduleUrl = `${baseUrl}/schedule.html?rest=${restaurantId}`;
   
   document.getElementById('restaurantContent').innerHTML = `
-    <div style="background:#14532d;padding:16px;border-radius:10px;margin-bottom:20px;">
+    <div id="management" style="background:#14532d;padding:16px;border-radius:10px;margin-bottom:20px;">
       <h3 style="margin-bottom:8px;">Готово! Система запущена</h3>
       <p style="color:#86efac;font-size:14px;">Сохрани эти ссылки. Их больше не увидишь.</p>
     </div>
@@ -137,7 +159,7 @@ function showLaunchScreen(restaurantId){
 }
 
 async function checkSession(){
-  const { data: { session } }= await supabaseClient.auth.getSession();
+  const { data: { session }= await supabaseClient.auth.getSession();
   if(session){
     await redirectAfterLogin();
   } else {
@@ -146,7 +168,7 @@ async function checkSession(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } } = await supabaseClient.auth.getUser();
+  const { data: { user } = await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
@@ -157,7 +179,6 @@ async function redirectAfterLogin(){
     .maybeSingle();
   
   if(restaurant){
-    // Если ресторан есть - показываем экран запуска
     showLaunchScreen(restaurant.id);
     showRestaurantForm();
     return;
@@ -175,11 +196,12 @@ async function redirectAfterLogin(){
     return;
   }
   
-  // Если ресторана нет - показываем форму создания
   document.getElementById('restaurantContent').innerHTML = `
-    <h2 style="margin-bottom:20px;">Создать ресторан</h2>
-    <input id="restName" type="text" placeholder="Название ресторана">
-    <button class="btn-primary" id="createRestBtn">Создать</button>
+    <div id="management">
+      <h2 style="margin-bottom:20px;">Создать ресторан</h2>
+      <input id="restName" type="text" placeholder="Название ресторана">
+      <button class="btn-primary" id="createRestBtn">Создать</button>
+    </div>
   `;
   
   document.getElementById('createRestBtn').addEventListener('click', createRestaurant);
@@ -193,7 +215,7 @@ async function createRestaurant(){
     return;
   }
   
-  const { data: { user } }= await supabaseClient.auth.getUser();
+  const { data: { user }= await supabaseClient.auth.getUser();
   const { data, error } = await supabaseClient.from('restaurants')
     .insert({ name: name, owner_id: user.id })
     .select()
