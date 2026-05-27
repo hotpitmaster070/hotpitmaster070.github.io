@@ -66,7 +66,7 @@ button{
 <script>
 const supabaseClient = supabase.createClient(
   'https://xljogkyropyocvuuodfl.supabase.co', 
-  ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs''
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
 
 function showMsg(msg, type){
@@ -153,11 +153,10 @@ async function signup(){
     return;
   }
   
-  showMsg('Готово! Ты красавчик 🔥 Проверь почту, подтверди регистрацию и жми "Войти". Добро пожаловать в HotPit!', 'success');
+  showMsg('Готово! Проверь почту, подтверди регистрацию и жми "Войти". Добро пожаловать в HotPit!', 'success');
   document.getElementById('password').value = '';
 }
 
-// Навешиваем события после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('loginBtn').addEventListener('click', login);
   document.getElementById('signupBtn').addEventListener('click', signup);
@@ -167,7 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Если уже залогинен - сразу перекидываем
 supabaseClient.auth.getSession().then(({ data: { session } }) => {
   if(session){
     redirectAfterLogin();
@@ -175,4 +173,4 @@ supabaseClient.auth.getSession().then(({ data: { session } }) => {
 });
 </script>
 </body>
-  </html>
+</html>
