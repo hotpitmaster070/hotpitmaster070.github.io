@@ -45,6 +45,11 @@ button{
 .success{background:#14532d;color:#86efac;}
 .hidden{display:none;}
 .restaurant-info{background:#262626;padding:16px;border-radius:10px;margin-bottom:20px;}
+.link-box{
+  background:#262626;padding:12px;border-radius:8px;word-break:break-all;
+  margin-bottom:20px;
+}
+.link-box a{color:#f97316;text-decoration:none;font-size:14px;}
 </style>
 </head>
 <body>
@@ -105,8 +110,34 @@ function showRestaurantForm(){
   document.getElementById('restaurantBox').classList.remove('hidden');
 }
 
+function showLaunchScreen(restaurantId){
+  const baseUrl = window.location.origin;
+  const scheduleUrl = `${baseUrl}/schedule.html?rest=${restaurantId}`;
+  
+  document.getElementById('restaurantContent').innerHTML = `
+    <div style="background:#14532d;padding:16px;border-radius:10px;margin-bottom:20px;">
+      <h3 style="margin-bottom:8px;">Готово! Система запущена</h3>
+      <p style="color:#86efac;font-size:14px;">Сохрани эти ссылки. Их больше не увидишь.</p>
+    </div>
+    
+    <div>
+      <p style="margin-bottom:8px;font-weight:600;">1. Твоя ссылка — управление поварами и графиком</p>
+      <div class="link-box">
+        <a href="${scheduleUrl}" target="_blank">${scheduleUrl}</a>
+      </div>
+    </div>
+    
+    <div>
+      <p style="margin-bottom:8px;font-weight:600;">2. QR-коды для поваров</p>
+      <p style="color:#71717a;font-size:14px;">Сделаешь их в панели управления</p>
+    </div>
+    
+    <button class="btn-primary" onclick="location.reload()" style="margin-top:20px;">Готово</button>
+  `;
+}
+
 async function checkSession(){
-  const { data: { session } } = await supabaseClient.auth.getSession();
+  const { data: { session } = await supabaseClient.auth.getSession();
   if(session){
     await redirectAfterLogin();
   } else {
@@ -115,7 +146,7 @@ async function checkSession(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } }= await supabaseClient.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
@@ -126,19 +157,8 @@ async function redirectAfterLogin(){
     .maybeSingle();
   
   if(restaurant){
-    // Показываем панель на этой же странице
-    document.getElementById('restaurantContent').innerHTML = `
-      <div class="restaurant-info">
-        <h2 style="margin-bottom:8px;">${restaurant.name || 'Мой ресторан'}</h2>
-        <p style="color:#71717a;font-size:14px;">ID: ${restaurant.id}</p>
-      </div>
-      <button class="btn-primary" onclick="window.location.href='/dashboard.html?rest=${restaurant.id}'">
-        Открыть панель
-      </button>
-      <button class="btn-secondary" onclick="window.location.href='/onboarding.html'">
-        Настройки
-      </button>
-    `;
+    // Если ресторан есть - показываем экран запуска
+    showLaunchScreen(restaurant.id);
     showRestaurantForm();
     return;
   }
@@ -158,9 +178,33 @@ async function redirectAfterLogin(){
   // Если ресторана нет - показываем форму создания
   document.getElementById('restaurantContent').innerHTML = `
     <h2 style="margin-bottom:20px;">Создать ресторан</h2>
-    <p style="color:#71717a;">Тут будет твоя форма создания ресторана</p>
+    <input id="restName" type="text" placeholder="Название ресторана">
+    <button class="btn-primary" id="createRestBtn">Создать</button>
   `;
+  
+  document.getElementById('createRestBtn').addEventListener('click', createRestaurant);
   showRestaurantForm();
+}
+
+async function createRestaurant(){
+  const name = document.getElementById('restName').value.trim();
+  if(!name){
+    showMsg('Введи название ресторана', 'error');
+    return;
+  }
+  
+  const { data: { user } }= await supabaseClient.auth.getUser();
+  const { data, error } = await supabaseClient.from('restaurants')
+    .insert({ name: name, owner_id: user.id })
+    .select()
+    .single();
+  
+  if(error){
+    showMsg('Ошибка: ' + error.message, 'error');
+    return;
+  }
+  
+  showLaunchScreen(data.id);
 }
 
 async function login(){
@@ -197,13 +241,18 @@ async function signup(){
     return;
   }
   
-  const { error } = await supabaseClient.auth.signUp({ email, password });
+  const { error } = await supabaseClient.auth.signUp({ 
+    email, 
+    password,
+    options: { emailRedirectTo: window.location.origin }
+  });
+  
   if(error){
     showMsg('Этот email уже зарегистрирован', 'error');
     return;
   }
   
-  showMsg('Готово! Проверь почту, подтверди регистрацию и жми "Войти"', 'success');
+  showMsg('Готово! Проверь почту, подтверди регистрацию и вернись сюда', 'success');
 }
 
 async function logout(){
@@ -215,7 +264,12 @@ document.getElementById('loginBtn').addEventListener('click', login);
 document.getElementById('signupBtn').addEventListener('click', signup);
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
-// Проверяем сессию при загрузке страницы
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if(event === 'SIGNED_IN' && session){
+    redirectAfterLogin();
+  }
+});
+
 checkSession();
 </script>
 </body>
