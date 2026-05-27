@@ -137,7 +137,7 @@ function showLaunchScreen(restaurantId){
 }
 
 async function checkSession(){
-  const { data: { session } = await supabaseClient.auth.getSession();
+  const { data: { session } }= await supabaseClient.auth.getSession();
   if(session){
     await redirectAfterLogin();
   } else {
