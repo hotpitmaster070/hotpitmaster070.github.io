@@ -78,7 +78,7 @@ function hideMsg(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data: { user } }= await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
