@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotPit Настройки</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <div class="bg-zinc-900 rounded-2xl p-6 space-y-6">
+    <div class="text-center">
+      <div class="text-2xl font-bold text-orange-500">Настройки</div>
+      <div class="text-zinc-400">Способ отметки</div>
+    </div>
+  
+    <div class="space-y-3">
+      <label class="block p-4 bg-zinc-800 rounded-xl cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-orange-500">
+        <input type="radio" name="mode" value="qr_only" class="sr-only">
+        <div class="font-semibold">QR код</div>
+        <div class="text-sm text-zinc-400">Быстро. Для тестов</div>
+      </label>
+
+      <label class="block p-4 bg-zinc-800 rounded-xl cursor-pointer has-[:checked]:ring-2 has-[:checked]:ring-orange-500">
+        <input type="radio" name="mode" value="qr_beacon" class="sr-only">
+        <div class="font-semibold">QR + BLE маячок</div>
+        <div class="text-sm text-zinc-400">Работает только в ресторане</div>
+      </label>
+    </div>
+
+    <div id="beaconBlock" class="hidden">
+      <label class="text-sm text-zinc-400">ID маячка</label>
+      <input id="beaconId" class="w-full bg-zinc-800 p-3 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-orange-500" placeholder="HOT1">
+    </div>
+
+    <button onclick="saveSettings()" class="w-full bg-orange-500 hover:bg-orange-600 p-4 rounded-lg font-semibold">
+      Сохранить
+    </button>
+  </div>
+</div>
+
+<script>
+const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'ТВОЙ_ANON_KEY');
+const restaurantId = new URLSearchParams(window.location.search).get('rest');
+
+loadSettings();
+
+async function loadSettings() {
+  const { data } = await supabase.from('restaurants')
+   .select('checkin_mode, beacon_id')
+   .eq('id', restaurantId)
+   .single();
+  
+  if (data) {
+    document.querySelector(`input[value="${data.checkin_mode}"]`).checked = true;
+    if (data.checkin_mode === 'qr_beacon') {
+      document.getElementById('beaconBlock').classList.remove('hidden');
+      document.getElementById('beaconId').value = data.beacon_id || '';
+    }
+  }
+}
+
+document.querySelectorAll('input[name="mode"]').forEach(radio => {
+  radio.onchange = (e) => {
+    document.getElementById('beaconBlock').classList.toggle('hidden', e.target.value !== 'qr_beacon');
+  }
+});
+
+async function saveSettings() {
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  const beaconId = document.getElementById('beaconId').value;
+  
+  const { error } = await supabase.from('restaurants').update({
+    checkin_mode: mode,
+    beacon_id: beaconId
+  }).eq('id', restaurantId);
+  
+  if (!error) {
+    alert('Сохранено!');
+  }
+}
+</script>
+</body>
+</html>
