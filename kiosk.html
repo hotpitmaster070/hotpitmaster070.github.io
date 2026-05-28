@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotPit Киоск</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-2xl">
+  <div class="bg-zinc-900 rounded-2xl p-6">
+    <div class="text-center mb-6">
+      <div class="text-3xl font-extrabold text-orange-500">HotPit</div>
+      <div class="text-zinc-400">Отметка смены</div>
+    </div>
+
+    <div id="staffList" class="space-y-3">
+      <!-- Загружается через JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Модалка QR -->
+<div id="qrModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+  <div class="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm text-center">
+    <div id="qrStaffName" class="text-xl font-bold mb-2"></div>
+    <div id="qrAction" class="text-sm text-zinc-400 mb-4"></div>
+    <div id="qrcode" class="flex justify-center mb-4 bg-white p-4 rounded-xl"></div>
+    <div class="text-sm text-zinc-400 mb-4">
+      Код обновится через <span id="timer">60</span> сек
+    </div>
+    <button onclick="closeModal()" class="w-full bg-zinc-700 hover:bg-zinc-600 p-3 rounded-lg font-semibold">
+      Закрыть
+    </button>
+  </div>
+</div>
+
+<script>
+const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'ТВОЙ_ANON_KEY');
+const restaurantId = new URLSearchParams(window.location.search).get('rest');
+let qrTimer = null;
+
+loadStaff();
+
+async function loadStaff() {
+  const { data } = await supabase.from('staff')
+   .select('id, name, role')
+   .eq('restaurant_id', restaurantId)
+   .order('name');
+
+  document.getElementById('staffList').innerHTML = data.map(s => `
+    <div class="bg-zinc-800 p-4 rounded-xl">
+      <div class="mb-3">
+        <div class="text-lg font-semibold">${s.name}</div>
+        <div class="text-sm text-zinc-400">${s.role || 'Сотрудник'}</div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button onclick="showQR('${s.id}', '${s.name}', 'in')" 
+          class="bg-green-600 hover:bg-green-700 p-3 rounded-lg font-semibold">
+          Пришел
+        </button>
+        <button onclick="showQR('${s.id}', '${s.name}', 'out')" 
+          class="bg-red-600 hover:bg-red-700 p-3 rounded-lg font-semibold">
+          Ушел
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showQR(staffId, staffName, type) {
+  document.getElementById('qrStaffName').innerText = staffName;
+  document.getElementById('qrAction').innerText = type === 'in' ? 'Отметка прихода' : 'Отметка ухода';
+  document.getElementById('qrModal').classList.remove('hidden');
+  
+  const qrUrl = `https://hotpitmaster070.github.io/staff.html?staff=${staffId}&rest=${restaurantId}&action=${type}`;
+  
+  document.getElementById('qrcode').innerHTML = '';
+  new QRCode(document.getElementById('qrcode'), {
+    text: qrUrl,
+    width: 200,
+    height: 200,
+    colorDark: "#000",
+    colorLight: "#fff"
+  });
+
+  let timeLeft = 60;
+  document.getElementById('timer').innerText = timeLeft;
+  clearInterval(qrTimer);
+  qrTimer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('timer').innerText = timeLeft;
+    if (timeLeft <= 0) closeModal();
+  }, 1000);
+}
+
+function closeModal() {
+  document.getElementById('qrModal').classList.add('hidden');
+  clearInterval(qrTimer);
+}
+</script>
+</body>
+</html>
