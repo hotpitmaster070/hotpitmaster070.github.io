@@ -1,1 +1,420 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Управление - HotPit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --accent: #f97316;
+    --accent-dark: #ea580c;
+  }
+ .btn-primary { background: var(--accent); color: white; }
+ .btn-primary:hover { background: var(--accent-dark); }
+ .btn-danger { background: #ef4444; color: white; }
+ .btn-danger:hover { background: #dc2626; }
+ .tab-active { background: var(--accent); color: white; }
+ .tab-inactive { background: #27272a; color: #a1a1aa; }
+ .topbar{ display:flex; align-items:center; gap:12px; margin-bottom:24px; font-size:18px; }
+ .logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
+ .logo-link:hover{opacity:0.8;}
+ .divider{color:#71717a;}
+ .nav-link{ color:#d4d4d8; text-decoration:none; font-size:18px; }
+ .group-title{ color:#f97316; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+</style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 p-4 md:p-6">
 
+<div class="max-w-6xl mx-auto space-y-6">
+
+  <!-- Шапка -->
+  <header class="topbar">
+    <a href="/" class="logo-link">HotPit</a>
+    <span class="divider">|</span>
+    <span class="nav-link" style="cursor: default;">Управление</span>
+  </header>
+
+  <!-- 4 ТАБА -->
+  <div class="flex gap-2 flex-wrap">
+    <button onclick="setTab('staff')" id="tabBtnStaff" class="tab-active px-4 py-2 rounded-lg font-semibold">Персонал</button>
+    <button onclick="setTab('stock')" id="tabBtnStock" class="tab-inactive px-4 py-2 rounded-lg font-semibold relative">
+      Склад <span id="alertBadge" class="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-5 h-5 hidden">0</span>
+    </button>
+    <button onclick="setTab('prod')" id="tabBtnProd" class="tab-inactive px-4 py-2 rounded-lg font-semibold">Производство</button>
+    <button onclick="setTab('reports')" id="tabBtnReports" class="tab-inactive px-4 py-2 rounded-lg font-semibold">Отчеты</button>
+  </div>
+
+  <!-- ТАБ 1: ПЕРСОНАЛ = Повара + График -->
+  <div id="tab-staff" class="space-y-6">
+    <!-- Блок Повара -->
+    <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+      <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="users" class="text-orange-500"></i>
+        <h2 class="text-xl font-bold">Повара</h2>
+      </div>
+      <div class="flex gap-3 mb-4">
+        <input id="newStaffName" placeholder="Имя повара"
+          class="flex-1 bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+        <button onclick="addStaff()" class="btn-primary px-6 rounded-lg font-semibold">
+          <i data-lucide="plus" class="inline w-4 h-4"></i> Добавить
+        </button>
+      </div>
+      <div id="staffList" class="space-y-3"></div>
+    </div>
+
+    <!-- Блок График -->
+    <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="calendar" class="text-orange-500"></i>
+          <h2 class="text-xl font-bold" id="scheduleTitle">График</h2>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="setView('day')" id="btnDay" class="px-3 py-1 rounded-lg bg-orange-600 text-sm">День</button>
+          <button onclick="setView('week')" id="btnWeek" class="px-3 py-1 rounded-lg bg-zinc-700 text-sm">Неделя</button>
+          <button onclick="setView('month')" id="btnMonth" class="px-3 py-1 rounded-lg bg-zinc-700 text-sm">Месяц</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <select id="staffSelect" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none"></select>
+        <input type="date" id="dateInput" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+        <input type="time" id="timeIn" value="09:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+        <input type="time" id="timeOut" value="18:00" class="bg-zinc-800 rounded-lg p-3 border-zinc-700 focus:border-orange-500 outline-none">
+      </div>
+      <button onclick="addShift()" class="w-full bg-green-600 hover:bg-green-700 rounded-lg p-3 font-semibold">
+        <i data-lucide="calendar-plus" class="inline w-4 h-4"></i> Добавить в график
+      </button>
+      <button onclick="showTodayReport()" class="w-full mt-3 bg-orange-600 hover:bg-orange-700 rounded-lg p-3 font-semibold">
+        <i data-lucide="clipboard-list" class="inline w-4 h-4"></i> Табель на сегодня
+      </button>
+      <div id="todayShifts" class="mt-6 space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- ТАБ 2: СКЛАД с группировкой кнопок -->
+  <div id="tab-stock" class="hidden space-y-6">
+
+    <!-- ФИШКА №9: РЕАЛЬНЫЙ ОСТАТОК -->
+    <div id="balanceBlock" class="bg-zinc-900 rounded-xl p-6 border-orange-800 border-2">
+      <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="scale" class="text-orange-500"></i>
+        <h2 class="text-xl font-bold">Остатки на сегодня</h2>
+        <button onclick="refreshBalance()" class="ml-auto text-zinc-400 hover:text-white">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div id="balanceList" class="space-y-2 text-sm max-h-60 overflow-y-auto">
+        <p class="text-zinc-500">Загружаю...</p>
+      </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="stockAlerts" class="bg-zinc-900 rounded-xl p-4 border-zinc-800 hidden">
+      <div class="flex items-center gap-2 mb-2">
+        <i data-lucide="bell-ring" class="text-orange-500"></i>
+        <h3 class="font-bold">Товары на исходе 🔔</h3>
+      </div>
+      <div id="alertsList" class="space-y-2 text-sm"></div>
+    </div>
+
+    <!-- ГРУППА: СКЛАД -->
+    <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+      <div class="group-title">Склад</div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <button onclick="openIncome()" class="btn-primary p-4 rounded-xl font-semibold">
+          <i data-lucide="plus-circle" class="inline w-5 h-5"></i> + Приход
+        </button>
+        <button onclick="showInventory()" class="btn-primary p-4 rounded-xl font-semibold">
+          <i data-lucide="warehouse" class="inline w-5 h-5"></i> Мой склад
+        </button>
+        <button onclick="openInventory()" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
+          <i data-lucide="clipboard-check" class="inline w-5 h-5"></i> Инвентаризация
+        </button>
+        <button onclick="openWriteoff()" class="btn-danger p-4 rounded-xl font-semibold">
+          <i data-lucide="minus-circle" class="inline w-5 h-5"></i> Списание
+        </button>
+        <button onclick="refreshBalance()" class="bg-orange-600 hover:bg-orange-700 p-4 rounded-xl font-semibold">
+          <i data-lucide="scale" class="inline w-5 h-5"></i> Обновить остаток
+        </button>
+        <button onclick="showAlerts()" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
+          <i data-lucide="bell" class="inline w-5 h-5"></i> Уведомления
+        </button>
+      </div>
+    </div>
+
+    <!-- Таблица Мой склад -->
+    <div id="inventoryTable" class="bg-zinc-900 rounded-xl p-6 border-zinc-800 hidden">
+      <h3 class="text-xl font-bold mb-4">Мой склад</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-zinc-400 border-b border-zinc-700">
+              <th class="text-left p-2">Товар</th>
+              <th class="text-right p-2">Остаток</th>
+              <th class="text-right p-2">Ед.</th>
+              <th class="text-right p-2">Мин. остаток</th>
+              <th class="text-center p-2">Действие</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ТАБ 3: ПРОИЗВОДСТВО -->
+  <div id="tab-prod" class="hidden space-y-6">
+    <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+      <div class="group-title">Производство</div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <button onclick="alert('Задания - делаем на след шаге')" class="btn-primary p-4 rounded-xl font-semibold">
+          <i data-lucide="list-checks" class="inline w-5 h-5"></i> Задания
+        </button>
+        <button onclick="alert('Заготовки - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
+          <i data-lucide="chef-hat" class="inline w-5 h-5"></i> Заготовки
+        </button>
+        <button onclick="alert('Photo-контроль - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold cursor-not-allowed" disabled>
+          <i data-lucide="camera" class="inline w-5 h-5"></i> Photo-контроль
+        </button>
+        <button onclick="alert('Себестоимость - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold cursor-not-allowed" disabled>
+          <i data-lucide="calculator" class="inline w-5 h-5"></i> Себестоимость
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ТАБ 4: ОТЧЕТЫ -->
+  <div id="tab-reports" class="hidden space-y-6">
+    <div class="bg-zinc-900 rounded-xl p-6 border-zinc-800">
+      <div class="group-title">Отчеты</div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <button onclick="alert('Отчет по списанию - делаем')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
+          <i data-lucide="file-text" class="inline w-5 h-5"></i> Списание
+        </button>
+        <button onclick="alert('Отчет за месяц - делаем')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
+          <i data-lucide="bar-chart-3" class="inline w-5 h-5"></i> Месяц
+        </button>
+        <button onclick="loadOrders()" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
+          <i data-lucide="shopping-cart" class="inline w-5 h-5"></i> Заказы
+        </button>
+      </div>
+      <div id="ordersList" class="mt-4 space-y-3"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const _supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+lucide.createIcons();
+
+const urlParams = new URLSearchParams(window.location.search);
+const restaurantId = urlParams.get('rest');
+let currentView = 'day';
+let currentTab = 'staff';
+
+if (!restaurantId) {
+  document.body.innerHTML = '<div class="text-center py-20 text-red-400">Ошибка: не указан ресторан. Открой ссылку из onboarding.html</div>';
+}
+
+document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+document.getElementById('dateInput').addEventListener('change', loadShifts);
+
+loadStaff();
+loadShifts();
+refreshBalance(); // грузим остатки сразу
+
+// ===== ТАБЫ =====
+function setTab(tab) {
+  currentTab = tab;
+  ['staff','stock','prod','reports'].forEach(t => {
+    document.getElementById('tab-'+t).classList.add('hidden');
+    document.getElementById('tabBtn'+t.charAt(0).toUpperCase()+t.slice(1)).className = 'tab-inactive px-4 py-2 rounded-lg font-semibold';
+  });
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  document.getElementById('tabBtn'+tab.charAt(0).toUpperCase()+tab.slice(1)).className = 'tab-active px-4 py-2 rounded-lg font-semibold';
+
+  if(tab === 'stock') refreshBalance();
+}
+
+// ===== ФИШКА №9: РЕАЛЬНЫЙ ОСТАТОК =====
+async function refreshBalance() {
+  const { data: inventory } = await _supabase.from('inventory').select('*').eq('restaurant_id', restaurantId);
+
+  // Пока без списаний и заготовок - формула: quantity
+  // Когда добавим таблицы writeoffs и production - вычтем их тут
+  document.getElementById('balanceList').innerHTML = inventory.map(item => {
+    const realQty = item.quantity; // TODO: - списания - заготовки
+    const isLow = realQty <= item.min_quantity && item.min_quantity > 0;
+
+    return `
+      <div class="flex justify-between items-center p-2 rounded ${isLow? 'bg-red-950/40' : 'bg-zinc-800'}">
+        <span class="${isLow? 'text-red-400 font-semibold' : ''}">${item.name}</span>
+        <span class="${isLow? 'text-red-400 font-bold' : 'text-zinc-300'}">${realQty} ${item.unit}</span>
+      </div>
+    `;
+  }).join('') || '<p class="text-zinc-500">Товаров нет</p>';
+
+  checkAlerts(inventory);
+}
+
+// ===== СКЛАД =====
+async function showInventory() {
+  document.getElementById('inventoryTable').classList.remove('hidden');
+  const { data } = await _supabase.from('inventory').select('*').eq('restaurant_id', restaurantId);
+
+  document.getElementById('inventoryBody').innerHTML = data.map(item => `
+    <tr class="border-b border-zinc-800 ${item.quantity <= item.min_quantity? 'bg-red-950/30' : ''}">
+      <td class="p-3">${item.name}</td>
+      <td class="p-3 text-right font-semibold ${item.quantity <= item.min_quantity? 'text-red-400' : ''}">${item.quantity}</td>
+      <td class="p-3 text-right text-zinc-400">${item.unit}</td>
+      <td class="p-3 text-right">
+        <input type="number" value="${item.min_quantity || 0}"
+          onchange="updateMinStock('${item.id}', this.value)"
+          class="w-20 bg-zinc-800 rounded px-2 py-1 text-right border-zinc-700 focus:border-orange-500 outline-none">
+      </td>
+      <td class="p-3 text-center">
+        ${item.quantity <= item.min_quantity?
+          `<button onclick="addToOrder('${item.id}')" class="text-orange-400 text-xs">+ В заказ</button>` : ''}
+      </td>
+    </tr>
+  `).join('');
+  lucide.createIcons();
+}
+
+async function updateMinStock(id, value) {
+  await _supabase.from('inventory').update({ min_quantity: parseFloat(value) || 0 }).eq('id', id);
+  showInventory();
+  refreshBalance();
+}
+
+async function checkAlerts(items) {
+  const lowStock = items.filter(i => i.quantity <= i.min_quantity && i.min_quantity > 0);
+  if (lowStock.length > 0) {
+    document.getElementById('stockAlerts').classList.remove('hidden');
+    document.getElementById('alertBadge').classList.remove('hidden');
+    document.getElementById('alertBadge').innerText = lowStock.length;
+    document.getElementById('alertsList').innerHTML = lowStock.map(i =>
+      `<div class="text-red-400">🔴 ${i.name}: ${i.quantity}${i.unit} / лимит ${i.min_quantity}${i.unit}</div>`
+    ).join('');
+  } else {
+    document.getElementById('stockAlerts').classList.add('hidden');
+    document.getElementById('alertBadge').classList.add('hidden');
+  }
+}
+
+function openIncome() { alert('Модалка Прихода - делаем следующим шагом'); }
+function openWriteoff() { alert('Модалка Списания - делаем следующим шагом'); }
+function openInventory() { alert('Инвентаризация - делаем следующим шагом'); }
+function showAlerts() { refreshBalance(); }
+async function addToOrder(productId) { alert('Товар добавлен в черновик заказа'); }
+
+// ===== ПЕРСОНАЛ - твой код без изменений =====
+async function addStaff() {
+  const name = document.getElementById('newStaffName').value.trim();
+  if (!name) return;
+  await _supabase.from('staff').insert({
+    restaurant_id: restaurantId,
+    name: name,
+    role: 'staff',
+    pay_type: 'hourly',
+    hourly_rate: 0,
+    daily_rate: 0
+  });
+  document.getElementById('newStaffName').value = '';
+  loadStaff();
+}
+
+async function deleteStaff(id) {
+  if (!confirm('Удалить повара?')) return;
+  await _supabase.from('staff').delete().eq('id', id);
+  loadStaff();
+}
+
+async function updateStaff(id, field, value) {
+  await _supabase.from('staff').update({ [field]: parseFloat(value) || value }).eq('id', id);
+  loadStaff();
+}
+
+async function loadStaff() {
+  const { data } = await _supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+  document.getElementById('staffList').innerHTML = data.map(s => `
+    <div class="bg-zinc-800 rounded-lg p-4 border-zinc-700">
+      <div class="flex justify-between items-center mb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="user" class="w-4 h-4 text-zinc-400"></i>
+          <span class="font-semibold">${s.name}</span>
+          <span class="text-zinc-500 text-sm">${s.role === 'owner'? 'Шеф' : 'Повар'}</span>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="showQR('${s.id}', '${s.name}')" class="text-purple-400 hover:text-purple-300">
+            <i data-lucide="qr-code" class="w-4 h-4"></i>
+          </button>
+          ${s.role!== 'owner'? `<button onclick="deleteStaff('${s.id}')" class="text-red-400 hover:text-red-300">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>` : ''}
+        </div>
+      </div>
+      ${s.role!== 'owner'? `
+      <div class="flex gap-2 mb-3">
+        <button onclick="updateStaff('${s.id}', 'pay_type', 'hourly')"
+          class="flex-1 py-2 rounded-lg text-sm ${s.pay_type === 'hourly'? 'bg-orange-600' : 'bg-zinc-700'}">
+          Почасовой
+        </button>
+        <button onclick="updateStaff('${s.id}', 'pay_type', 'daily')"
+          class="flex-1 py-2 rounded-lg text-sm ${s.pay_type === 'daily'? 'bg-orange-600' : 'bg-zinc-700'}">
+          Фикс за день
+        </button>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="${s.pay_type === 'hourly'? '' : 'hidden'}">
+          <label class="text-xs text-zinc-400">₽/час</label>
+          <input type="number" value="${s.hourly_rate || 0}"
+            onchange="updateStaff('${s.id}', 'hourly_rate', this.value)"
+            class="w-full bg-zinc-700 rounded px-2 py-1 text-sm">
+        </div>
+        <div class="${s.pay_type === 'daily'? '' : 'hidden'}">
+          <label class="text-xs text-zinc-400">₽/день</label>
+          <input type="number" value="${s.daily_rate || 0}"
+            onchange="updateStaff('${s.id}', 'daily_rate', this.value)"
+            class="w-full bg-zinc-700 rounded px-2 py-1 text-sm">
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
+
+  document.getElementById('staffSelect').innerHTML = data
+  .filter(s => s.role!== 'owner')
+  .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  lucide.createIcons();
+}
+
+function showQR(staffId, name) {
+  const checkinURL = `${window.location.origin}/staff.html?staff=${staffId}&rest=${restaurantId}&type=checkin`;
+  const checkoutURL = `${window.location.origin}/staff.html?staff=${staffId}&rest=${restaurantId}&type=checkout`;
+  const html = `
+  <div class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onclick="this.remove()">
+    <div class="bg-zinc-900 rounded-xl p-6 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+      <h3 class="text-xl font-bold mb-4">QR для ${name}</h3>
+      <div class="space-y-4">
+        <div><p class="text-sm text-zinc-400 mb-2">Приход</p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(checkinURL)}" class="mx-auto rounded-lg">
+        </div>
+        <div><p class="text-sm text-zinc-400 mb-2">Уход</p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(checkoutURL)}" class="mx-auto rounded-lg">
+        </div>
+        <button onclick="this.closest('.fixed').remove()" class="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg p-2">Закрыть</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function setView(view) {
+  currentView = view;
+  document.getElementById('btnDay').className = view === 'day'? 'px-3 py-1 rounded-lg bg-orange-600 text-sm' : 'px-3 py-1 rounded-lg bg-zinc-700 text-sm';
+  document.getElementById('btnWeek').c
