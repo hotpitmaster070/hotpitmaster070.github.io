@@ -12,18 +12,18 @@
     --accent: #f97316;
     --accent-dark: #ea580c;
   }
- .btn-primary { background: var(--accent); color: white; }
- .btn-primary:hover { background: var(--accent-dark); }
- .btn-danger { background: #ef4444; color: white; }
- .btn-danger:hover { background: #dc2626; }
- .tab-active { background: var(--accent); color: white; }
- .tab-inactive { background: #27272a; color: #a1a1aa; }
- .topbar{ display:flex; align-items:center; gap:12px; margin-bottom:24px; font-size:18px; }
- .logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
- .logo-link:hover{opacity:0.8;}
- .divider{color:#71717a;}
- .nav-link{ color:#d4d4d8; text-decoration:none; font-size:18px; }
- .group-title{ color:#f97316; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+.btn-primary { background: var(--accent); color: white; }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-danger { background: #ef4444; color: white; }
+.btn-danger:hover { background: #dc2626; }
+.tab-active { background: var(--accent); color: white; }
+.tab-inactive { background: #27272a; color: #a1a1aa; }
+.topbar{ display:flex; align-items:center; gap:12px; margin-bottom:24px; font-size:18px; }
+.logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
+.logo-link:hover{opacity:0.8;}
+.divider{color:#71717a;}
+.nav-link{ color:#d4d4d8; text-decoration:none; font-size:18px; }
+.group-title{ color:#f97316; font-weight:700; font-size:14px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
 </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 p-4 md:p-6">
@@ -176,10 +176,10 @@
         <button onclick="alert('Заготовки - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
           <i data-lucide="chef-hat" class="inline w-5 h-5"></i> Заготовки
         </button>
-        <button onclick="alert('Photo-контроль - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold cursor-not-allowed" disabled>
+        <button onclick="alert('Photo-контроль - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
           <i data-lucide="camera" class="inline w-5 h-5"></i> Photo-контроль
         </button>
-        <button onclick="alert('Себестоимость - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold cursor-not-allowed" disabled>
+        <button onclick="alert('Себестоимость - делаем на след шаге')" class="bg-zinc-700 hover:bg-zinc-600 p-4 rounded-xl font-semibold">
           <i data-lucide="calculator" class="inline w-5 h-5"></i> Себестоимость
         </button>
       </div>
@@ -217,7 +217,7 @@ let currentView = 'day';
 let currentTab = 'staff';
 
 if (!restaurantId) {
-  document.body.innerHTML = '<div class="text-center py-20 text-red-400">Ошибка: не указан ресторан. Открой ссылку из onboarding.html</div>';
+  document.body.innerHTML = '<div class="text-center py-20 text-red-400">Ошибка: не указан ресторан. Открой ссылку из onboarding.html?rest=ID</div>';
 }
 
 document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
@@ -225,7 +225,7 @@ document.getElementById('dateInput').addEventListener('change', loadShifts);
 
 loadStaff();
 loadShifts();
-refreshBalance(); // грузим остатки сразу
+refreshBalance();
 
 // ===== ТАБЫ =====
 function setTab(tab) {
@@ -236,20 +236,15 @@ function setTab(tab) {
   });
   document.getElementById('tab-'+tab).classList.remove('hidden');
   document.getElementById('tabBtn'+tab.charAt(0).toUpperCase()+tab.slice(1)).className = 'tab-active px-4 py-2 rounded-lg font-semibold';
-
   if(tab === 'stock') refreshBalance();
 }
 
-// ===== ФИШКА №9: РЕАЛЬНЫЙ ОСТАТОК =====
+// ===== РЕАЛЬНЫЙ ОСТАТОК =====
 async function refreshBalance() {
   const { data: inventory } = await _supabase.from('inventory').select('*').eq('restaurant_id', restaurantId);
-
-  // Пока без списаний и заготовок - формула: quantity
-  // Когда добавим таблицы writeoffs и production - вычтем их тут
   document.getElementById('balanceList').innerHTML = inventory.map(item => {
-    const realQty = item.quantity; // TODO: - списания - заготовки
+    const realQty = item.quantity;
     const isLow = realQty <= item.min_quantity && item.min_quantity > 0;
-
     return `
       <div class="flex justify-between items-center p-2 rounded ${isLow? 'bg-red-950/40' : 'bg-zinc-800'}">
         <span class="${isLow? 'text-red-400 font-semibold' : ''}">${item.name}</span>
@@ -257,15 +252,12 @@ async function refreshBalance() {
       </div>
     `;
   }).join('') || '<p class="text-zinc-500">Товаров нет</p>';
-
   checkAlerts(inventory);
 }
 
-// ===== СКЛАД =====
 async function showInventory() {
   document.getElementById('inventoryTable').classList.remove('hidden');
   const { data } = await _supabase.from('inventory').select('*').eq('restaurant_id', restaurantId);
-
   document.getElementById('inventoryBody').innerHTML = data.map(item => `
     <tr class="border-b border-zinc-800 ${item.quantity <= item.min_quantity? 'bg-red-950/30' : ''}">
       <td class="p-3">${item.name}</td>
@@ -306,13 +298,13 @@ async function checkAlerts(items) {
   }
 }
 
-function openIncome() { alert('Модалка Прихода - делаем следующим шагом'); }
-function openWriteoff() { alert('Модалка Списания - делаем следующим шагом'); }
-function openInventory() { alert('Инвентаризация - делаем следующим шагом'); }
+function openIncome() { alert('Модалка Прихода - следующий шаг'); }
+function openWriteoff() { alert('Модалка Списания - следующий шаг'); }
+function openInventory() { alert('Инвентаризация - следующий шаг'); }
 function showAlerts() { refreshBalance(); }
 async function addToOrder(productId) { alert('Товар добавлен в черновик заказа'); }
 
-// ===== ПЕРСОНАЛ - твой код без изменений =====
+// ===== ПЕРСОНАЛ =====
 async function addStaff() {
   const name = document.getElementById('newStaffName').value.trim();
   if (!name) return;
@@ -388,8 +380,8 @@ async function loadStaff() {
   `).join('') || '<p class="text-zinc-500 text-sm">Поваров пока нет</p>';
 
   document.getElementById('staffSelect').innerHTML = data
-  .filter(s => s.role!== 'owner')
-  .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+.filter(s => s.role!== 'owner')
+.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   lucide.createIcons();
 }
 
@@ -422,129 +414,3 @@ function setView(view) {
   loadShifts();
 }
 
-async function addShift() {
-  const staffId = document.getElementById('staffSelect').value;
-  const date = document.getElementById('dateInput').value;
-  const timeIn = document.getElementById('timeIn').value;
-  const timeOut = document.getElementById('timeOut').value;
-  if (!staffId) { alert('Выбери повара'); return; }
-  await _supabase.from('work_schedules').insert({
-    restaurant_id: restaurantId,
-    staff_id: staffId,
-    date: date,
-    start_time: timeIn,
-    end_time: timeOut,
-    status: 'active'
-  });
-  loadShifts();
-}
-
-async function deleteShift(id) {
-  if (!confirm('Удалить смену?')) return;
-  await _supabase.from('work_schedules').delete().eq('id', id);
-  loadShifts();
-}
-
-function calcHours(start, end) {
-  const [sh, sm] = start.split(':').map(Number);
-  const [eh, em] = end.split(':').map(Number);
-  let hours = (eh + em/60) - (sh + sm/60);
-  return hours > 0? hours : 0;
-}
-
-async function loadShifts() {
-  const selectedDate = document.getElementById('dateInput').value;
-  let startDate, endDate, title;
-  if (currentView === 'day') {
-    startDate = selectedDate;
-    endDate = selectedDate;
-    title = `График на ${selectedDate.split('-').reverse().join('.')}`;
-  } else if (currentView === 'week') {
-    const date = new Date(selectedDate);
-    const day = date.getDay();
-    const diff = day === 0? 6 : day - 1;
-    date.setDate(date.getDate() - diff);
-    startDate = date.toISOString().split('T')[0];
-    date.setDate(date.getDate() + 6);
-    endDate = date.toISOString().split('T')[0];
-    title = `Неделя ${startDate.split('-').reverse().join('.')} - ${endDate.split('-').reverse().join('.')}`;
-  } else {
-    startDate = selectedDate.slice(0,7) + '-01';
-    const d = new Date(selectedDate.slice(0,7) + '-01');
-    d.setMonth(d.getMonth() + 1);
-    d.setDate(0);
-    endDate = d.toISOString().split('T')[0];
-    title = `Месяц ${startDate.slice(5,7)}.${startDate.slice(0,4)}`;
-  }
-  document.getElementById('scheduleTitle').innerText = title;
-  const { data } = await _supabase.from('work_schedules')
-  .select('*, staff(id, name, hourly_rate, daily_rate, pay_type)')
-  .gte('date', startDate).lte('date', endDate)
-  .eq('restaurant_id', restaurantId).order('date').order('start_time');
-  document.getElementById('todayShifts').innerHTML = data.map(s => {
-    const hours = calcHours(s.start_time, s.end_time);
-    return `
-    <div class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
-      <div class="flex justify-between items-center">
-        <div>
-          <div class="font-semibold">${s.staff.name}</div>
-          <div class="text-xs text-zinc-400">${s.date.split('-').reverse().join('.')} • ${s.start_time.slice(0,5)}-${s.end_time.slice(0,5)} • ${hours.toFixed(1)}ч</div>
-        </div>
-        <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300">
-          <i data-lucide="trash-2" class="w-4 h-4"></i>
-        </button>
-      </div>
-    </div>
-  `}).join('') || '<p class="text-zinc-500 text-sm text-center py-4">Смен нет</p>';
-  lucide.createIcons();
-}
-
-async function showTodayReport() {
-  const today = new Date().toISOString().split('T')[0];
-  const { data } = await _supabase.from('work_schedules')
-  .select('*, staff(name, hourly_rate, daily_rate, pay_type)')
-  .eq('date', today)
-  .eq('restaurant_id', restaurantId)
-  .eq('status', 'active');
-
-  let html = `<div class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onclick="this.remove()">
-    <div class="bg-zinc-900 rounded-xl p-6 max-w-md w-full" onclick="event.stopPropagation()">
-      <h3 class="text-xl font-bold mb-4">Табель на ${today.split('-').reverse().join('.')}</h3>
-      <div class="space-y-2">`;
-
-  if (!data || data.length === 0) {
-    html += '<p class="text-zinc-500">Сегодня никто не работает</p>';
-  } else {
-    let totalPay = 0;
-    html += data.map(s => {
-      const hours = calcHours(s.start_time, s.end_time);
-      const pay = s.staff.pay_type === 'daily'? s.staff.daily_rate : hours * s.staff.hourly_rate;
-      totalPay += pay;
-      return `
-      <div class="bg-zinc-800 rounded-lg p-3">
-        <div class="font-semibold">${s.staff.name}</div>
-        <div class="text-sm text-zinc-400">${s.start_time.slice(0,5)}-${s.end_time.slice(0,5)} • ${hours.toFixed(1)}ч</div>
-        <div class="text-sm text-green-400">Заработал: ${pay.toFixed(0)}₽</div>
-      </div>`;
-    }).join('');
-    html += `<div class="border-t border-zinc-700 pt-3 mt-3 text-lg font-bold">Итого: ${totalPay.toFixed(0)}₽</div>`;
-  }
-  html += `</div><button onclick="this.closest('.fixed').remove()"
-    class="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg p-2">Закрыть</button></div></div>`;
-  document.body.insertAdjacentHTML('beforeend', html);
-}
-
-async function loadOrders() {
-  const { data } = await _supabase.from('orders').select('*, suppliers(name)').eq('restaurant_id', restaurantId).order('created_at', {ascending: false});
-  document.getElementById('ordersList').innerHTML = data.map(o => `
-    <div class="bg-zinc-800 rounded-lg p-4">
-      <div class="flex justify-between">
-        <span>Заказ от ${o.order_date}</span>
-        <span class="text-zinc-400">${o.status}</span>
-      </div>
-    </div>
-  `).join('') || '<p class="text-zinc-500">Заказов пока нет</p>';
-}
-</script>
-</body>
-</html>
