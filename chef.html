@@ -414,3 +414,129 @@ function setView(view) {
   loadShifts();
 }
 
+async function addShift() {
+  const staffId = document.getElementById('staffSelect').value;
+  const date = document.getElementById('dateInput').value;
+  const timeIn = document.getElementById('timeIn').value;
+  const timeOut = document.getElementById('timeOut').value;
+  if (!staffId) { alert('Выбери повара'); return; }
+  await _supabase.from('work_schedules').insert({
+    restaurant_id: restaurantId,
+    staff_id: staffId,
+    date: date,
+    start_time: timeIn,
+    end_time: timeOut,
+    status: 'active'
+  });
+  loadShifts();
+}
+
+async function deleteShift(id) {
+  if (!confirm('Удалить смену?')) return;
+  await _supabase.from('work_schedules').delete().eq('id', id);
+  loadShifts();
+}
+
+function calcHours(start, end) {
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  let hours = (eh + em/60) - (sh + sm/60);
+  return hours > 0? hours : 0;
+}
+
+async function loadShifts() {
+  const selectedDate = document.getElementById('dateInput').value;
+  let startDate, endDate, title;
+  if (currentView === 'day') {
+    startDate = selectedDate;
+    endDate = selectedDate;
+    title = `График на ${selectedDate.split('-').reverse().join('.')}`;
+  } else if (currentView === 'week') {
+    const date = new Date(selectedDate);
+    const day = date.getDay();
+    const diff = day === 0? 6 : day - 1;
+    date.setDate(date.getDate() - diff);
+    startDate = date.toISOString().split('T')[0];
+    date.setDate(date.getDate() + 6);
+    endDate = date.toISOString().split('T')[0];
+    title = `Неделя ${startDate.split('-').reverse().join('.')} - ${endDate.split('-').reverse().join('.')}`;
+  } else {
+    startDate = selectedDate.slice(0,7) + '-01';
+    const d = new Date(selectedDate.slice(0,7) + '-01');
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(0);
+    endDate = d.toISOString().split('T')[0];
+    title = `Месяц ${startDate.slice(5,7)}.${startDate.slice(0,4)}`;
+  }
+  document.getElementById('scheduleTitle').innerText = title;
+  const { data } = await _supabase.from('work_schedules')
+.select('*, staff(id, name, hourly_rate, daily_rate, pay_type)')
+.gte('date', startDate).lte('date', endDate)
+.eq('restaurant_id', restaurantId).order('date').order('start_time');
+  document.getElementById('todayShifts').innerHTML = data.map(s => {
+    const hours = calcHours(s.start_time, s.end_time);
+    return `
+    <div class="bg-zinc-800 rounded-lg p-3 border-zinc-700">
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="font-semibold">${s.staff.name}</div>
+          <div class="text-xs text-zinc-400">${s.date.split('-').reverse().join('.')} • ${s.start_time.slice(0,5)}-${s.end_time.slice(0,5)} • ${hours.toFixed(1)}ч</div>
+        </div>
+        <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  `}).join('') || '<p class="text-zinc-500 text-sm text-center py-4">Смен нет</p>';
+  lucide.createIcons();
+}
+
+async function showTodayReport() {
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await _supabase.from('work_schedules')
+.select('*, staff(name, hourly_rate, daily_rate, pay_type)')
+.eq('date', today)
+.eq('restaurant_id', restaurantId)
+.eq('status', 'active');
+
+  let html = `<div class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onclick="this.remove()">
+    <div class="bg-zinc-900 rounded-xl p-6 max-w-md w-full" onclick="event.stopPropagation()">
+      <h3 class="text-xl font-bold mb-4">Табель на ${today.split('-').reverse().join('.')}</h3>
+      <div class="space-y-2">`;
+
+  if (!data || data.length === 0) {
+    html += '<p class="text-zinc-500">Сегодня никто не работает</p>';
+  } else {
+    let totalPay = 0;
+    html += data.map(s => {
+      const hours = calcHours(s.start_time, s.end_time);
+      const pay = s.staff.pay_type === 'daily'? s.staff.daily_rate : hours * s.staff.hourly_rate;
+      totalPay += pay;
+      return `
+      <div class="bg-zinc-800 rounded-lg p-3">
+        <div class="font-semibold">${s.staff.name}</div>
+        <div class="text-sm text-zinc-400">${s.start_time.slice(0,5)}-${s.end_time.slice(0,5)} • ${hours.toFixed(1)}ч</div>
+        <div class="text-sm text-green-400">Заработал: ${pay.toFixed(0)}₽</div>
+      </div>`;
+    }).join('');
+    html += `<div class="border-t border-zinc-700 pt-3 mt-3 text-lg font-bold">Итого: ${totalPay.toFixed(0)}₽</div>`;
+  }
+  html += `</div><button onclick="this.closest('.fixed').remove()"
+    class="w-full mt-4 bg-zinc-700 hover:bg-zinc-600 rounded-lg p-2">Закрыть</button></div></div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function loadOrders() {
+  const { data } = await _supabase.from('orders').select('*, suppliers(name)').eq('restaurant_id', restaurantId).order('created_at', {ascending: false});
+  document.getElementById('ordersList').innerHTML = data.map(o => `
+    <div class="bg-zinc-800 rounded-lg p-4">
+      <div class="flex justify-between">
+        <span>Заказ от ${o.order_date}</span>
+        <span class="text-zinc-400">${o.status}</span>
+      </div>
+    </div>
+  `).join('') || '<p class="text-zinc-500">Заказов пока нет</p>';
+}
+</script>
+</body>
+</html>
