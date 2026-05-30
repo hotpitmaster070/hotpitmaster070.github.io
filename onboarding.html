@@ -3,145 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Запуск HotPit за 3 минуты</title>
+<title>HotPit - Запуск кухни</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<style>
+:root { --accent: #f97316; --accent-dark: #ea580c; }
+body { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); }
+.glass { backdrop-filter: blur(12px); background: rgba(39, 39, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; transition: all 0.2s; }
+.btn-primary:active { transform: scale(0.95); }
+.logo { color:#f97316; font-weight:800; font-size:32px; text-align:center; margin-bottom:24px; }
+</style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 p-6">
+<body class="text-zinc-100 min-h-screen flex items-center justify-center p-4">
+<div class="max-w-md w-full">
 
-<div class="max-w-2xl mx-auto">
-  <h1 class="text-3xl font-bold mb-2">Запуск HotPit</h1>
-  <p class="text-zinc-400 mb-8">Введи данные, остальное сделаю я. 3 минуты и готово.</p>
-
-  <div id="errorBox" class="hidden bg-red-900/50 border-red-700 rounded-lg p-4 mb-4">
-    <p class="font-semibold">Ошибка:</p>
-    <p id="errorText" class="text-sm"></p>
-  </div>
-
-  <div id="form" class="space-y-4">
-    <div>
-      <label class="text-sm text-zinc-400">Название ресторана</label>
-      <input id="restName" placeholder="Шашлык у Али" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
-    </div>
+  <!-- ШАГ 1: РЕГИСТРАЦИЯ -->
+  <div id="step1" class="glass rounded-2xl p-8">
+    <h1 class="logo">HotPit</h1>
+    <h2 class="text-2xl font-bold text-center mb-6">Запусти кухню за 2 минуты</h2>
+    <p class="text-zinc-400 text-center mb-6">Каждая подписка = 1 обед ребёнку-сироте 💛</p>
     
-    <div>
-      <label class="text-sm text-zinc-400">Твое имя</label>
-      <input id="ownerName" placeholder="Али" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
-    </div>
-
-    <div>
-      <label class="text-sm text-zinc-400">Повара через запятую</label>
-      <input id="staffNames" placeholder="Марат, Азамат, Рустам" class="w-full bg-zinc-900 rounded-lg p-4 border-zinc-800 mt-1">
-    </div>
+    <input id="email" type="email" placeholder="Email шефа" class="w-full glass rounded-xl p-4 mb-3 outline-none">
+    <input id="password" type="password" placeholder="Пароль" class="w-full glass rounded-xl p-4 mb-3 outline-none">
+    <input id="restName" placeholder="Название ресторана" class="w-full glass rounded-xl p-4 mb-6 outline-none">
     
-    <button onclick="setup()" class="w-full bg-orange-500 hover:bg-orange-600 rounded-lg p-4 font-semibold text-lg mt-4">
-      Создать систему
-    </button>
+    <button onclick="createAccount()" class="btn-primary w-full rounded-xl py-4 font-bold text-lg">Создать аккаунт</button>
   </div>
 
-  <div id="result" class="hidden mt-8 space-y-6">
-    <div class="bg-green-900/30 border-green-700 rounded-lg p-6">
-      <h2 class="text-xl font-bold mb-2">Готово! Система запущена</h2>
-      <p class="text-green-200">Сохрани эти ссылки. Их больше не увидишь.</p>
-    </div>
-
-    <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
-      <h3 class="font-semibold mb-2">1. Твоя ссылка — управление поварами и графиком</h3>
-      <p id="ownerLink" class="text-orange-400 break-all bg-zinc-950 p-3 rounded"></p>
-    </div>
-
-    <div class="bg-zinc-900 rounded-lg p-6 border-zinc-800">
-      <h3 class="font-semibold mb-4">2. QR-коды для поваров</h3>
-      <div id="qrs" class="grid grid-cols-2 gap-4"></div>
-    </div>
+  <!-- ШАГ 2: ГОТОВО + ССЫЛКА -->
+  <div id="step2" class="hidden glass rounded-2xl p-8 text-center">
+    <div class="text-6xl mb-4">🎉</div>
+    <h2 class="text-3xl font-bold text-green-400 mb-4">Готово! Система запущена</h2>
+    <p class="text-zinc-400 mb-4">Сохрани эту ссылку - это твой кабинет шефа:</p>
+    
+    <div id="chefLink" class="glass rounded-xl p-4 text-orange-400 break-all text-sm mb-4 font-mono"></div>
+    
+    <button onclick="copyLink()" class="w-full bg-zinc-700 hover:bg-zinc-600 rounded-xl py-3 mb-3">Копировать ссылку</button>
+    <button id="btnDone" class="btn-primary w-full rounded-xl py-4 font-bold text-lg">Открыть кабинет</button>
+    
+    <p class="text-zinc-500 text-xs mt-4">Дальше: добавь поваров и распечатай им QR</p>
   </div>
 
-  <div id="loading" class="hidden text-center py-12">
-    <p class="text-lg">Создаю базу...</p>
-    <p class="text-zinc-400">Не закрывай страницу</p>
-  </div>
 </div>
 
 <script>
-const supabaseClient = window.supabase.createClient(
-  'https://xljogkyropyocvuuodfl.supabase.co', 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
-);
+const _supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 
-function showError(msg) {
-  alert('Ошибка: ' + msg); // алерт для телефона
-  document.getElementById('errorBox').classList.remove('hidden');
-  document.getElementById('errorText').textContent = msg;
-  document.getElementById('loading').classList.add('hidden');
-  document.getElementById('form').classList.remove('hidden');
+let restaurantId = null;
+let chefLink = '';
+
+async function createAccount() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const restName = document.getElementById('restName').value.trim();
+  
+  if(!email || !password || !restName) {
+    alert('Заполни все поля');
+    return;
+  }
+
+  // 1. Создаём пользователя
+  const { data: authData, error: authError } = await _supabase.auth.signUp({ email, password });
+  if(authError) {
+    alert('Ошибка: ' + authError.message);
+    return;
+  }
+
+  // 2. Создаём ресторан с UUID
+  const { data: restData, error: restError } = await _supabase
+    .from('restaurants')
+    .insert({ 
+      id: crypto.randomUUID(), // ГЕНЕРИРУЕМ UUID
+      name: restName,
+      owner_id: authData.user.id 
+    })
+    .select()
+    .single();
+    
+  if(restError) {
+    alert('Ошибка создания ресторана: ' + restError.message);
+    return;
+  }
+
+  restaurantId = restData.id;
+
+  // 3. ГЕНЕРАЦИЯ ССЫЛКИ ДЛЯ ШЕФА - ВОТ ЭТА СТРОКА!
+  chefLink = `https://hotpitmaster070.github.io/schedule.html?rest=${restaurantId}`;
+
+  // 4. Показываем ссылку на экране
+  document.getElementById('chefLink').innerText = chefLink;
+  document.getElementById('step1').classList.add('hidden');
+  document.getElementById('step2').classList.remove('hidden');
+
+  // 5. Кнопка "Открыть кабинет" ведёт по ссылке
+  document.getElementById('btnDone').onclick = () => {
+    window.location.href = chefLink;
+  }
 }
 
-async function setup() {
-  try {
-    console.log('Start setup');
-    const restName = document.getElementById('restName').value.trim();
-    const ownerName = document.getElementById('ownerName').value.trim();
-    const staffNames = document.getElementById('staffNames').value.split(',').map(s => s.trim()).filter(s => s);
-
-    if (!restName || !ownerName || staffNames.length === 0) {
-      showError('Заполни все поля');
-      return;
-    }
-
-    document.getElementById('form').classList.add('hidden');
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('errorBox').classList.add('hidden');
-
-    console.log('Insert restaurant');
-    const { data: rest, error: restErr } = await supabaseClient.from('restaurants').insert({name: restName}).select().single();
-    if (restErr) throw restErr;
-    console.log('Restaurant created:', rest);
-
-    console.log('Insert owner');
-    const { data: owner, error: ownerErr } = await supabaseClient.from('staff').insert({
-      restaurant_id: rest.id,
-      name: ownerName,
-      role: 'owner'
-    }).select().single();
-    if (ownerErr) throw ownerErr;
-
-    console.log('Insert staff');
-    const staffToInsert = staffNames.map(name => ({
-      restaurant_id: rest.id,
-      name: name,
-      role: 'staff'
-    }));
-    const { data: staff, error: staffErr } = await supabaseClient.from('staff').insert(staffToInsert).select();
-    if (staffErr) throw staffErr;
-
-    document.getElementById('loading').classList.add('hidden');
-    document.getElementById('result').classList.remove('hidden');
-    
-    const scheduleUrl = `https://hotpitmaster070.github.io/schedule.html?rest=${rest.id}`;
-    document.getElementById('ownerLink').textContent = scheduleUrl;
-
-    const qrsDiv = document.getElementById('qrs');
-    qrsDiv.innerHTML = '';
-    const allStaff = [owner, ...staff];
-    
-    for (let person of allStaff) {
-      const canvas = document.createElement('canvas');
-      await QRCode.toCanvas(canvas, person.id, { width: 200, margin: 1 });
-      canvas.classList.add('rounded-lg', 'bg-white', 'p-2');
-      
-      qrsDiv.innerHTML += `
-        <div class="text-center bg-zinc-950 p-4 rounded-lg">
-          ${canvas.outerHTML}
-          <p class="mt-2 font-semibold">${person.name}</p>
-        </div>
-      `;
-    }
-
-  } catch(e) {
-    console.error(e);
-    showError(e.message || e);
-  }
+function copyLink() {
+  navigator.clipboard.writeText(chefLink);
+  alert('Ссылка скопирована!');
 }
 </script>
 </body>
