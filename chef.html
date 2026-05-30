@@ -264,21 +264,74 @@ async function addShift() {
 }
 
 async function loadShifts() {
-  const { data } = await _supabase.from('work_schedules').select('*, staff(name)').eq('restaurant_id', restaurantId).order('date').order('start_time');
-  
-  document.getElementById('todayShifts').innerHTML = data?.map(s => `
-    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center">
-      <div>
-        <span class="font-semibold">${s.staff.name}</span>
-        <span class="text-zinc-400 ml-2">${s.date} ${s.start_time}-${s.end_time}</span>
+  // 1. Грузим смены за выбранную дату
+  const date = document.getElementById('dateInput').value;
+  const { data: shifts } = await _supabase
+    .from('work_schedules')
+    .select('*, staff(name, pay_type, hourly_rate, daily_rate)')
+    .eq('date', date)
+    .order('time_in');
+
+  // 2. Грузим ставки если не подтянулись через join
+  const { data: staff } = await _supabase.from('staff').select('id,name,pay_type,hourly_rate,daily_rate');
+
+  document.getElementById('todayShifts').innerHTML = shifts.map(s => {
+    const st = staff.find(x => x.id === s.staff_id);
+    if(!st) return '';
+    
+    // 3. Считаем часы: 18:00 - 09:00 = 9ч
+    const [h1, m1] = s.time_in.split(':').map(Number);
+    const [h2, m2] = s.time_out.split(':').map(Number);
+    const hours = ((h2 + m2/60) - (h1 + m1/60)).toFixed(1);
+    
+    // 4. Считаем ЗП по типу оплаты
+    let pay = 0;
+    let payLabel = '';
+    if(st.pay_type === 'hourly') {
+      pay = hours * (st.hourly_rate || 0);
+      payLabel = `${hours}ч × ${st.hourly_rate}₽`;
+    } else {
+      pay = st.daily_rate || 0;
+      payLabel = `Фикс за день`;
+    }
+    
+    // 5. Статус "На смене" если сейчас внутри интервала
+    const now = new Date();
+    const [nowH, nowM] = [now.getHours(), now.getMinutes()];
+    const nowMinutes = nowH * 60 + nowM;
+    const inMinutes = h1 * 60 + m1;
+    const outMinutes = h2 * 60 + m2;
+    const isWorking = nowMinutes >= inMinutes && nowMinutes <= outMinutes;
+    const statusDot = isWorking ? '<span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> На смене' : '';
+
+    return `
+    <div class="bg-zinc-800 rounded-xl p-4 border-zinc-700 hover:border-orange-500 transition mb-3">
+      <div class="flex justify-between items-start mb-2">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center font-bold text-black">${st.name[0]}</div>
+          <div>
+            <div class="font-bold text-lg">${st.name}</div>
+            <div class="text-zinc-400 text-sm flex items-center gap-2">${s.date} ${statusDot}</div>
+          </div>
+        </div>
+        <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300">
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </button>
       </div>
-      <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300 p-1">
-        <i data-lucide="trash-2" class="w-5 h-5"></i>
-      </button>
+      
+      <div class="flex items-center justify-between mt-3 pt-3 border-t border-zinc-700">
+        <div class="flex items-center gap-2 text-zinc-300">
+          <i data-lucide="clock" class="w-4 h-4"></i>
+          <span>${s.time_in.slice(0,5)} - ${s.time_out.slice(0,5)}</span>
+          <span class="text-zinc-500">• ${payLabel}</span>
+        </div>
+        <div class="text-green-400 font-bold text-xl">+${pay.toFixed(0)}₽</div>
+      </div>
     </div>
-  `).join('') || '<p class="text-zinc-500">Смен нет</p>';
+    `;
+  }).join('') || '<p class="text-zinc-500 text-center py-4">Смен нет на эту дату</p>';
   
-  lucide.createIcons(); // без этого иконка корзины не отрисуется
+  lucide.createIcons();
 }
 
 async function deleteShift(id) {
