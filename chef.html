@@ -175,21 +175,66 @@ async function addStaff() {
 
 async function loadStaff() {
   const { data } = await _supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
-  document.getElementById('staffList').innerHTML = data?.map(s => `
-    <div class="bg-zinc-800 rounded-lg p-4">
-      <div class="flex justify-between items-center mb-3">
-        <span class="font-semibold">${s.name}</span>
-        <button onclick="deleteStaff('${s.id}')" class="text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+  
+  document.getElementById('staffList').innerHTML = data?.map(s => {
+    const isHourly = s.pay_type === 'hourly';
+    const qrUrl = `${window.location.origin}/clock.html?rest=${restaurantId}&staff=${s.id}`;
+    
+    return `
+      <div class="bg-zinc-800 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="user" class="w-5 h-5 text-zinc-400"></i>
+            <span class="font-bold text-lg">${s.name}</span>
+            <span class="text-zinc-500 text-sm">Повар</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="showQR('${qrUrl}', '${s.name}')" class="text-purple-400 hover:text-purple-300">
+              <i data-lucide="qr-code" class="w-5 h-5"></i>
+            </button>
+            <button onclick="deleteStaff('${s.id}')" class="text-red-400 hover:text-red-300">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 mb-3">
+          <button onclick="setPayType('${s.id}', 'hourly')" 
+            class="${isHourly? 'btn-primary' : 'bg-zinc-700'} flex-1 rounded-lg py-2 text-sm font-semibold">
+            Почасовой
+          </button>
+          <button onclick="setPayType('${s.id}', 'daily')" 
+            class="${!isHourly? 'btn-primary' : 'bg-zinc-700'} flex-1 rounded-lg py-2 text-sm font-semibold">
+            Фикс за день
+          </button>
+        </div>
+        
+        <div>
+          <label class="text-zinc-400 text-sm">₽/${isHourly? 'час' : 'день'}</label>
+          <input type="number" value="${isHourly? s.hourly_rate||0 : s.daily_rate||0}" 
+            onchange="updateRate('${s.id}', '${s.pay_type}', this.value)"
+            class="w-full mt-1 bg-zinc-900 rounded-lg p-2 border-zinc-700 outline-none">
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-2">
-        <input type="number" value="${s.hourly_rate||0}" onchange="updateStaff('${s.id}','hourly_rate',this.value)" placeholder="₽/час" class="bg-zinc-700 rounded px-2 py-1 text-sm">
-        <input type="number" value="${s.daily_rate||0}" onchange="updateStaff('${s.id}','daily_rate',this.value)" placeholder="₽/день" class="bg-zinc-700 rounded px-2 py-1 text-sm">
-      </div>
-    </div>
-  `).join('') || '<p class="text-zinc-500">Поваров нет</p>';
-
+    `;
+  }).join('') || '<p class="text-zinc-500">Поваров нет. Добавь первого</p>';
+  
   document.getElementById('staffSelect').innerHTML = data?.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   lucide.createIcons();
+}
+
+async function setPayType(id, type) {
+  await _supabase.from('staff').update({ pay_type: type }).eq('id', id);
+  loadStaff();
+}
+
+async function updateRate(id, type, value) {
+  const field = type === 'hourly'? 'hourly_rate' : 'daily_rate';
+  await _supabase.from('staff').update({ [field]: parseFloat(value)||0 }).eq('id', id);
+}
+
+function showQR(url, name) {
+  alert(`QR для ${name}:\n${url}\n\nclock.html сделаем след шагом`);
 }
 
 async function deleteStaff(id) {
