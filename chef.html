@@ -237,68 +237,49 @@ async function addShift() {
 
 async function loadShifts() {
   const date = document.getElementById('dateInput').value;
-  const { data: shifts } = await _supabase
-   .from('work_schedules')
-   .select('*, staff(name, pay_type, hourly_rate, daily_rate)')
-   .eq('date', date)
-   .order('start_time');
+  const { data: shifts, error } = await _supabase
+    .from('work_schedules')
+    .select('*, staff(name)')
+    .eq('date', date)
+    .order('start_time');
 
-  const { data: staff } = await _supabase.from('staff').select('id,name,pay_type,hourly_rate,daily_rate');
+  if (error) {
+    console.error(error);
+    document.getElementById('todayShifts').innerHTML = '<p class="text-red-400">Ошибка загрузки</p>';
+    return;
+  }
 
   document.getElementById('todayShifts').innerHTML = shifts.map(s => {
-    const st = staff.find(x => x.id === s.staff_id);
-    if(!st) return '';
-
-    // Считаем часы по start_time и end_time
-    const [h1, m1] = s.start_time.split(':').map(Number);
-    const [h2, m2] = s.end_time.split(':').map(Number);
-    const hours = ((h2 + m2/60) - (h1 + m1/60)).toFixed(1);
-
-    let pay = 0;
-    let payLabel = '';
-    if(st.pay_type === 'hourly') {
-      pay = hours * (st.hourly_rate || 0);
-      payLabel = `${hours}ч × ${st.hourly_rate}₽`;
-    } else {
-      pay = st.daily_rate || 0;
-      payLabel = `Фикс за день`;
-    }
-
-    const now = new Date();
-    const [nowH, nowM] = [now.getHours(), now.getMinutes()];
-    const nowMinutes = nowH * 60 + nowM;
-    const inMinutes = h1 * 60 + m1;
-    const outMinutes = h2 * 60 + m2;
-    const isWorking = nowMinutes >= inMinutes && nowMinutes <= outMinutes;
-    const statusDot = isWorking? '<span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> На смене' : '';
-
+    const st = s.staff?.name || 'Не назначен';
+    const hours = ((new Date(`2000-01-01T${s.end_time}`) - new Date(`2000-01-01T${s.start_time}`)) / 3600000).toFixed(1);
+    
     return `
-    <div class="bg-zinc-800 rounded-xl p-4 border-zinc-700 hover:border-orange-500 transition mb-3">
+    <div class="bg-zinc-800 rounded-xl p-4 border-zinc-700 hover:border-orange-500 transition-all duration-300 mb-3">
       <div class="flex justify-between items-start mb-2">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center font-bold text-black">${st.name[0]}</div>
+          <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center font-bold text-black text-lg">${st[0]}</div>
           <div>
-            <div class="font-bold text-lg">${st.name}</div>
-            <div class="text-zinc-400 text-sm flex items-center gap-2">${s.date} ${statusDot}</div>
+            <div class="font-bold text-xl">${st}</div>
+            <div class="text-zinc-400 text-sm">${s.date} ${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</div>
           </div>
         </div>
-        <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300">
+        <button onclick="deleteShift('${s.id}')" class="text-zinc-500 hover:text-red-400 p-2">
           <i data-lucide="trash-2" class="w-5 h-5"></i>
         </button>
       </div>
-
+      
       <div class="flex items-center justify-between mt-3 pt-3 border-t border-zinc-700">
         <div class="flex items-center gap-2 text-zinc-300">
           <i data-lucide="clock" class="w-4 h-4"></i>
           <span>${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
-          <span class="text-zinc-500">• ${payLabel}</span>
+          <span class="text-zinc-500">• ${hours}ч</span>
         </div>
-        <div class="text-green-400 font-bold text-xl">+${pay.toFixed(0)}₽</div>
+        <div class="text-green-400 font-bold text-xl">+${(hours * 300).toFixed(0)}₽</div>
       </div>
     </div>
     `;
   }).join('') || '<p class="text-zinc-500 text-center py-4">Смен нет на эту дату</p>';
-
+  
   lucide.createIcons();
 }
 
