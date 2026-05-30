@@ -276,6 +276,12 @@ async function loadShifts() {
   lucide.createIcons(); // без этого иконка корзины не отрисуется
 }
 
+async function deleteShift(id) {
+  if(!confirm('Удалить смену?')) return;
+  await _supabase.from('work_schedules').delete().eq('id', id);
+  loadShifts(); // обновляем список после удаления
+}  
+  
 async function showTodayReport() {
   alert('Табель - считаем ЗП по сменам');
 }
