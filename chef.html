@@ -260,14 +260,20 @@ async function addShift() {
 
 async function loadShifts() {
   const { data } = await _supabase.from('work_schedules').select('*, staff(name)').eq('restaurant_id', restaurantId).order('date').order('start_time');
+  
   document.getElementById('todayShifts').innerHTML = data?.map(s => `
-    <div class="bg-zinc-800 rounded-lg p-3">
-      <div class="flex justify-between">
-        <span>${s.staff.name}</span>
-        <span class="text-zinc-400">${s.date} ${s.start_time}-${s.end_time}</span>
+    <div class="bg-zinc-800 rounded-lg p-3 flex justify-between items-center">
+      <div>
+        <span class="font-semibold">${s.staff.name}</span>
+        <span class="text-zinc-400 ml-2">${s.date} ${s.start_time}-${s.end_time}</span>
       </div>
+      <button onclick="deleteShift('${s.id}')" class="text-red-400 hover:text-red-300 p-1">
+        <i data-lucide="trash-2" class="w-5 h-5"></i>
+      </button>
     </div>
   `).join('') || '<p class="text-zinc-500">Смен нет</p>';
+  
+  lucide.createIcons(); // без этого иконка корзины не отрисуется
 }
 
 async function showTodayReport() {
