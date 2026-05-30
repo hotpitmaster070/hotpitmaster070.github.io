@@ -210,12 +210,17 @@ async function loadStaff() {
         </div>
         
         <div>
-          <label class="text-zinc-400 text-sm">₽/${isHourly? 'час' : 'день'}</label>
-          <input type="number" value="${isHourly? s.hourly_rate||0 : s.daily_rate||0}" 
-            onchange="updateRate('${s.id}', '${s.pay_type}', this.value)"
-            class="w-full mt-1 bg-zinc-900 rounded-lg p-2 border-zinc-700 outline-none">
-        </div>
-      </div>
+  <label class="text-zinc-400 text-sm">₽/${isHourly? 'час' : 'день'}</label>
+  <div class="flex gap-2 mt-1">
+    <input type="number" id="rate-${s.id}" value="${isHourly? s.hourly_rate||0 : s.daily_rate||0}"
+      oninput="showSaveBtn('${s.id}')"
+      class="flex-1 bg-zinc-900 rounded-lg p-2 border-zinc-700 outline-none focus:border-orange-500">
+    <button id="save-${s.id}" onclick="saveRate('${s.id}', '${s.pay_type}')"
+      class="hidden bg-green-600 hover:bg-green-700 px-4 rounded-lg transition-all">
+      <i data-lucide="check" class="w-5 h-5"></i>
+    </button>
+  </div>
+</div>
     `;
   }).join('') || '<p class="text-zinc-500">Поваров нет. Добавь первого</p>';
   
