@@ -339,6 +339,30 @@ function openWriteoff() { alert('Модалка [-Списание] - следу
 function openInventory() { alert('Инвентаризация - следующий шаг') }
 function showInventory() { alert('Таблица всех товаров') }
 
+ function showSaveBtn(id) {
+  document.getElementById('save-'+id).classList.remove('hidden');
+}
+
+async function saveRate(id, type) {
+  const input = document.getElementById('rate-'+id);
+  const btn = document.getElementById('save-'+id);
+  const field = type === 'hourly'? 'hourly_rate' : 'daily_rate';
+  const value = parseFloat(input.value) || 0;
+
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>';
+  lucide.createIcons();
+
+  await _supabase.from('staff').update({ [field]: value }).eq('id', id);
+
+  input.classList.add('border-green-500');
+  btn.classList.add('hidden');
+  btn.disabled = false;
+  btn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i>';
+  setTimeout(() => input.classList.remove('border-green-500'), 800);
+  lucide.createIcons();
+} 
+  
 // Запуск
 loadStaff();
 loadShifts();
