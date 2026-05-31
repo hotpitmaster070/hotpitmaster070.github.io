@@ -605,3 +605,148 @@ async function loadSchedule() {
 .select('*, staff(*)').eq('date', dateStr).eq('restaurant_id', restaurantId);
 
     let html = staffList.map(st => {
+      const shift = shifts?.find(s => s.staff_id === st.id);
+      const isActive = shift? true : false;
+
+      return `
+        <div class="card">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${st.name[0]}</div>
+              <div>
+                <div class="font-semibold">${st.name}</div>
+                <div class="text-xs text-zinc-500">${dateStr}</div>
+              </div>
+            </div>
+            <button onclick="toggleStaffDay('${st.id}')" class="staff-day-btn ${isActive? 'active' : ''}">
+              ${isActive? 'В смене ✓' : 'Не в смене'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('scheduleContent').innerHTML = html || '<div class="text-zinc-500 text-sm">Нет поваров</div>';
+  }
+
+  if (currentView === 'month') {
+    loadMonthSchedule();
+  }
+}
+
+async function loadMonthSchedule() {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+
+  const startDate = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+  const { data: shifts } = await _supabase.from('work_schedules')
+.select('*').gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
+
+  let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
+
+  staffList.forEach(st => {
+    html += `<div class="card mb-3">
+      <div class="font-semibold mb-2 flex items-center gap-2">
+        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${st.name[0]}</div>
+        ${st.name}
+      </div>
+      <div class="grid grid-cols-7 gap-1">`;
+
+    for(let d = 1; d <= lastDay; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const hasShift = shifts?.some(s => s.staff_id === st.id && s.date === dateStr);
+
+      html += `<button
+        onclick="toggleShiftMonth('${st.id}', '${dateStr}')"
+        class="month-day-btn ${hasShift? 'active' : ''}">
+        ${d}
+      </button>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  document.getElementById('scheduleContent').innerHTML = html;
+}
+
+async function toggleStaffDay(staffId) {
+  const dateStr = currentDate.toISOString().split('T')[0];
+
+  const { data: existing } = await _supabase.from('work_schedules')
+.select('*').eq('staff_id', staffId).eq('date', dateStr).single();
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: dateStr,
+      start_time: '00:00',
+      end_time: '23:59'
+    });
+  }
+  loadSchedule();
+}
+
+async function toggleShiftMonth(staffId, date) {
+  const { data: existing } = await _supabase.from('work_schedules')
+.select('*').eq('staff_id', staffId).eq('date', date).single();
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: date,
+      start_time: '00:00',
+      end_time: '23:59'
+    });
+  }
+  loadSchedule();
+}
+
+async function startQrScanner() {
+  if (html5QrCode) html5QrCode.stop();
+  html5QrCode = new Html5Qrcode("qr-reader");
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    async (decodedText) => {
+      const staffId = decodedText;
+      const staff = staffList.find(s => s.id === staffId);
+      if (!staff) return;
+
+      const now = new Date();
+      const time = now.toTimeString().slice(0,5);
+      const date = now.toISOString().split('T')[0];
+
+      const { data: existing } = await _supabase.from('work_schedules')
+.select('*').eq('staff_id', staffId).eq('date', date).single();
+
+      if (!existing) {
+        await _supabase.from('work_schedules').insert({
+          restaurant_id: restaurantId,
+          staff_id: staffId,
+          date: date,
+          start_time: time,
+          end_time: null
+        });
+        document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
+      } else if (!existing.end_time) {
+        await _supabase.from('work_schedules').update({end_time: time}).eq('id', existing.id);
+        document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`;
+      } else {
+        document.getElementById('qr-result').innerText = `${staff.name} уже отметил приход и уход сегодня`;
+      }
+      loadSchedule();
+    },
+    (error) => {}
+  );
+}
+</script>
+</body>
+</html>
