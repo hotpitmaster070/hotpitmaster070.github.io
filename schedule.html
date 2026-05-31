@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>HotPit - Управление кухней</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+  body { background: #000; touch-action: pan-y; }
+.sidebar {
+    background: #111;
+    border-right: 1px solid #222;
+  }
+.sidebar-item {
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+  }
+.sidebar-item.active {
+    background: #f97316;
+    color: white;
+    font-weight: 600;
+  }
+.card {
+    background: rgba(28,28,30,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 16px;
+  }
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 60;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+.modal.show {
+    display: flex;
+  }
+.pay-toggle button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid #333;
+  flex: 1;
+}
+.pay-toggle button.active {
+  background: #f97316;
+  color: white;
+  border-color: #f97316;
+}
+.pay-toggle button.inactive {
+  background: #1a1a1a;
+  color: #a1a1aa;
+}
+.btn-primary {
+  background: #f97316;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.btn-danger {
+  background: rgba(239,68,68,0.2);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+.view-toggle button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.view-toggle button.active {
+  background: #f97316;
+  color: white;
+}
+.view-toggle button.inactive {
+  background: #1a1a1a;
+  color: #a1a1aa;
+}
+.staff-day-btn {
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #a1a1aa;
+  width: 100%;
+  transition: all 0.2s;
+}
+.staff-day-btn.active {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+.day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.day-nav button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #1a1a1a;
+}
+.date-badge {
+  background: rgba(249,115,22,0.2);
+  color: #f97316;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.date-badge:hover {
+  background: rgba(249,115,22,0.3);
+}
+.month-day-btn {
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #a1a1aa;
+  transition: all 0.2s;
+}
+.month-day-btn.active {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-day {
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #1a1a1a;
+}
+.calendar-day:hover {
+  background: #2a2a2a;
+}
+.calendar-day.selected {
+  background: #f97316;
+  color: white;
+  font-weight: 600;
+}
+.calendar-day.today {
+  border: 1px solid #f97316;
+}
+.calendar-header {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 4px;
+}
+</style>
+</head>
+<body class="text-zinc-100">
+<div class="flex min-h-screen" id="app">
+
+  <div id="errorBox" class="hidden w-full text-center mt-40">
+    <div class="text-xl font-bold mb-2">Ошибка</div>
+    <div class="text-sm text-zinc-300">Открой через дашборд. Нужен параметр?rest=UUID</div>
+  </div>
+
+  <div id="mainContent" class="flex w-full">
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar w-64 p-4 hidden md:block">
+      <h2 class="text-xl font-bold mb-6 px-2">HotPit</h2>
+      <div class="space-y-2">
+        <div class="sidebar-item active" onclick="setTab('staff', event)">
+          <i data-lucide="users" class="w-5 h-5"></i><span>Повара</span>
+        </div>
+        <div class="sidebar-item" onclick="setTab('prod', event)">
+          <i data-lucide="calendar" class="w-5 h-5"></i><span>График</span>
+        </div>
+        <div class="sidebar-item" onclick="setTab('qr', event)">
+          <i data-lucide="qr-code" class="w-5 h-5"></i><span>QR Сканер</span>
+        </div>
+        <div class="sidebar-item" onclick="setTab('reports', event)">
+          <i data-lucide="bar-chart" class="w-5 h-5"></i><span>Отчёты</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="sidebarMobile" class="sidebar fixed left-[-280px] top-0 h-full w-64 p-4 md:hidden z-50 transition-all">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold">HotPit</h2>
+        <button onclick="toggleSidebar()"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+      <div class="space-y-2">
+        <div class="sidebar-item active" onclick="setTab('staff', event)">
+          <i data-lucide="users" class="w-5 h-5"></i><span>Повара</span>
+        </div>
+        <div class="sidebar-item" onclick="setTab('prod', event)">
+          <i data-lucide="calendar" class="w-5 h-5"></i><span>График</span>
+        </div>
+        <div class="sidebar-item" onclick="setTab('qr', event)">
+          <i data-lucide="qr-code" class="w-5 h-5"></i><span>QR Сканер</span>
+        </div>
+        <div class="sidebar-item" onclick="setTab('reports', event)">
+          <i data-lucide="bar-chart" class="w-5 h-5"></i><span>Отчёты</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-1 p-4">
+      <button class="md:hidden mb-4" onclick="toggleSidebar()">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+      </button>
+
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Управление кухней</h1>
+        <p class="text-sm text-zinc-500" id="dateTitle"></p>
+      </div>
+
+      <div id="tab-staff" class="card">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-orange-500"></i>
+            <h2 class="font-semibold">Повара</h2>
+          </div>
+          <button onclick="openAddModal()" class="btn-primary text-sm">
+            <i data-lucide="user-plus" class="w-4 h-4 inline mr-1"></i> Добавить
+          </button>
+        </div>
+        <div id="staffList" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-prod" class="hidden card">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-3 mb-4">
+          <h2 class="font-semibold">График смен</h2>
+          <div class="flex gap-2 view-toggle">
+            <button id="viewDay" onclick="setView('day')" class="active">День</button>
+            <button id="viewMonth" onclick="setView('month')" class="inactive">Месяц</button>
+          </div>
+        </div>
+
+        <div id="dayNav" class="day-nav">
+          <button onclick="changeDay(-1)"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+          <div class="text-center">
+            <div class="flex items-center justify-center gap-2">
+              <span class="font-semibold text-lg" id="currentDayText">1 июн</span>
+              <span class="date-badge" id="currentDateBadge" onclick="openDatePicker()">2026-06-01</span>
+            </div>
+            <div class="text-xs text-zinc-500" id="currentDayWeek">Пн</div>
+          </div>
+          <button onclick="changeDay(1)"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+        </div>
+
+        <div id="monthNav" class="day-nav hidden">
+          <button onclick="changeMonth(-1)"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+          <div class="text-center">
+            <span class="font-semibold text-lg" id="currentMonthText">Июнь 2026</span>
+          </div>
+          <button onclick="changeMonth(1)"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+        </div>
+
+        <div id="scheduleContent" class="space-y-3"></div>
+      </div>
+
+      <div id="tab-qr" class="hidden card">
+        <h2 class="font-semibold mb-4">QR Сканер - Приход/Уход</h2>
+        <div id="qr-reader" class="w-full rounded-xl overflow-hidden"></div>
+        <div id="qr-result" class="mt-4 text-sm text-zinc-400"></div>
+      </div>
+
+      <div id="tab-reports" class="hidden card">
+        <h2 class="font-semibold mb-4">Отчёты</h2>
+        <p class="text-zinc-500 text-sm">ФОТ считаем в базе. Поварам не показываем.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="addModal" class="modal" onclick="if(event.target.id==='addModal') closeAddModal()">
+  <div class="card w-full max-w-md mx-4" onclick="event.stopPropagation()">
+    <h3 class="text-lg font-bold mb-4">Добавить повара</h3>
+    <div class="space-y-4">
+      <input id="newStaffName" placeholder="Имя повара" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none">
+      <input id="newStaffRate" type="number" placeholder="Ставка 300" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none">
+      <div>
+        <p class="text-sm text-zinc-400 mb-2">Тип оплаты:</p>
+        <div class="pay-toggle flex gap-2">
+          <button id="payHourly" onclick="selectPayType('hourly')" class="active">Почасовой</button>
+          <button id="payDaily" onclick="selectPayType('daily')" class="inactive">Фикс за день</button>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeAddModal()" class="flex-1 bg-zinc-800 py-3 rounded-lg">Отмена</button>
+        <button onclick="addStaff()" class="btn-primary flex-1">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- КРАСИВЫЙ КАЛЕНДАРЬ ПОПАП -->
+<div id="datePickerModal" class="modal" onclick="if(event.target.id==='datePickerModal') closeDatePicker()">
+  <div class="card w-full max-w-sm mx-4" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <button onclick="changePickerMonth(-1)"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+      <span class="font-semibold" id="pickerMonthYear">Июнь 2026</span>
+      <button onclick="changePickerMonth(1)"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+    </div>
+    <div class="calendar-grid mb-2">
+      <div class="calendar-header">Пн</div>
+      <div class="calendar-header">Вт</div>
+      <div class="calendar-header">Ср</div>
+      <div class="calendar-header">Чт</div>
+      <div class="calendar-header">Пт</div>
+      <div class="calendar-header">Сб</div>
+      <div class="calendar-header">Вс</div>
+    </div>
+    <div id="calendarDays" class="calendar-grid"></div>
+    <div class="flex gap-2 mt-4">
+      <button onclick="closeDatePicker()" class="flex-1 bg-zinc-800 py-3 rounded-lg">Отмена</button>
+      <button onclick="selectToday()" class="btn-primary flex-1">Сегодня</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+lucide.createIcons();
+
+const urlParams = new URLSearchParams(window.location.search);
+const restaurantId = urlParams.get('rest');
+
+if (!restaurantId) {
+  document.getElementById('mainContent').classList.add('hidden');
+  document.getElementById('errorBox').classList.remove('hidden');
+  throw new Error('Нет restaurant_id');
+}
+
+const currencyMap = {
+  'RUB': '₽', 'USD': '$', 'EUR': '€',
+  'AED': 'د.إ', 'TRY': '₺', 'KZT': '₸', 'AZN': '₼'
+};
+
+let currency = '₽';
+let staffList = [];
+let html5QrCode;
+let selectedPayType = 'hourly';
+let currentView = 'day';
+let currentDate = new Date();
+let pickerDate = new Date();
+
+const months = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const monthsFull = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const days = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+function updateDateTitle() {
+  const dateStr = currentDate.toISOString().split('T')[0];
+  document.getElementById('dateTitle').innerText = `${currentDate.getDate()} ${months[currentDate.getMonth()]}, ${days[currentDate.getDay()]}`;
+  document.getElementById('currentDayText').innerText = `${currentDate.getDate()} ${months[currentDate.getMonth()]}`;
+  document.getElementById('currentDayWeek').innerText = days[currentDate.getDay()];
+  document.getElementById('currentDateBadge').innerText = dateStr;
+  document.getElementById('currentMonthText').innerText = `${monthsFull[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+}
+
+function changeDay(delta) {
+  currentDate.setDate(currentDate.getDate() + delta);
+  updateDateTitle();
+  loadSchedule();
+}
+
+function changeMonth(delta) {
+  currentDate.setMonth(currentDate.getMonth() + delta);
+  updateDateTitle();
+  loadSchedule();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebarMobile').classList.toggle('left-[-280px]');
+  document.getElementById('overlay').classList.toggle('hidden');
+}
+
+function openAddModal() {
+  document.getElementById('addModal').classList.add('show');
+  selectedPayType = 'hourly';
+  selectPayType('hourly');
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('show');
+  document.getElementById('newStaffName').value = '';
+  document.getElementById('newStaffRate').value = '';
+}
+
+function selectPayType(type) {
+  selectedPayType = type;
+  const btnHourly = document.getElementById('payHourly');
+  const btnDaily = document.getElementById('payDaily');
+  btnHourly.className = type === 'hourly'? 'active' : 'inactive';
+  btnDaily.className = type === 'daily'? 'active' : 'inactive';
+}
+
+// КРАСИВЫЙ КАЛЕНДАРЬ
+function openDatePicker() {
+  pickerDate = new Date(currentDate);
+  document.getElementById('datePickerModal').classList.add('show');
+  renderCalendar();
+}
+
+function closeDatePicker() {
+  document.getElementById('datePickerModal').classList.remove('show');
+}
+
+function changePickerMonth(delta) {
+  pickerDate.setMonth(pickerDate.getMonth() + delta);
+  renderCalendar();
+}
+
+function selectToday() {
+  currentDate = new Date();
+  closeDatePicker();
+  updateDateTitle();
+  loadSchedule();
+}
+
+function selectDate(date) {
+  currentDate = new Date(date);
+  closeDatePicker();
+  updateDateTitle();
+  loadSchedule();
+}
+
+function renderCalendar() {
+  const year = pickerDate.getFullYear();
+  const month = pickerDate.getMonth();
+  document.getElementById('pickerMonthYear').innerText = `${monthsFull[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const today = new Date();
+
+  let startDay = firstDay.getDay();
+  startDay = startDay === 0? 6 : startDay - 1; // Понедельник = 0
+
+  let html = '';
+
+  // Пустые клетки до 1 числа
+  for(let i = 0; i < startDay; i++) {
+    html += '<div></div>';
+  }
+
+  // Дни месяца
+  for(let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+    const isSelected = currentDate.getDate() === d && currentDate.getMonth() === month && currentDate.getFullYear() === year;
+
+    html += `<div
+      class="calendar-day ${isToday? 'today' : ''} ${isSelected? 'selected' : ''}"
+      onclick="selectDate('${dateStr}')">
+      ${d}
+    </div>`;
+  }
+
+  document.getElementById('calendarDays').innerHTML = html;
+  lucide.createIcons();
+}
+
+async function loadCurrency() {
+  const { data } = await _supabase.from('restaurants').select('currency').eq('id', restaurantId).single();
+  const code = (data?.currency || 'RUB').toUpperCase();
+  currency = currencyMap[code] || '₽';
+}
+
+async function setTab(tab, e) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  e.target.closest('.sidebar-item').classList.add('active');
+
+  ['staff','prod','qr','reports'].forEach(t => {
+    document.getElementById('tab-'+t).classList.add('hidden');
+  });
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+
+  if(window.innerWidth < 768) toggleSidebar();
+
+  if(tab === 'prod') loadSchedule();
+  if(tab === 'qr') startQrScanner();
+  if(tab === 'staff') loadStaff();
+}
+
+function setView(view) {
+  currentView = view;
+  localStorage.setItem('hotpit_view', view);
+
+  ['day','month'].forEach(v => {
+    const btn = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1));
+    btn.className = view === v? 'active' : 'inactive';
+  });
+
+  document.getElementById('dayNav').classList.toggle('hidden', view!== 'day');
+  document.getElementById('monthNav').classList.toggle('hidden', view!== 'month');
+
+  loadSchedule();
+}
+
+async function addStaff() {
+  const name = document.getElementById('newStaffName').value.trim();
+  const rate = parseInt(document.getElementById('newStaffRate').value) || 300;
+  if (!name) return alert('Введи имя повара');
+
+  await _supabase.from('staff').insert({
+    restaurant_id: restaurantId,
+    name,
+    pay_type: selectedPayType,
+    hourly_rate: selectedPayType === 'hourly'? rate : null,
+    daily_rate: selectedPayType === 'daily'? rate : null
+  });
+  closeAddModal();
+  loadStaff();
+}
+
+async function deleteStaff(id, name) {
+  if (!confirm(`Удалить ${name}?`)) return;
+  await _supabase.from('staff').delete().eq('id', id);
+  loadStaff();
+}
+
+async function updatePayType(staffId, type) {
+  await _supabase.from('staff').update({pay_type: type}).eq('id', staffId);
+  loadStaff();
+}
+
+async function loadStaff() {
+  const { data } = await _supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+  staffList = data || [];
+  document.getElementById('staffList').innerHTML = staffList.map(s => {
+    const isHourly = s.pay_type === 'hourly';
+    const label = isHourly? `${currency}/час` : `${currency}/день`;
+
+    return `
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name[0]}</div>
+            <div>
+              <div class="font-semibold">${s.name}</div>
+              <div class="text-xs text-zinc-500">${label}</div>
+            </div>
+          </div>
+          <button onclick="deleteStaff('${s.id}', '${s.name}')" class="btn-danger">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="pay-toggle flex gap-2">
+          <button onclick="updatePayType('${s.id}', 'hourly')" class="${isHourly? 'active' : 'inactive'}">Почасовой</button>
+          <button onclick="updatePayType('${s.id}', 'daily')" class="${!isHourly? 'active' : 'inactive'}">Фикс за день</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  lucide.createIcons();
+}
+
+async function loadSchedule() {
+  updateDateTitle();
+  if (currentView === 'day') {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const { data: shifts } = await _supabase.from('work_schedules')
+.select('*, staff(*)').eq('date', dateStr).eq('restaurant_id', restaurantId);
+
+    let html = staffList.map(st => {
+      const shift = shifts?.find(s => s.staff_id === st.id);
+      const isActive = shift? true : false;
+
+      return `
+        <div class="card">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+      
