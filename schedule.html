@@ -561,9 +561,10 @@ async function startQrScanner() {
       const date = now.toISOString().split('T')[0];
 
       const { data: existing } = await _supabase.from('work_schedules')
-    .select('*').eq('staff_id', staffId).eq('date', date).single();
+       .select('*').eq('staff_id', staffId).eq('date', date).single();
 
       if (!existing) {
+        // Приход
         await _supabase.from('work_schedules').insert({
           restaurant_id: restaurantId,
           staff_id: staffId,
@@ -573,5 +574,20 @@ async function startQrScanner() {
         });
         document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
       } else if (!existing.end_time) {
+        // Уход
         await _supabase.from('work_schedules').update({end_time: time}).eq('id', existing.id);
-        document.getElementById
+        document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`;
+      } else {
+        document.getElementById('qr-result').innerText = `${staff.name} уже отметил приход и уход сегодня`;
+      }
+      loadSchedule();
+    },
+    (error) => {}
+  );
+}
+
+// Запуск
+loadCurrency().then(loadStaff);
+</script>
+</body>
+</html>
