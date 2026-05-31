@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotPit - Управление кухней</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  body { background: #0a0a0b; }
+.glass {
+    background: rgba(28,28,30,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+  }
+.tab-active {
+    background: #f97316;
+    color: white;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+.tab-inactive {
+    color: #a1a1aa;
+    border-radius: 10px;
+  }
+
+/* КОМПАКТНЫЙ ТАЙМЛАЙН */
+.timeline {
+    height: 56px;
+    background: #1c1c1e;
+    border-radius: 12px;
+    padding: 18px 12px 28px 12px;
+    position: relative;
+  }
+.timeline-bar {
+    position: absolute;
+    top: 12px;
+    height: 32px;
+    background: #22c55e;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+.timeline-hour {
+    font-size: 9px;
+    color: #52525b;
+    position: absolute;
+    bottom: 6px;
+    transform: translateX(-50%);
+  }
+ #totalPay {
+    font-size: 32px;
+    font-weight: 700;
+    color: #22c55e;
+  }
+</style>
+</head>
+<body class="text-zinc-100 p-4">
+
+<div class="max-w-3xl mx-auto">
+
+  <!-- ШАПКА -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold">Управление кухней</h1>
+    <p class="text-sm text-zinc-500" id="dateTitle"></p>
+  </div>
+
+  <!-- ТАБЫ КОМПАКТНЫЕ -->
+  <div class="flex gap-2 mb-6 glass rounded-xl p-1">
+    <button id="tabBtnStaff" onclick="setTab('staff')" class="tab-active flex-1 py-2 text-sm">Повара</button>
+    <button id="tabBtnProd" onclick="setTab('prod')" class="tab-inactive flex-1 py-2 text-sm">График</button>
+    <button id="tabBtnStock" onclick="setTab('stock')" class="tab-inactive flex-1 py-2 text-sm">Склад</button>
+    <button id="tabBtnReports" onclick="setTab('reports')" class="tab-inactive flex-1 py-2 text-sm">Отчёты</button>
+  </div>
+
+  <!-- ТАБ ПОВАРА -->
+  <div id="tab-staff" class="glass rounded-2xl p-4">
+    <div class="flex items-center gap-2 mb-4">
+      <i data-lucide="users" class="w-5 h-5 text-orange-500"></i>
+      <h2 class="font-semibold">Повара</h2>
+    </div>
+    <div class="flex gap-2 mb-4">
+      <input id="newStaffName" placeholder="Имя" class="flex-1 bg-zinc-800 rounded-lg px-3 py-2 text-sm outline-none">
+      <input id="newStaffRate" type="number" placeholder="300" class="w-20 bg-zinc-800 rounded-lg px-3 py-2 text-sm">
+      <button onclick="addStaff()" class="bg-orange-500 px-4 rounded-lg text-sm font-semibold">+</button>
+    </div>
+    <div id="staffList" class="space-y-3"></div>
+  </div>
+
+  <!-- ТАБ ГРАФИК - ИНСТРУМЕНТ -->
+  <div id="tab-prod" class="hidden glass rounded-2xl p-4">
+    <div class="flex justify-between mb-4">
+      <h2 class="font-semibold">График на день</h2>
+      <input type="date" id="dateInput" class="bg-zinc-800 rounded-lg px-2 py-1 text-sm" onchange="loadShifts()">
+    </div>
+    <div id="timelineContainer" class="space-y-5"></div>
+    <div class="glass rounded-xl p-4 mt-6 flex justify-between">
+      <span class="text-zinc-400 text-sm">ИТОГО ФОТ</span>
+      <span id="totalPay">0₽</span>
+    </div>
+  </div>
+
+  <!-- ТАБ СКЛАД -->
+  <div id="tab-stock" class="hidden glass rounded-2xl p-4">
+    <h2 class="font-semibold mb-4">Склад</h2>
+    <p class="text-zinc-500 text-sm">В разработке</p>
+  </div>
+
+  <!-- ТАБ ОТЧЁТЫ -->
+  <div id="tab-reports" class="hidden glass rounded-2xl p-4">
+    <h2 class="font-semibold mb-4">Отчёты</h2>
+    <p class="text-zinc-500 text-sm">В разработке</p>
+  </div>
+
+</div>
+
+<script>
+const _supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+lucide.createIcons();
+
+const restaurantId = new URLSearchParams(window.location.search).get('rest');
+const dateInput = document.getElementById('dateInput');
+dateInput.value = new Date().toISOString().split('T')[0];
+
+function updateDate() {
+  const d = new Date(dateInput.value);
+  const days = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  const months = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+  document.getElementById('dateTitle').innerText = `${d.getDate()} ${months[d.getMonth()]}, ${days[d.getDay()]}`;
+}
+updateDate();
+
+let currentTab = 'staff';
+let staffList = [];
+
+function setTab(tab) {
+  currentTab = tab;
+  ['staff','prod','stock','reports'].forEach(t => {
+    document.getElementById('tab-'+t).classList.add('hidden');
+    document.getElementById('tabBtn'+t.charAt(0).toUpperCase()+t.slice(1)).className = 'tab-inactive flex-1 py-2 text-sm';
+  });
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  document.getElementById('tabBtn'+tab.charAt(0).toUpperCase()+tab.slice(1)).className = 'tab-active flex-1 py-2 text-sm';
+  if(tab === 'prod') loadShifts();
+}
+
+async function addStaff() {
+  const name = document.getElementById('newStaffName').value.trim();
+  const rate = document.getElementById('newStaffRate').value || 300;
+  if (!name) return;
+  await _supabase.from('staff').insert({restaurant_id: restaurantId, name, pay_type: 'hourly', hourly_rate: rate});
+  document.getElementById('newStaffName').value = '';
+  document.getElementById('newStaffRate').value = '';
+  loadStaff();
+}
+
+async function loadStaff() {
+  const { data } = await _supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+  staffList = data || [];
+  document.getElementById('staffList').innerHTML = staffList.map(s => `
+    <div class="flex items-center justify-between bg-zinc-800 rounded-lg p-3">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-black text-sm font-bold">${s.name[0]}</div>
+        <div>
+          <div class="font-semibold text-sm">${s.name}</div>
+          <div class="text-xs text-zinc-500">${s.hourly_rate}₽/час</div>
+        </div>
+      </div>
+      <button onclick="deleteStaff('${s.id}')" class="text-zinc-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+async function deleteStaff(id) {
+  await _supabase.from('staff').delete().eq('id', id);
+  loadStaff();
+}
+
+async function loadShifts() {
+  updateDate();
+  const { data: shifts } = await _supabase.from('work_schedules').select('*, staff(*)').eq('date', dateInput.value).eq('restaurant_id', restaurantId);
+
+  let totalPay = 0;
+  document.getElementById('timelineContainer').innerHTML = staffList.map(st => {
+    const shift = shifts?.find(s => s.staff_id === st.id);
+    const start = shift? parseInt(shift.start_time) : 9;
+    const end = shift? parseInt(shift.end_time) : 18;
+    const hours = end - start;
+    const pay = hours * (st.hourly_rate || 300);
+    totalPay += pay;
+
+    const hoursHtml = Array.from({length: 9}, (_, i) => {
+      const hour = 6 + i*2;
+      return `<div class="timeline-hour" style="left: ${i*12.5}%">${hour}:00</div>`
+    }).join('');
+
+    const barLeft = (start - 6) * 6.25;
+    const barWidth = hours * 6.25;
+
+    return `
+      <div>
+        <div class="flex justify-between mb-2">
+          <span class="font-semibold text-sm">${st.name}</span>
+          <span class="text-green-400 text-sm font-semibold">+${pay}₽</span>
+        </div>
+        <div class="timeline" onclick="createShift(event, '${st.id}')">
+          ${hoursHtml}
+          ${shift? `<div class="timeline-bar" style="left: ${barLeft}%; width: ${barWidth}%"></div>` : ''}
+        </div>
+        <div class="text-zinc-500 text-xs mt-1">${shift? `${start}:00-${end}:00` : 'тап → добавить'}</div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('totalPay').innerText = totalPay.toLocaleString('ru-RU') + '₽';
+}
+
+async function createShift(e, staffId) {
+  const x = e.offsetX / e.currentTarget.offsetWidth;
+  const hour = 6 + Math.round(x * 18);
+  await _supabase.from('work_schedules').insert({restaurant_id, staff_id: staffId, date: dateInput.value, start_time: hour, end_time: hour+8});
+  loadShifts();
+}
+
+loadStaff();
+</script>
+</body>
+</html>
