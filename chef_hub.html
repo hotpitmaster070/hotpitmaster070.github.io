@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Экран Шефа - HotPit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+body { background: radial-gradient(ellipse at top, #18181b 0%, #09090b 100%); }
+.glass { backdrop-filter: blur(16px); background: rgba(39, 39, 42, 0.7); border: 1px solid rgba(255,255,255,0.1); }
+.card { transition: all 0.2s; }
+.card:active { transform: scale(0.96); }
+.btn-red { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.btn-gray { background: #27272a; opacity: 0.5; }
+</style>
+</head>
+<body class="text-white min-h-screen p-6">
+<div class="max-w-md mx-auto">
+
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold mb-2">Экран Шефа 🧱</h1>
+    <!-- ТУТ БУДЕТ НАЗВАНИЕ РЕСТОРАНА -->
+    <p id="restName" class="text-xl font-semibold text-red-400 mb-1">Загрузка...</p>
+    <p class="text-zinc-400 text-sm">HotPit Kitchen OS</p>
+  </div>
+
+  <div class="grid gap-3">
+    
+    <button class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="package-plus" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">1. Приход товара</p>
+        <p class="text-xs text-zinc-300">Накладные, поставки</p>
+      </div>
+    </button>
+
+    <button class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">2. Создать задание</p>
+        <p class="text-xs text-zinc-300">Для поваров</p>
+      </div>
+    </button>
+
+    <button onclick="openChef()" class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="warehouse" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">4. Мой склад</p>
+        <p class="text-xs text-zinc-300">Остатки на сегодня</p>
+      </div>
+    </button>
+
+    <button class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="chef-hat" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">5. Мои заготовки</p>
+        <p class="text-xs text-zinc-300">Prep-list</p>
+      </div>
+    </button>
+
+    <button disabled class="glass card btn-gray rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="trash-2" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">6. Списание</p>
+        <p class="text-xs text-zinc-300">Скоро</p>
+      </div>
+    </button>
+
+    <button class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="bar-chart-3" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">7. Отчёт по списанию</p>
+      </div>
+    </button>
+
+    <button class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="calendar" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">8. Отчёт за месяц</p>
+      </div>
+    </button>
+
+    <button class="glass card btn-red rounded-2xl p-5 flex items-center gap-4 text-left">
+      <i data-lucide="scan-search" class="w-8 h-8"></i>
+      <div>
+        <p class="font-bold text-lg">9. Инвентаризация</p>
+      </div>
+    </button>
+
+    <button onclick="window.location.href='join.html'" class="glass card btn-gray rounded-2xl p-4 mt-4">
+      <p class="font-bold">ВЫЙТИ</p>
+    </button>
+
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+// Supabase ключи - возьми из своего chef.html
+const SUPABASE_URL = 'https://твой-project.supabase.co';
+const SUPABASE_KEY = 'твой-anon-key';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Берём UUID из ссылки
+const urlParams = new URLSearchParams(window.location.search);
+const restaurantId = urlParams.get('rest');
+
+// Загружаем название ресторана
+async function loadRestaurantName() {
+  if (!restaurantId) {
+    document.getElementById('restName').textContent = 'Ошибка: нет ID';
+    return;
+  }
+  
+  const { data, error } = await supabase
+    .from('restaurants')
+    .select('name')
+    .eq('id', restaurantId)
+    .single();
+    
+  if (error || !data) {
+    document.getElementById('restName').textContent = 'Ресторан не найден';
+  } else {
+    document.getElementById('restName').textContent = data.name;
+  }
+}
+
+// Функция для кнопки 4
+function openChef() {
+  if (!restaurantId) {
+    alert('Ошибка: нет ID ресторана');
+    return;
+  }
+  window.location.href = `chef.html?rest=${restaurantId}`;
+}
+
+// Запускаем при открытии
+loadRestaurantName();
+</script>
+</body>
+  </html>
