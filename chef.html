@@ -2,127 +2,183 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>Управление - HotPit</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
   :root { --accent: #f97316; --accent-dark: #ea580c; }
-  body { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); }
-.glass { backdrop-filter: blur(12px); background: rgba(39, 39, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); }
-.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; transition: all 0.2s; }
-.btn-primary:active { transform: scale(0.95); }
-.tab-active { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; }
-.tab-inactive { background: rgba(39, 39, 42, 0.8); color: #a1a1aa; }
-.timeline { position: relative; height: 60px; background: rgba(63,63,70,0.3); border-radius: 12px; }
-.timeline-bar { position: absolute; height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 8px; cursor: grab; }
-.timeline-bar:active { cursor: grabbing; }
-.timeline-hour { position: absolute; bottom: -24px; font-size: 10px; color: #71717a; }
-.logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
-.divider{color:#71717a;}
-.nav-link{ color:#d4d4d8; font-size:18px; }
+  body { background: #000; touch-action: pan-y; }
+ .sidebar {
+    background: #111;
+    border-right: 1px solid #222;
+  }
+ .sidebar-item {
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+  }
+ .sidebar-item.active {
+    background: #f97316;
+    color: white;
+    font-weight: 600;
+  }
+ .glass { backdrop-filter: blur(12px); background: rgba(39, 39, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); }
+ .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; transition: all 0.2s; }
+ .btn-primary:active { transform: scale(0.95); }
+ .timeline { position: relative; height: 60px; background: rgba(63,63,70,0.3); border-radius: 12px; }
+ .timeline-bar { position: absolute; height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 8px; cursor: grab; }
+ .timeline-hour { position: absolute; bottom: -24px; font-size: 10px; color: #71717a; }
+ .logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
 </style>
 </head>
-<body class="text-zinc-100 p-4 md:p-6">
-<div class="max-w-5xl mx-auto space-y-6">
+<body class="text-zinc-100">
+<div class="flex min-h-screen" id="app">
 
-  <header class="flex items-center gap-3 mb-6">
-    <a href="/" class="logo-link">HotPit</a>
-    <span class="divider">|</span>
-    <span class="nav-link">Управление кухней</span>
-  </header>
+  <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden" onclick="toggleSidebar()"></div>
 
-  <div class="flex gap-2 mb-6 overflow-x-auto">
-    <button id="tabBtnKitchen" onclick="setTab('kitchen')" class="tab-inactive px-5 py-3 rounded-xl font-semibold">Экран Шефа</button>
-    <button id="tabBtnStaff" onclick="setTab('staff')" class="tab-active px-5 py-3 rounded-xl font-semibold">Повара</button>
-    <button id="tabBtnProd" onclick="setTab('prod')" class="tab-inactive px-5 py-3 rounded-xl font-semibold">График</button>
-    <button id="tabBtnStock" onclick="setTab('stock')" class="tab-inactive px-5 py-3 rounded-xl font-semibold">Склад</button>
-    <button id="tabBtnReports" onclick="setTab('reports')" class="tab-inactive px-5 py-3 rounded-xl font-semibold">Отчёты</button>
-  </div>
-
-  <!-- ЭКРАН ШЕФА -->
-  <div id="tab-kitchen" class="hidden glass rounded-2xl p-6">
-    <div class="text-center mb-8">
-      <h2 class="text-3xl font-bold mb-2">Экран Шефа 🧱</h2>
-      <p id="restNameKitchen" class="text-xl font-semibold text-orange-500 mb-1">Загрузка...</p>
-      <p class="text-zinc-400 text-sm">HotPit Kitchen OS</p>
-    </div>
-
-    <div class="grid gap-3 max-w-md mx-auto">
-      <button class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
-        <i data-lucide="package-plus" class="w-8 h-8"></i>
-        <div>
-          <p class="font-bold text-lg">1. Приход товара</p>
-          <p class="text-xs opacity-80">Накладные, поставки</p>
-        </div>
-      </button>
-
-      <button class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
-        <i data-lucide="clipboard-list" class="w-8 h-8"></i>
-        <div>
-          <p class="font-bold text-lg">2. Создать задание</p>
-          <p class="text-xs opacity-80">Для поваров</p>
-        </div>
-      </button>
-
-      <button onclick="setTab('prod')" class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
-        <i data-lucide="calendar" class="w-8 h-8"></i>
-        <div>
-          <p class="font-bold text-lg">4. График смен</p>
-          <p class="text-xs opacity-80">Таймлайн поваров</p>
-        </div>
-      </button>
-
-      <button onclick="setTab('stock')" class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
-        <i data-lucide="warehouse" class="w-8 h-8"></i>
-        <div>
-          <p class="font-bold text-lg">Мой склад</p>
-          <p class="text-xs opacity-80">Остатки на сегодня</p>
-        </div>
-      </button>
-    </div>
-  </div>
-
-  <!-- ПОВАРА -->
-  <div id="tab-staff" class="glass rounded-2xl p-6">
-    <h2 class="text-2xl font-bold mb-4">Повара</h2>
-    <div class="flex gap-3 mb-6">
-      <input id="newStaffName" placeholder="Имя повара" class="flex-1 glass rounded-xl p-3 outline-none">
-      <button onclick="addStaff()" class="btn-primary px-8 rounded-xl font-bold">+ Добавить</button>
-    </div>
-    <div id="staffList" class="space-y-4"></div>
-  </div>
-
-  <!-- ГРАФИК КОСМОС -->
-  <div id="tab-prod" class="hidden glass rounded-2xl p-6">
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-2xl font-bold" id="dateTitle">30 Мая, Пятница</h2>
-      <input type="date" id="dateInput" class="glass rounded-xl px-4 py-2 outline-none" onchange="loadShifts()">
-    </div>
-
-    <div id="timelineContainer" class="space-y-6">
-      <!-- Сюда вставятся таймлайны поваров -->
-    </div>
-
-    <div class="glass rounded-xl p-4 mt-8">
-      <div class="flex justify-between items-center">
-        <span class="text-zinc-400 text-lg">ИТОГО ФОТ ЗА ДЕНЬ:</span>
-        <span id="totalPay" class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">0₽</span>
+  <!-- БОКОВАЯ ПАНЕЛЬ ДЕСКТОП -->
+  <div class="sidebar w-64 p-4 hidden md:block">
+    <h2 class="text-xl font-bold mb-6 px-2">HotPit</h2>
+    <div class="space-y-2">
+      <div class="sidebar-item active" onclick="setTab('kitchen', event)">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i><span>Экран Шефа</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('staff', event)">
+        <i data-lucide="users" class="w-5 h-5"></i><span>Повара</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('prod', event)">
+        <i data-lucide="calendar" class="w-5 h-5"></i><span>График</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('stock', event)">
+        <i data-lucide="warehouse" class="w-5 h-5"></i><span>Склад</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('reports', event)">
+        <i data-lucide="bar-chart" class="w-5 h-5"></i><span>Отчёты</span>
       </div>
     </div>
   </div>
 
-  <!-- СКЛАД -->
-  <div id="tab-stock" class="hidden glass rounded-2xl p-6">
-    <h2 class="text-2xl font-bold mb-4">Склад</h2>
-    <div id="balanceList" class="space-y-2"></div>
+  <!-- БОКОВАЯ ПАНЕЛЬ МОБИЛЬНАЯ -->
+  <div id="sidebarMobile" class="sidebar fixed left-[-280px] top-0 h-full w-64 p-4 md:hidden z-50 transition-all">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">HotPit</h2>
+      <button onclick="toggleSidebar()"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+    <div class="space-y-2">
+      <div class="sidebar-item active" onclick="setTab('kitchen', event)">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i><span>Экран Шефа</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('staff', event)">
+        <i data-lucide="users" class="w-5 h-5"></i><span>Повара</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('prod', event)">
+        <i data-lucide="calendar" class="w-5 h-5"></i><span>График</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('stock', event)">
+        <i data-lucide="warehouse" class="w-5 h-5"></i><span>Склад</span>
+      </div>
+      <div class="sidebar-item" onclick="setTab('reports', event)">
+        <i data-lucide="bar-chart" class="w-5 h-5"></i><span>Отчёты</span>
+      </div>
+    </div>
   </div>
 
-  <!-- ОТЧЁТЫ -->
-  <div id="tab-reports" class="hidden glass rounded-2xl p-6">
-    <h2 class="text-2xl font-bold mb-4">Отчёты</h2>
-    <p class="text-zinc-500">В разработке</p>
+  <!-- ОСНОВНОЙ КОНТЕНТ -->
+  <div class="flex-1 p-4">
+    <button class="md:hidden mb-4" onclick="toggleSidebar()">
+      <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+
+    <!-- ЭКРАН ШЕФА -->
+    <div id="tab-kitchen" class="glass rounded-2xl p-6">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold mb-2">Экран Шефа 🧱</h2>
+        <p id="restNameKitchen" class="text-xl font-semibold text-orange-500 mb-1">Загрузка...</p>
+        <p class="text-zinc-400 text-sm">HotPit Kitchen OS</p>
+      </div>
+
+      <div class="grid gap-3 max-w-md mx-auto">
+        <button class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
+          <i data-lucide="package-plus" class="w-8 h-8"></i>
+          <div>
+            <p class="font-bold text-lg">1. Приход товара</p>
+            <p class="text-xs opacity-80">Накладные, поставки</p>
+          </div>
+        </button>
+
+        <button class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
+          <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+          <div>
+            <p class="font-bold text-lg">2. Создать задание</p>
+            <p class="text-xs opacity-80">Для поваров</p>
+          </div>
+        </button>
+
+        <button onclick="setTab('prod', event)" class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
+          <i data-lucide="calendar" class="w-8 h-8"></i>
+          <div>
+            <p class="font-bold text-lg">4. График смен</p>
+            <p class="text-xs opacity-80">Таймлайн поваров</p>
+          </div>
+        </button>
+
+        <button onclick="setTab('stock', event)" class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
+          <i data-lucide="warehouse" class="w-8 h-8"></i>
+          <div>
+            <p class="font-bold text-lg">Мой склад</p>
+            <p class="text-xs opacity-80">Остатки на сегодня</p>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ПОВАРА -->
+    <div id="tab-staff" class="hidden glass rounded-2xl p-6">
+      <h2 class="text-2xl font-bold mb-4">Повара</h2>
+      <div class="flex gap-3 mb-6">
+        <input id="newStaffName" placeholder="Имя повара" class="flex-1 glass rounded-xl p-3 outline-none">
+        <button onclick="addStaff()" class="btn-primary px-8 rounded-xl font-bold">+ Добавить</button>
+      </div>
+      <div id="staffList" class="space-y-4"></div>
+    </div>
+
+    <!-- ГРАФИК КОСМОС -->
+    <div id="tab-prod" class="hidden glass rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold" id="dateTitle">30 Мая, Пятница</h2>
+        <input type="date" id="dateInput" class="glass rounded-xl px-4 py-2 outline-none" onchange="loadShifts()">
+      </div>
+
+      <div id="timelineContainer" class="space-y-6">
+        <!-- Сюда вставятся таймлайны поваров -->
+      </div>
+
+      <div class="glass rounded-xl p-4 mt-8">
+        <div class="flex justify-between items-center">
+          <span class="text-zinc-400 text-lg">ИТОГО ФОТ ЗА ДЕНЬ:</span>
+          <span id="totalPay" class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">0₽</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- СКЛАД -->
+    <div id="tab-stock" class="hidden glass rounded-2xl p-6">
+      <h2 class="text-2xl font-bold mb-4">Склад</h2>
+      <div id="balanceList" class="space-y-2"></div>
+    </div>
+
+    <!-- ОТЧЁТЫ -->
+    <div id="tab-reports" class="hidden glass rounded-2xl p-6">
+      <h2 class="text-2xl font-bold mb-4">Отчёты</h2>
+      <p class="text-zinc-500">В разработке</p>
+    </div>
   </div>
 </div>
 
@@ -135,19 +191,29 @@ const restaurantId = urlParams.get('rest');
 document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
 updateDateTitle();
 
-let currentTab = 'staff';
+let currentTab = 'kitchen';
 let staffList = [];
 
-function setTab(tab) {
+function toggleSidebar() {
+  document.getElementById('sidebarMobile').classList.toggle('left-[-280px]');
+  document.getElementById('overlay').classList.toggle('hidden');
+}
+
+function setTab(tab, e) {
   currentTab = tab;
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  if(e) e.target.closest('.sidebar-item').classList.add('active');
+
   ['kitchen','staff','prod','stock','reports'].forEach(t => {
     document.getElementById('tab-'+t).classList.add('hidden');
-    document.getElementById('tabBtn'+t.charAt(0).toUpperCase()+t.slice(1)).className = 'tab-inactive px-5 py-3 rounded-xl font-semibold';
   });
   document.getElementById('tab-'+tab).classList.remove('hidden');
-  document.getElementById('tabBtn'+tab.charAt(0).toUpperCase()+tab.slice(1)).className = 'tab-active px-5 py-3 rounded-xl font-semibold';
+
+  if(window.innerWidth < 768) toggleSidebar();
+
   if(tab === 'prod') loadShifts();
   if(tab === 'kitchen') loadRestaurantNameKitchen();
+  if(tab === 'staff') loadStaff();
 }
 
 function updateDateTitle() {
@@ -165,10 +231,10 @@ async function loadRestaurantNameKitchen() {
   }
 
   const { data, error } = await _supabase
-   .from('restaurants')
-   .select('name')
-   .eq('id', restaurantId)
-   .single();
+  .from('restaurants')
+  .select('name')
+  .eq('id', restaurantId)
+  .single();
 
   if (error) {
     nameEl.textContent = 'Ошибка загрузки';
@@ -254,7 +320,6 @@ async function loadShifts() {
     }
     totalPay += pay;
 
-    // Рисуем шкалу 6:00 до 24:00
     const hoursHtml = Array.from({length: 18}, (_, i) =>
       `<div class="timeline-hour" style="left: ${i*5.55}%">${i+6}:00</div>`
     ).join('');
@@ -300,11 +365,11 @@ async function createShift(e, staffId) {
 
 function startDrag(e, staffId) {
   e.stopPropagation();
-  // Упрощённо: пока клик создаёт смену. Драг сделаем в версии 2.0
   alert('Версия 2.0: тащи полосу пальцем. Пока жми на шкалу для создания смены');
 }
 
 loadStaff();
+setTab('kitchen', null);
 </script>
 </body>
 </html>
