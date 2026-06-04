@@ -1,0 +1,211 @@
+body { background: #000; touch-action: pan-y; }
+.sidebar {
+    background: #111;
+    border-right: 1px solid #222;
+  }
+.sidebar-item {
+    padding: 12px 16px;
+    border-radius: 10px;
+    color: #a1a1aa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s;
+  }
+.sidebar-item.active {
+    background: #f97316;
+    color: white;
+    font-weight: 600;
+  }
+.card {
+    background: rgba(28,28,30,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 16px;
+  }
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 60;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+.modal.show {
+    display: flex;
+  }
+.pay-toggle button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid #333;
+  flex: 1;
+}
+.pay-toggle button.active {
+  background: #f97316;
+  color: white;
+  border-color: #f97316;
+}
+.pay-toggle button.inactive {
+  background: #1a1a1a;
+  color: #a1a1aa;
+}
+.btn-primary {
+  background: #f97316;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.btn-danger {
+  background: rgba(239,68,68,0.2);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+.view-toggle button {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.view-toggle button.active {
+  background: #f97316;
+  color: white;
+}
+.view-toggle button.inactive {
+  background: #1a1a1a;
+  color: #a1a1aa;
+}
+.staff-day-btn {
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #a1a1aa;
+  width: 100%;
+  transition: all 0.2s;
+}
+.staff-day-btn.active {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+.day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.day-nav button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #1a1a1a;
+}
+.date-badge {
+  background: rgba(249,115,22,0.2);
+  color: #f97316;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.date-badge:hover {
+  background: rgba(249,115,22,0.3);
+}
+.month-day-btn {
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid #333;
+  background: #1a1a1a;
+  color: #a1a1aa;
+  transition: all 0.2s;
+}
+.month-day-btn.active {
+  background: #22c55e;
+  color: white;
+  border-color: #22c55e;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.calendar-day {
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #1a1a1a;
+}
+.calendar-day:hover {
+  background: #2a2a2a;
+}
+.calendar-day.selected {
+  background: #f97316;
+  color: white;
+  font-weight: 600;
+}
+.calendar-day.today {
+  border: 1px solid #f97316;
+}
+.calendar-header {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 4px;
+}
+.kitchen-btn {
+  width:100%; 
+  padding:10px 12px;
+  display:flex; 
+  align-items:center; 
+  gap:10px;
+  background:linear-gradient(135deg,#f97316,#ea580c);
+  border:none; 
+  border-radius:8px;
+  color:white; 
+  cursor:pointer; 
+  transition:all 0.2s;
+  text-align:left;
+  min-height:44px;
+}
+.kitchen-btn:active { transform:scale(0.98) }
+.kitchen-btn svg {
+  width:20px;
+  height:20px;
+  flex-shrink:0;
+  stroke-width:2;
+}
+.kitchen-btn p:first-child {
+  font-weight:600;
+  font-size:14px;
+  margin:0;
+  line-height:1.2;
+}
+.kitchen-btn p:last-child {
+  font-size:11px; 
+  opacity:0.8; 
+  margin:2px 0 0 0;
+  line-height:1.1;
+}
+.kitchen-btn.disabled {
+  background:rgba(60,60,60,0.6);
+  background-image:none;
+  opacity:0.7;
+  cursor:not-allowed;
+}
