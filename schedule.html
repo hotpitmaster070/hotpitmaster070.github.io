@@ -850,42 +850,49 @@ async function startQrScanner() {
 <style>
 .kitchen-btn {
   width:100%; 
-  padding:12px 16px; /* было 20px, стало 12px */
+  padding:10px 12px; /* компактный паддинг */
   display:flex; 
   align-items:center; 
-  gap:12px; /* было 16px */
-  background:rgba(39,39,42,0.8); 
-  backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.1); 
-  border-radius:12px; /* было 16px */
+  gap:10px; /* расстояние иконка-текст */
+  background:linear-gradient(135deg,#f97316,#ea580c);
+  border:none; 
+  border-radius:8px; /* как у тебя на скрине */
   color:white; 
   cursor:pointer; 
   transition:all 0.2s;
-  background-image:linear-gradient(135deg,#f97316,#ea580c);
   text-align:left;
-  min-height:52px; /* ограничили высоту */
+  min-height:44px; /* высота как у "Повара" на скрине */
 }
-.kitchen-btn:active { transform:scale(0.97) }
+.kitchen-btn:active { transform:scale(0.98) }
 
-/* Иконки тоже уменьшим */
+/* Иконки как у тебя - маленькие */
 .kitchen-btn svg {
-  width:24px; /* было 32px */
-  height:24px;
+  width:20px; /* было 32px */
+  height:20px;
   flex-shrink:0;
+  stroke-width:2;
 }
 
-/* Текст поменьше */
+/* Текст как у тебя */
 .kitchen-btn p:first-child {
-  font-weight:700; /* было 800 */
-  font-size:15px; /* было 17px */
+  font-weight:600; /* было 800 */
+  font-size:14px; /* было 17px */
   margin:0;
   line-height:1.2;
 }
 .kitchen-btn p:last-child {
-  font-size:11px; /* было 12px */
+  font-size:11px; 
   opacity:0.8; 
-  margin:2px 0 0 0; /* было 4px */
+  margin:2px 0 0 0;
   line-height:1.1;
+}
+
+/* Серые кнопки "Скоро" */
+.kitchen-btn.disabled {
+  background:rgba(60,60,60,0.6);
+  background-image:none;
+  opacity:0.7;
+  cursor:not-allowed;
 }
 </style>
 
