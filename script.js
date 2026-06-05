@@ -420,3 +420,46 @@ async function loadRestaurantNamePanel() {
   const { data } = await _supabase.from('restaurants').select('name').eq('id', restaurantId).single();
   document.getElementById('restNamePanel').textContent = data?.name || 'Ресторан';
 }
+
+// ФУНКЦИИ ДЛЯ ЗАДАНИЙ ШЕФА
+function openTaskModal() {
+  const select = document.getElementById('taskCook');
+  if(!select) return;
+  select.innerHTML = '<option value="">Выбери повара...</option>' +
+    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('taskModal').classList.add('show');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('show');
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+}
+
+async function saveTask() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('rest');
+  const staff_id = document.getElementById('taskCook').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDesc').value.trim();
+  
+  if(!staff_id || !title) {
+    alert('Выбери повара и напиши заголовок!');
+    return;
+  }
+
+  const { error } = await _supabase.from('tasks').insert({
+    restaurant_id: restaurantId,
+    staff_id: staff_id,
+    title: title,
+    description: description,
+    status: 'new'
+  });
+
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+  alert('Задание отправлено!');
+  closeTaskModal();
+}
