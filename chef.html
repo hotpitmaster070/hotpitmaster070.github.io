@@ -10,11 +10,11 @@
 <style>
   :root { --accent: #f97316; --accent-dark: #ea580c; }
   body { background: #000; touch-action: pan-y; }
- .sidebar {
+.sidebar {
     background: #111;
     border-right: 1px solid #222;
   }
- .sidebar-item {
+.sidebar-item {
     padding: 12px 16px;
     border-radius: 10px;
     color: #a1a1aa;
@@ -24,18 +24,18 @@
     gap: 12px;
     transition: all 0.2s;
   }
- .sidebar-item.active {
+.sidebar-item.active {
     background: #f97316;
     color: white;
     font-weight: 600;
   }
- .glass { backdrop-filter: blur(12px); background: rgba(39, 39, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); }
- .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; transition: all 0.2s; }
- .btn-primary:active { transform: scale(0.95); }
- .timeline { position: relative; height: 60px; background: rgba(63,63,70,0.3); border-radius: 12px; }
- .timeline-bar { position: absolute; height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 8px; cursor: grab; }
- .timeline-hour { position: absolute; bottom: -24px; font-size: 10px; color: #71717a; }
- .logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
+.glass { backdrop-filter: blur(12px); background: rgba(39, 39, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; transition: all 0.2s; }
+.btn-primary:active { transform: scale(0.95); }
+.timeline { position: relative; height: 60px; background: rgba(63,63,70,0.3); border-radius: 12px; }
+.timeline-bar { position: absolute; height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 8px; cursor: grab; }
+.timeline-hour { position: absolute; bottom: -24px; font-size: 10px; color: #71717a; }
+.logo-link{ color:#f97316; font-weight:800; text-decoration:none; font-size:24px; }
 </style>
 </head>
 <body class="text-zinc-100">
@@ -113,7 +113,7 @@
           </div>
         </button>
 
-        <button class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
+        <button onclick="openTaskModal()" class="glass rounded-2xl p-5 flex items-center gap-4 text-left bg-gradient-to-r from-orange-600 to-orange-700 text-white">
           <i data-lucide="clipboard-list" class="w-8 h-8"></i>
           <div>
             <p class="font-bold text-lg">2. Создать задание</p>
@@ -156,9 +156,7 @@
         <input type="date" id="dateInput" class="glass rounded-xl px-4 py-2 outline-none" onchange="loadShifts()">
       </div>
 
-      <div id="timelineContainer" class="space-y-6">
-        <!-- Сюда вставятся таймлайны поваров -->
-      </div>
+      <div id="timelineContainer" class="space-y-6"></div>
 
       <div class="glass rounded-xl p-4 mt-8">
         <div class="flex justify-between items-center">
@@ -178,6 +176,24 @@
     <div id="tab-reports" class="hidden glass rounded-2xl p-6">
       <h2 class="text-2xl font-bold mb-4">Отчёты</h2>
       <p class="text-zinc-500">В разработке</p>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА СОЗДАТЬ ЗАДАНИЕ -->
+<div id="taskModal" class="fixed inset-0 bg-black/80 z-60 hidden items-center justify-center">
+  <div class="glass rounded-2xl p-6 w-full max-w-md mx-4">
+    <h3 class="text-xl font-bold mb-4">Новое задание</h3>
+    <div class="space-y-4">
+      <select id="taskCook" class="w-full glass rounded-xl p-3 outline-none">
+        <option value="">Выбери повара...</option>
+      </select>
+      <input id="taskTitle" placeholder="Заголовок: Почистить картошку" class="w-full glass rounded-xl p-3 outline-none">
+      <textarea id="taskDesc" placeholder="Описание: 5кг, мелким кубиком" rows="3" class="w-full glass rounded-xl p-3 outline-none"></textarea>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeTaskModal()" class="flex-1 bg-zinc-700 py-3 rounded-xl">Отмена</button>
+        <button onclick="saveTask()" class="btn-primary flex-1 py-3 rounded-xl font-bold">Отправить</button>
+      </div>
     </div>
   </div>
 </div>
@@ -229,19 +245,16 @@ async function loadRestaurantNameKitchen() {
     nameEl.textContent = 'Ошибка: нет ID ресторана';
     return;
   }
-
   const { data, error } = await _supabase
-  .from('restaurants')
-  .select('name')
-  .eq('id', restaurantId)
-  .single();
-
+.from('restaurants')
+.select('name')
+.eq('id', restaurantId)
+.single();
   if (error) {
     nameEl.textContent = 'Ошибка загрузки';
     console.error(error);
     return;
   }
-
   nameEl.textContent = data?.name || 'Ресторан';
 }
 
@@ -298,9 +311,9 @@ async function loadShifts() {
   updateDateTitle();
   const date = document.getElementById('dateInput').value;
   const { data: shifts } = await _supabase
-  .from('work_schedules')
-  .select('*, staff(id,name,pay_type,hourly_rate,daily_rate)')
-  .eq('date', date);
+.from('work_schedules')
+.select('*, staff(id,name,pay_type,hourly_rate,daily_rate)')
+.eq('date', date);
 
   const container = document.getElementById('timelineContainer');
   let totalPay = 0;
@@ -366,6 +379,47 @@ async function createShift(e, staffId) {
 function startDrag(e, staffId) {
   e.stopPropagation();
   alert('Версия 2.0: тащи полосу пальцем. Пока жми на шкалу для создания смены');
+}
+
+// ФУНКЦИИ ДЛЯ ЗАДАНИЙ ШЕФА
+function openTaskModal() {
+  const select = document.getElementById('taskCook');
+  select.innerHTML = '<option value="">Выбери повара...</option>' +
+    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('taskModal').classList.remove('hidden');
+  document.getElementById('taskModal').classList.add('flex');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.add('hidden');
+  document.getElementById('taskModal').classList.remove('flex');
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+}
+
+async function saveTask() {
+  const staff_id = document.getElementById('taskCook').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDesc').value.trim();
+  if(!staff_id ||!title) {
+    alert('Выбери повара и напиши заголовок!');
+    return;
+  }
+
+  const { error } = await _supabase.from('tasks').insert({
+    restaurant_id: restaurantId,
+    staff_id: staff_id,
+    title: title,
+    description: description,
+    status: 'new'
+  });
+
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+  alert('Задание отправлено!');
+  closeTaskModal();
 }
 
 loadStaff();
