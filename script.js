@@ -10,6 +10,12 @@ fetch('menu.html').then(r=>r.text()).then(html=>{
     });
   }
   
+  // Подсвечиваем активный пункт меню
+  const currentPage = window.location.pathname.split('/').pop();
+  if(currentPage === 'chef.html') {
+    document.querySelector('[data-rest]')?.classList.add('active');
+  }
+  
   if(typeof lucide !== 'undefined') lucide.createIcons();
 });
 
@@ -475,4 +481,4 @@ async function saveTask() {
   }
   alert('Задание отправлено!');
   closeTaskModal();
-  }
+}
