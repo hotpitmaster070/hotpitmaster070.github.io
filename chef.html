@@ -9,7 +9,6 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="style.css">
 <style>
-  /* Стили для шефа, если в style.css нет */
   .modal {
     position: fixed;
     inset: 0;
@@ -35,6 +34,7 @@
     transition: all 0.2s;
     border: none;
     width: 100%;
+    cursor: pointer;
   }
   .kitchen-btn:active {
     transform: scale(0.97);
@@ -61,6 +61,8 @@
     color: white;
     font-weight: 600;
     transition: all 0.2s;
+    border: none;
+    cursor: pointer;
   }
   .btn-primary:active {
     transform: scale(0.95);
@@ -125,13 +127,13 @@
   <div class="card w-full max-w-md mx-4" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold mb-4">Новое задание</h3>
     <div class="space-y-4">
-      <select id="taskCook" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700">
+      <select id="taskCook" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700 text-white">
         <option value="">Выбери повара...</option>
       </select>
-      <input id="taskTitle" placeholder="Заголовок: Почистить картошку" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700">
-      <textarea id="taskDesc" placeholder="Описание: 5кг, мелким кубиком" rows="3" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700"></textarea>
+      <input id="taskTitle" placeholder="Заголовок: Почистить картошку" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700 text-white">
+      <textarea id="taskDesc" placeholder="Описание: 5кг, мелким кубиком" rows="3" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700 text-white"></textarea>
       <div class="flex gap-2 pt-2">
-        <button onclick="closeTaskModal()" class="flex-1 bg-zinc-700 py-3 rounded-lg">Отмена</button>
+        <button onclick="closeTaskModal()" class="flex-1 bg-zinc-700 py-3 rounded-lg text-white">Отмена</button>
         <button onclick="saveTask()" class="btn-primary flex-1 py-3 rounded-lg">Отправить</button>
       </div>
     </div>
@@ -140,12 +142,14 @@
 
 <div id="kitchenOverlay" onclick="closeKitchenPanel()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:9998; backdrop-filter:blur(4px)"></div>
 
+<!-- СНАЧАЛА ПОДКЛЮЧАЕМ script.js ГДЕ ЕСТЬ _supabase -->
 <script src="script.js"></script>
+
 <script>
 // Доп функции только для chef.html
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   if(typeof lucide !== 'undefined') lucide.createIcons();
-  loadRestaurantNameKitchen();
+  await loadRestaurantNameKitchen();
 });
 
 async function loadRestaurantNameKitchen() {
