@@ -8,70 +8,10 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="stylesheet" href="style.css">
-<style>
-  .modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
-    z-index: 60;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-  }
-  .modal.show {
-    display: flex;
-  }
-  .kitchen-btn {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    text-align: left;
-    background: linear-gradient(135deg, #f97316, #ea580c);
-    color: white;
-    padding: 20px;
-    border-radius: 16px;
-    transition: all 0.2s;
-    border: none;
-    width: 100%;
-    cursor: pointer;
-  }
-  .kitchen-btn:active {
-    transform: scale(0.97);
-  }
-  .kitchen-btn p:first-child {
-    font-weight: 700;
-    font-size: 18px;
-    margin: 0;
-  }
-  .kitchen-btn p:last-child {
-    font-size: 12px;
-    opacity: 0.8;
-    margin: 0;
-  }
-  .card {
-    background: rgba(23, 23, 23, 0.95);
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
-    border-radius: 16px;
-    padding: 24px;
-  }
-  .btn-primary {
-    background: linear-gradient(135deg, #f97316, #ea580c);
-    color: white;
-    font-weight: 600;
-    transition: all 0.2s;
-    border: none;
-    cursor: pointer;
-  }
-  .btn-primary:active {
-    transform: scale(0.95);
-  }
-</style>
 </head>
 <body class="text-zinc-100 bg-zinc-950">
-<div class="flex min-h-screen" id="app">
 
+<div class="flex min-h-screen" id="app">
   <div id="errorBox" class="hidden w-full text-center mt-40">
     <div class="text-xl font-bold mb-2">Ошибка</div>
     <div class="text-sm text-zinc-300">Открой через дашборд. Нужен параметр ?rest=UUID</div>
@@ -91,7 +31,7 @@
         <p class="text-sm text-zinc-500" id="restNameKitchen">Загрузка...</p>
       </div>
 
-      <div id="tab-kitchen" class="card">
+      <div class="card">
         <div class="grid gap-3 max-w-md mx-auto">
           <button onclick="alert('Накладные - в разработке')" class="kitchen-btn">
             <i data-lucide="package-plus" class="w-6 h-6"></i>
@@ -109,7 +49,7 @@
             </div>
           </button>
 
-          <button onclick="window.location.href='schedule.html' + window.location.search" class="kitchen-btn">
+          <button onclick="location.href='schedule.html' + location.search" class="kitchen-btn">
             <i data-lucide="calendar" class="w-6 h-6"></i>
             <div>
               <p>4. График смен</p>
@@ -122,13 +62,13 @@
   </div>
 </div>
 
-<!-- МОДАЛКА СОЗДАТЬ ЗАДАНИЕ -->
+<!-- МОДАЛКА -->
 <div id="taskModal" class="modal" onclick="if(event.target.id==='taskModal') closeTaskModal()">
   <div class="card w-full max-w-md mx-4" onclick="event.stopPropagation()">
     <h3 class="text-lg font-bold mb-4">Новое задание</h3>
     <div class="space-y-4">
       <select id="taskCook" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700 text-white">
-        <option value="">Выбери повара...</option>
+        <option value="">Загрузка поваров...</option>
       </select>
       <input id="taskTitle" placeholder="Заголовок: Почистить картошку" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700 text-white">
       <textarea id="taskDesc" placeholder="Описание: 5кг, мелким кубиком" rows="3" class="w-full bg-zinc-800 rounded-lg px-4 py-3 text-sm outline-none border-zinc-700 text-white"></textarea>
@@ -142,32 +82,7 @@
 
 <div id="kitchenOverlay" onclick="closeKitchenPanel()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:9998; backdrop-filter:blur(4px)"></div>
 
-<!-- СНАЧАЛА ПОДКЛЮЧАЕМ script.js ГДЕ ЕСТЬ _supabase -->
-<script src="script.js"></script>
-
-<script>
-// Доп функции только для chef.html
-document.addEventListener('DOMContentLoaded', async function() {
-  if(typeof lucide !== 'undefined') lucide.createIcons();
-  await loadRestaurantNameKitchen();
-});
-
-async function loadRestaurantNameKitchen() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const restaurantId = urlParams.get('rest');
-  const nameEl = document.getElementById('restNameKitchen');
-  if (!restaurantId) {
-    nameEl.textContent = 'Ошибка: нет ID ресторана';
-    return;
-  }
-  const { data, error } = await _supabase.from('restaurants').select('name').eq('id', restaurantId).single();
-  if(error) {
-    console.error(error);
-    nameEl.textContent = 'Ошибка загрузки';
-    return;
-  }
-  nameEl.textContent = data?.name || 'Ресторан';
-}
-</script>
+<!-- ОДИН СКРИПТ НА ВСЁ. defer = ждёт загрузки HTML -->
+<script src="script.js" defer></script>
 </body>
-</html>
+              </html>
