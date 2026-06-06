@@ -1,319 +1,512 @@
-// ===== SUPABASE =====
-const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ===== ГЛОБАЛЬНЫЕ =====
-let staffList = [];
-let currentPayType = 'hourly';
-let currentDate = new Date();
-let currentView = 'day';
-
-// ===== ЗАПУСК =====
-document.addEventListener('DOMContentLoaded', async () => {
-  if(typeof lucide!== 'undefined') lucide.createIcons();
-
-  const page = location.pathname.split('/').pop();
-  const restId = new URLSearchParams(location.search).get('rest');
-
-  if(!restId && page!== 'index.html') {
-    document.getElementById('mainContent')?.classList.add('hidden');
-    document.getElementById('errorBox')?.classList.remove('hidden');
-    return;
+fetch('menu.html').then(r=>r.text()).then(html=>{
+  document.getElementById('sidebarContainer').innerHTML=html;
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const restId = urlParams.get('rest');
+  if(restId) {
+    document.querySelectorAll('[data-rest]').forEach(a => {
+      a.href = a.href.replace('?rest=', '?rest=' + restId);
+    });
   }
-
-  // СНАЧАЛА ГРУЗИМ МЕНЮ! Чтобы сайдбар появился
-  await loadMenu(restId);
-
-  // ПОТОМ грузим страницу
-  if(page === 'chef.html') {
-    await initChefPage(restId);
-  } else if(page === 'schedule.html') {
-    const tab = new URLSearchParams(location.search).get('tab') || 'prod';
-    if(tab === 'staff') await initStaffPage(restId);
-    else if(tab === 'qr') await initQRPage(restId);
-    else if(tab === 'reports') await initReportsPage(restId);
-    else await initSchedulePage(restId);
-  } else if(page === 'cook.html') {
-    await initCookPage(restId);
+  
+  const currentPage = window.location.pathname.split('/').pop();
+  if(currentPage === 'chef.html') {
+    document.querySelector('[data-rest]')?.classList.add('active');
   }
+  
+  if(typeof lucide !== 'undefined') lucide.createIcons();
 });
 
-// ===== МЕНЮ - ПОД ТВОЙ HTML С sidebar-item =====
-async function loadMenu(restId) {
-  const container = document.getElementById('sidebarContainer');
-  if(!container) return;
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 
-  try {
-    const html = await fetch('menu.html').then(r=>r.text());
-    container.innerHTML = html;
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 1. Подставляем UUID в ссылку "Экран шефа"
-    if(restId) {
-      container.querySelectorAll('a[data-rest="true"]').forEach(a => {
-        a.href = 'chef.html?rest=' + restId;
-      });
+const urlParams = new URLSearchParams(window.location.search);
+const restaurantId = urlParams.get('rest');
+
+if (!restaurantId) {
+  document.getElementById('mainContent').classList.add('hidden');
+  document.getElementById('errorBox').classList.remove('hidden');
+} else {
+  document.addEventListener('DOMContentLoaded', async function() {
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
     }
-
-    // 2. Подсветка активной вкладки для ТВОЕГО дизайна
-    const tab = new URLSearchParams(location.search).get('tab') || 'prod';
-    const items = container.querySelectorAll('.sidebar-item');
-    items.forEach(item => item.classList.remove('active'));
-
-    if(tab === 'staff') items[0]?.classList.add('active'); // Повара
-    if(tab === 'prod' ||!tab) items[1]?.classList.add('active'); // График
-    if(tab === 'qr') items[2]?.classList.add('active'); // QR Сканер
-    if(tab === 'reports') items[3]?.classList.add('active'); // Отчёты
-
-    if(typeof lucide!== 'undefined') lucide.createIcons();
-  } catch(e) {
-    console.error('Ошибка загрузки меню:', e);
-  }
+    await initApp();
+  });
 }
 
-// ===== КЛИКИ ПО МЕНЮ =====
-window.setTab = function(tab, event) {
-  const restId = new URLSearchParams(location.search).get('rest');
-  let url = 'schedule.html?rest=' + restId;
-  if(tab!== 'prod') url += '&tab=' + tab;
-  location.href = url;
+async function initApp() {
+  updateDateTitle();
+  await loadCurrency();
+  await loadStaff(); // ЖДЁМ загрузки поваров
+  setView(localStorage.getItem('hotpit_view') || 'day');
 }
 
-// ===== CHEF.HTML =====
-async function initChefPage(restId) {
-  const nameEl = document.getElementById('restNameKitchen');
-  if(nameEl) {
-    const { data } = await _supabase.from('restaurants').select('name').eq('id', restId).single();
-    nameEl.textContent = data?.name || 'Ресторан';
-  }
-  await loadStaffList(restId);
+const currencyMap = {
+  'RUB': '₽', 'USD': '$', 'EUR': '€',
+  'AED': 'د.إ', 'TRY': '₺', 'KZT': '₸', 'AZN': '₼'
+};
+
+let currency = '₽';
+let staffList = [];
+let html5QrCode;
+let selectedPayType = 'hourly';
+let currentView = 'day';
+let currentDate = new Date();
+let pickerDate = new Date();
+
+const months = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const monthsFull = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const days = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+
+function updateDateTitle() {
+  const dateStr = currentDate.toISOString().split('T')[0];
+  document.getElementById('dateTitle').innerText = `${currentDate.getDate()} ${months[currentDate.getMonth()]}, ${days[currentDate.getDay()]}`;
+  document.getElementById('currentDayText').innerText = `${currentDate.getDate()} ${months[currentDate.getMonth()]}`;
+  document.getElementById('currentDayWeek').innerText = days[currentDate.getDay()];
+  document.getElementById('currentDateBadge').innerText = dateStr;
+  document.getElementById('currentMonthText').innerText = `${monthsFull[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 }
 
-// ===== SCHEDULE.HTML - ПОВАРА =====
-async function initStaffPage(restId) {
-  await loadStaffList(restId);
-  renderStaffList(restId);
+function changeDay(delta) {
+  currentDate.setDate(currentDate.getDate() + delta);
+  updateDateTitle();
+  loadSchedule();
 }
 
-window.openAddModal = function() {
+function changeMonth(delta) {
+  currentDate.setMonth(currentDate.getMonth() + delta);
+  updateDateTitle();
+  loadSchedule();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebarMobile').classList.toggle('left-[-280px]');
+  document.getElementById('overlay').classList.toggle('hidden');
+}
+
+function openAddModal() {
   document.getElementById('addModal').classList.add('show');
+  selectedPayType = 'hourly';
+  selectPayType('hourly');
 }
-window.closeAddModal = function() {
+
+function closeAddModal() {
   document.getElementById('addModal').classList.remove('show');
   document.getElementById('newStaffName').value = '';
   document.getElementById('newStaffRate').value = '';
 }
 
-window.selectPayType = function(type) {
-  currentPayType = type;
-  document.getElementById('payHourly').className = type==='hourly'? 'active' : 'inactive';
-  document.getElementById('payDaily').className = type==='daily'? 'active' : 'inactive';
+function selectPayType(type) {
+  selectedPayType = type;
+  const btnHourly = document.getElementById('payHourly');
+  const btnDaily = document.getElementById('payDaily');
+  btnHourly.className = type === 'hourly'? 'active' : 'inactive';
+  btnDaily.className = type === 'daily'? 'active' : 'inactive';
 }
 
-window.addStaff = async function() {
-  const restId = new URLSearchParams(location.search).get('rest');
-  const name = document.getElementById('newStaffName').value.trim();
-  const rate = document.getElementById('newStaffRate').value;
+function openDatePicker() {
+  pickerDate = new Date(currentDate);
+  document.getElementById('datePickerModal').classList.add('show');
+  renderCalendar();
+}
 
-  if(!name ||!rate) return alert('Заполни имя и ставку!');
+function closeDatePicker() {
+  document.getElementById('datePickerModal').classList.remove('show');
+}
 
-  await _supabase.from('staff').insert({
-    restaurant_id: restId,
-    name: name,
-    rate: parseInt(rate),
-    pay_type: currentPayType
+function changePickerMonth(delta) {
+  pickerDate.setMonth(pickerDate.getMonth() + delta);
+  renderCalendar();
+}
+
+function selectToday() {
+  currentDate = new Date();
+  closeDatePicker();
+  updateDateTitle();
+  loadSchedule();
+}
+
+function selectDate(date) {
+  currentDate = new Date(date);
+  closeDatePicker();
+  updateDateTitle();
+  loadSchedule();
+}
+
+function renderCalendar() {
+  const year = pickerDate.getFullYear();
+  const month = pickerDate.getMonth();
+  document.getElementById('pickerMonthYear').innerText = `${monthsFull[month]} ${year}`;
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const today = new Date();
+
+  let startDay = firstDay.getDay();
+  startDay = startDay === 0? 6 : startDay - 1;
+
+  let html = '';
+
+  for(let i = 0; i < startDay; i++) {
+    html += '<div></div>';
+  }
+
+  for(let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+    const isSelected = currentDate.getDate() === d && currentDate.getMonth() === month && currentDate.getFullYear() === year;
+
+    html += `<div
+      class="calendar-day ${isToday? 'today' : ''} ${isSelected? 'selected' : ''}"
+      onclick="selectDate('${dateStr}')">
+      ${d}
+    </div>`;
+  }
+
+  document.getElementById('calendarDays').innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+async function loadCurrency() {
+  const { data } = await _supabase.from('restaurants').select('currency').eq('id', restaurantId).single();
+  const code = (data?.currency || 'RUB').toUpperCase();
+  currency = currencyMap[code] || '₽';
+}
+
+async function setTab(tab, e) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  e.target.closest('.sidebar-item').classList.add('active');
+
+  ['staff','prod','qr','reports'].forEach(t => {
+    document.getElementById('tab-'+t).classList.add('hidden');
+  });
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+
+  if(window.innerWidth < 768) toggleSidebar();
+
+  if(tab === 'prod') loadSchedule();
+  if(tab === 'qr') startQrScanner();
+  if(tab === 'staff') loadStaff();
+}
+
+function setView(view) {
+  currentView = view;
+  localStorage.setItem('hotpit_view', view);
+
+  ['day','month'].forEach(v => {
+    const btn = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1));
+    btn.className = view === v? 'active' : 'inactive';
   });
 
+  document.getElementById('dayNav').classList.toggle('hidden', view!== 'day');
+  document.getElementById('monthNav').classList.toggle('hidden', view!== 'month');
+
+  loadSchedule();
+}
+
+async function addStaff() {
+  const name = document.getElementById('newStaffName').value.trim();
+  const rate = parseInt(document.getElementById('newStaffRate').value) || 300;
+  if (!name) return alert('Введи имя повара');
+
+  await _supabase.from('staff').insert({
+    restaurant_id: restaurantId,
+    name,
+    pay_type: selectedPayType,
+    hourly_rate: selectedPayType === 'hourly'? rate : null,
+    daily_rate: selectedPayType === 'daily'? rate : null
+  });
   closeAddModal();
-  await loadStaffList(restId);
-  renderStaffList(restId);
+  loadStaff();
 }
 
-async function loadStaffList(restId) {
+async function deleteStaff(id, name) {
+  if (!confirm(`Удалить ${name}?`)) return;
+  await _supabase.from('staff').delete().eq('id', id);
+  loadStaff();
+}
+
+async function updatePayType(staffId, type) {
+  await _supabase.from('staff').update({pay_type: type}).eq('id', staffId);
+  loadStaff();
+}
+
+async function loadStaff() {
   const { data } = await _supabase.from('staff')
-  .select('*').eq('restaurant_id', restId).order('name');
+    .select('*')
+    .eq('restaurant_id', restaurantId)
+    .order('name'); // СОРТИРУЕМ ПО ИМЕНИ АЛФАВИТ
+  
   staffList = data || [];
-}
+  
+  // Обновляем список поваров
+  document.getElementById('staffList').innerHTML = staffList.map(s => {
+    const isHourly = s.pay_type === 'hourly';
+    const label = isHourly? `${currency}/час` : `${currency}/день`;
 
-function renderStaffList(restId) {
-  const list = document.getElementById('staffList');
-  if(!staffList.length) {
-    list.innerHTML = '<div class="text-zinc-500 text-sm">Поваров нет. Добавь первого</div>';
-    return;
-  }
-
-  list.innerHTML = staffList.map(s => `
-    <div class="card flex justify-between items-center">
-      <div>
-        <h3 class="font-bold">${s.name}</h3>
-        <p class="text-xs text-zinc-500">${s.pay_type==='hourly'? s.rate+'₽/час' : s.rate+'₽/день'}</p>
+    return `
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name[0]}</div>
+            <div>
+              <div class="font-semibold">${s.name}</div>
+              <div class="text-xs text-zinc-500">${label}</div>
+            </div>
+          </div>
+          <button onclick="deleteStaff('${s.id}', '${s.name}')" class="btn-danger">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="pay-toggle flex gap-2">
+          <button onclick="updatePayType('${s.id}', 'hourly')" class="${isHourly? 'active' : 'inactive'}">Почасовой</button>
+          <button onclick="updatePayType('${s.id}', 'daily')" class="${!isHourly? 'active' : 'inactive'}">Фикс за день</button>
+        </div>
       </div>
-      <button onclick="deleteStaff('${s.id}')" class="text-red-500 text-sm">Удалить</button>
-    </div>
-  `).join('');
-
-  if(typeof lucide!== 'undefined') lucide.createIcons();
+    `;
+  }).join('');
+  
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-window.deleteStaff = async function(id) {
-  if(confirm('Удалить повара?')) {
-    await _supabase.from('staff').delete().eq('id', id);
-    location.reload();
-  }
-}
-
-// ===== SCHEDULE.HTML - ГРАФИК =====
-async function initSchedulePage(restId) {
-  await loadStaffList(restId);
+async function loadSchedule() {
   updateDateTitle();
-  await loadSchedule(restId);
-}
-
-window.setView = async function(view) {
-  currentView = view;
-  document.getElementById('viewDay').className = view==='day'? 'active' : 'inactive';
-  document.getElementById('viewMonth').className = view==='month'? 'active' : 'inactive';
-  document.getElementById('dayNav').classList.toggle('hidden', view!=='day');
-  document.getElementById('monthNav').classList.toggle('hidden', view!=='month');
-  const restId = new URLSearchParams(location.search).get('rest');
-  await loadSchedule(restId);
-}
-
-window.changeDay = async function(dir) {
-  currentDate.setDate(currentDate.getDate() + dir);
-  updateDateTitle();
-  const restId = new URLSearchParams(location.search).get('rest');
-  await loadSchedule(restId);
-}
-
-function updateDateTitle() {
-  const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
-  const days = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-  const d = currentDate;
-  document.getElementById('currentDayText').textContent = d.getDate() + ' + months[d.getMonth()];
-  document.getElementById('currentDateBadge').textContent = d.toISOString().split('T')[0];
-  document.getElementById('currentDayWeek').textContent = days[d.getDay()];
-}
-
-async function loadSchedule(restId) {
-  const content = document.getElementById('scheduleContent');
-  if(currentView === 'day') {
+  if (currentView === 'day') {
     const dateStr = currentDate.toISOString().split('T')[0];
-    const { data: shifts } = await _supabase.from('shifts')
-    .select('*, staff(name)').eq('restaurant_id', restId).eq('shift_date', dateStr);
+    const { data: shifts } = await _supabase.from('work_schedules')
+      .select('*, staff(*)')
+      .eq('date', dateStr)
+      .eq('restaurant_id', restaurantId);
 
-    content.innerHTML = staffList.map(s => {
-      const shift = shifts?.find(x => x.staff_id === s.id);
+    let html = staffList.map(st => {
+      const shift = shifts?.find(s => s.staff_id === st.id);
+      const isActive = shift? true : false;
+
       return `
-        <div class="card flex justify-between items-center cursor-pointer" onclick="toggleShift('${s.id}','${dateStr}')">
-          <span>${s.name}</span>
-          <span class="${shift? 'text-green-400' : 'text-zinc-600'}">${shift? '✓ Смена' : 'Выходной'}</span>
+        <div class="card">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${st.name[0]}</div>
+              <div>
+                <div class="font-semibold">${st.name}</div>
+                <div class="text-xs text-zinc-500">${dateStr}</div>
+              </div>
+            </div>
+            <button onclick="toggleStaffDay('${st.id}')" class="staff-day-btn ${isActive? 'active' : ''}">
+              ${isActive? 'В смене ✓' : 'Не в смене'}
+            </button>
+          </div>
         </div>
       `;
     }).join('');
-  } else {
-    content.innerHTML = '<div class="text-zinc-500">Вид "Месяц" допишем позже брат</div>';
+    document.getElementById('scheduleContent').innerHTML = html || '<div class="text-zinc-500 text-sm">Нет поваров</div>';
+  }
+
+  if (currentView === 'month') {
+    loadMonthSchedule();
   }
 }
 
-window.toggleShift = async function(staffId, dateStr) {
-  const restId = new URLSearchParams(location.search).get('rest');
-  const { data } = await _supabase.from('shifts')
-  .select('id').eq('staff_id', staffId).eq('shift_date', dateStr).single();
+async function loadMonthSchedule() {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
 
-  if(data) await _supabase.from('shifts').delete().eq('id', data.id);
-  else await _supabase.from('shifts').insert({
-    restaurant_id: restId, staff_id: staffId, shift_date: dateStr,
-    start_time: '09:00', end_time: '21:00'
+  const startDate = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+  const { data: shifts } = await _supabase.from('work_schedules')
+    .select('*')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .eq('restaurant_id', restaurantId);
+
+  let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
+
+  staffList.forEach(st => {
+    html += `<div class="card mb-3">
+      <div class="font-semibold mb-2 flex items-center gap-2">
+        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${st.name[0]}</div>
+        ${st.name}
+      </div>
+      <div class="grid grid-cols-7 gap-1">`;
+
+    for(let d = 1; d <= lastDay; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const hasShift = shifts?.some(s => s.staff_id === st.id && s.date === dateStr);
+
+      html += `<button
+        onclick="toggleShiftMonth('${st.id}', '${dateStr}')"
+        class="month-day-btn ${hasShift? 'active' : ''}">
+        ${d}
+      </button>`;
+    }
+
+    html += `</div></div>`;
   });
-  await loadSchedule(restId);
+
+  document.getElementById('scheduleContent').innerHTML = html;
 }
 
-// ===== QR СКАНЕР =====
-async function initQRPage(restId) {
-  const html5QrCode = new Html5Qrcode("qr-reader");
-  const resultEl = document.getElementById('qr-result');
+async function toggleStaffDay(staffId) {
+  const dateStr = currentDate.toISOString().split('T')[0];
 
+  const { data: existing } = await _supabase.from('work_schedules')
+    .select('*')
+    .eq('staff_id', staffId)
+    .eq('date', dateStr)
+    .single();
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: dateStr,
+      start_time: '00:00',
+      end_time: '23:59'
+    });
+  }
+  loadSchedule();
+}
+
+async function toggleShiftMonth(staffId, date) {
+  const { data: existing } = await _supabase.from('work_schedules')
+    .select('*')
+    .eq('staff_id', staffId)
+    .eq('date', date)
+    .single();
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: date,
+      start_time: '00:00',
+      end_time: '23:59'
+    });
+  }
+  loadSchedule();
+}
+
+async function startQrScanner() {
+  if (html5QrCode) html5QrCode.stop();
+  html5QrCode = new Html5Qrcode("qr-reader");
   html5QrCode.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     async (decodedText) => {
-      resultEl.innerHTML = `Отсканировано: ${decodedText}`;
-      await _supabase.from('attendances').insert({
-        restaurant_id: restId,
-        staff_id: decodedText,
-        time_in: new Date().toISOString()
-      });
-      resultEl.innerHTML += '<br><span class="text-green-400">Отметка сделана!</span>';
+      const staffId = decodedText;
+      const staff = staffList.find(s => s.id === staffId);
+      if (!staff) return;
+
+      const now = new Date();
+      const time = now.toTimeString().slice(0,5);
+      const date = now.toISOString().split('T')[0];
+
+      const { data: existing } = await _supabase.from('work_schedules')
+        .select('*')
+        .eq('staff_id', staffId)
+        .eq('date', date)
+        .single();
+
+      if (!existing) {
+        await _supabase.from('work_schedules').insert({
+          restaurant_id: restaurantId,
+          staff_id: staffId,
+          date: date,
+          start_time: time,
+          end_time: null
+        });
+        document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
+      } else if (!existing.end_time) {
+        await _supabase.from('work_schedules').update({end_time: time}).eq('id', existing.id);
+        document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`;
+      } else {
+        document.getElementById('qr-result').innerText = `${staff.name} уже отметил приход и уход сегодня`;
+      }
+      loadSchedule();
     },
     (error) => {}
-  ).catch(err => resultEl.innerHTML = 'Камера не запустилась: ' + err);
+  );
 }
 
-// ===== ОТЧЁТЫ =====
-async function initReportsPage(restId) {
-  document.getElementById('tab-reports').innerHTML += '<div class="text-sm text-zinc-500 mt-4">Отчёты подключим после теста графика</div>';
+function openKitchenPanel() {
+  document.getElementById('kitchenPanel').style.right = '0px';
+  document.getElementById('kitchenOverlay').style.display = 'block';
+  loadRestaurantNamePanel();
+}
+function closeKitchenPanel() {
+  document.getElementById('kitchenPanel').style.right = '-400px';
+  document.getElementById('kitchenOverlay').style.display = 'none';
 }
 
-// ===== COOK.HTML =====
-async function initCookPage(restId) {
-  let staffId = localStorage.getItem('hotpit_staff_id');
-  if(!staffId) {
-    const name = prompt('Введи своё имя как у шефа:');
-    if(name) {
-      const { data } = await _supabase.from('staff')
-      .select('id').eq('restaurant_id', restId).eq('name', name).single();
-      if(data) {
-        localStorage.setItem('hotpit_staff_id', data.id);
-        location.reload();
-      } else alert('Повар не найден. Попроси шефа добавить тебя');
-    }
+async function loadRestaurantNamePanel() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('rest');
+  if(!restaurantId) {
+    document.getElementById('restNamePanel').textContent = 'Ошибка: нет ID ресторана';
     return;
   }
-  const { data: staff } = await _supabase.from('staff').select('name').eq('id', staffId).single();
-  document.getElementById('cookName').textContent = staff?.name || 'Повар';
-  await loadCookTasks(restId, staffId);
+  
+  const { data } = await _supabase.from('restaurants').select('name').eq('id', restaurantId).single();
+  document.getElementById('restNamePanel').textContent = data?.name || 'Ресторан';
 }
 
-async function loadCookTasks(restId, staffId) {
-  const list = document.getElementById('tasksList');
-  const { data: tasks } = await _supabase.from('tasks')
-  .select('*').eq('restaurant_id', restId).eq('staff_id', staffId)
-  .in('status', ['new', 'in_progress']).order('created_at', {ascending: false});
+// ФУНКЦИИ ДЛЯ ЗАДАНИЙ ШЕФА - ИСПРАВЛЕНО
+function openTaskModal() {
+  const select = document.getElementById('taskCook');
+  if(!select) {
+    console.error('Не найден select #taskCook');
+    return;
+  }
+  
+  if(staffList.length === 0) {
+    select.innerHTML = '<option>Сначала добавь поваров...</option>';
+    return;
+  }
+  
+  select.innerHTML = '<option value="">Выбери повара...</option>' +
+    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('taskModal').classList.add('show');
+}
 
-  if(!tasks || tasks.length === 0) {
-    list.innerHTML = '<div class="text-center text-zinc-500 mt-20">Заданий нет. Отдыхай 😎</div>';
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('show');
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+}
+
+async function saveTask() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('rest');
+  const staff_id = document.getElementById('taskCook').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDesc').value.trim();
+  
+  if(!staff_id || !title) {
+    alert('Выбери повара и напиши заголовок!');
     return;
   }
 
-  list.innerHTML = tasks.map(t => `
-    <div class="card ${t.status === 'in_progress'? 'border-orange-500' : ''}">
-      <div class="flex justify-between mb-2">
-        <h3 class="font-bold">${t.title}</h3>
-        <span class="text-xs px-2 py-1 rounded ${t.status === 'new'? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}">
-          ${t.status === 'new'? 'Новое' : 'В работе'}
-        </span>
-      </div>
-      <p class="text-sm text-zinc-400 mb-3">${t.description || ''}</p>
-      <button onclick="${t.status === 'new'? `startTask('${t.id}')` : `finishTask('${t.id}')`}"
-        class="w-full ${t.status === 'new'? 'bg-blue-600' : 'bg-green-600'} py-2 rounded-lg text-sm">
-        ${t.status === 'new'? 'Взять в работу' : 'Готово ✅'}
-      </button>
-    </div>
-  `).join('');
-}
+  const { error } = await _supabase.from('tasks').insert({
+    restaurant_id: restaurantId,
+    staff_id: staff_id,
+    title: title,
+    description: description,
+    status: 'new'
+  });
 
-window.startTask = async function(id) {
-  await _supabase.from('tasks').update({status: 'in_progress'}).eq('id', id);
-  location.reload();
-}
-window.finishTask = async function(id) {
-  await _supabase.from('tasks').update({status: 'done'}).eq('id', id);
-  alert('Красава!'); location.reload();
-}
-
-// ===== ОБЩИЕ =====
-function toggleSidebar() {
-  document.getElementById('sidebarMobile')?.classList.toggle('left-[-280px]');
-  document.getElementById('overlay')?.classList.toggle('hidden');
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+  alert('Задание отправлено!');
+  closeTaskModal();
 }
