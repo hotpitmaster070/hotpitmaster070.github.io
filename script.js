@@ -1,7 +1,6 @@
 fetch('menu.html').then(r=>r.text()).then(html=>{
   document.getElementById('sidebarContainer').innerHTML=html;
   
-  // Автоматом подставляем UUID ресторана в меню
   const urlParams = new URLSearchParams(window.location.search);
   const restId = urlParams.get('rest');
   if(restId) {
@@ -10,7 +9,6 @@ fetch('menu.html').then(r=>r.text()).then(html=>{
     });
   }
   
-  // Подсвечиваем активный пункт меню
   const currentPage = window.location.pathname.split('/').pop();
   if(currentPage === 'chef.html') {
     document.querySelector('[data-rest]')?.classList.add('active');
@@ -31,18 +29,18 @@ if (!restaurantId) {
   document.getElementById('mainContent').classList.add('hidden');
   document.getElementById('errorBox').classList.remove('hidden');
 } else {
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', async function() {
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }
-    initApp();
+    await initApp();
   });
 }
 
 async function initApp() {
   updateDateTitle();
   await loadCurrency();
-  await loadStaff();
+  await loadStaff(); // ЖДЁМ загрузки поваров
   setView(localStorage.getItem('hotpit_view') || 'day');
 }
 
@@ -237,8 +235,14 @@ async function updatePayType(staffId, type) {
 }
 
 async function loadStaff() {
-  const { data } = await _supabase.from('staff').select('*').eq('restaurant_id', restaurantId);
+  const { data } = await _supabase.from('staff')
+    .select('*')
+    .eq('restaurant_id', restaurantId)
+    .order('name'); // СОРТИРУЕМ ПО ИМЕНИ АЛФАВИТ
+  
   staffList = data || [];
+  
+  // Обновляем список поваров
   document.getElementById('staffList').innerHTML = staffList.map(s => {
     const isHourly = s.pay_type === 'hourly';
     const label = isHourly? `${currency}/час` : `${currency}/день`;
@@ -264,6 +268,7 @@ async function loadStaff() {
       </div>
     `;
   }).join('');
+  
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
@@ -272,7 +277,9 @@ async function loadSchedule() {
   if (currentView === 'day') {
     const dateStr = currentDate.toISOString().split('T')[0];
     const { data: shifts } = await _supabase.from('work_schedules')
-.select('*, staff(*)').eq('date', dateStr).eq('restaurant_id', restaurantId);
+      .select('*, staff(*)')
+      .eq('date', dateStr)
+      .eq('restaurant_id', restaurantId);
 
     let html = staffList.map(st => {
       const shift = shifts?.find(s => s.staff_id === st.id);
@@ -312,7 +319,10 @@ async function loadMonthSchedule() {
   const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
   const { data: shifts } = await _supabase.from('work_schedules')
-.select('*').gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
+    .select('*')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .eq('restaurant_id', restaurantId);
 
   let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
 
@@ -345,7 +355,10 @@ async function toggleStaffDay(staffId) {
   const dateStr = currentDate.toISOString().split('T')[0];
 
   const { data: existing } = await _supabase.from('work_schedules')
-.select('*').eq('staff_id', staffId).eq('date', dateStr).single();
+    .select('*')
+    .eq('staff_id', staffId)
+    .eq('date', dateStr)
+    .single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -363,7 +376,10 @@ async function toggleStaffDay(staffId) {
 
 async function toggleShiftMonth(staffId, date) {
   const { data: existing } = await _supabase.from('work_schedules')
-.select('*').eq('staff_id', staffId).eq('date', date).single();
+    .select('*')
+    .eq('staff_id', staffId)
+    .eq('date', date)
+    .single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -395,7 +411,10 @@ async function startQrScanner() {
       const date = now.toISOString().split('T')[0];
 
       const { data: existing } = await _supabase.from('work_schedules')
-.select('*').eq('staff_id', staffId).eq('date', date).single();
+        .select('*')
+        .eq('staff_id', staffId)
+        .eq('date', date)
+        .single();
 
       if (!existing) {
         await _supabase.from('work_schedules').insert({
@@ -440,10 +459,19 @@ async function loadRestaurantNamePanel() {
   document.getElementById('restNamePanel').textContent = data?.name || 'Ресторан';
 }
 
-// ФУНКЦИИ ДЛЯ ЗАДАНИЙ ШЕФА
+// ФУНКЦИИ ДЛЯ ЗАДАНИЙ ШЕФА - ИСПРАВЛЕНО
 function openTaskModal() {
   const select = document.getElementById('taskCook');
-  if(!select) return;
+  if(!select) {
+    console.error('Не найден select #taskCook');
+    return;
+  }
+  
+  if(staffList.length === 0) {
+    select.innerHTML = '<option>Сначала добавь поваров...</option>';
+    return;
+  }
+  
   select.innerHTML = '<option value="">Выбери повара...</option>' +
     staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('taskModal').classList.add('show');
