@@ -15,7 +15,7 @@
 
   <div id="errorBox" class="hidden w-full text-center mt-40">
     <div class="text-xl font-bold mb-2">Ошибка</div>
-    <div class="text-sm text-zinc-300">Открой через дашборд. Нужен параметр ?rest=UUID</div>
+    <div class="text-sm text-zinc-300">Открой через дашборд. Нужен параметр?rest=UUID</div>
   </div>
 
   <div id="mainContent" class="flex w-full">
@@ -28,8 +28,12 @@
         <i data-lucide="menu" class="w-6 h-6"></i>
       </button>
 
+      <!-- ВОТ ТУТ ИЗМЕНИЛ ШАПКУ - ДОБАВИЛ БЕЙДЖ РЕСТОРАНА -->
       <div class="mb-6">
-        <h1 class="text-2xl font-bold">Управление кухней</h1>
+        <div class="flex items-center gap-3 flex-wrap mb-2">
+          <h1 class="text-2xl font-bold">Управление кухней</h1>
+          <span id="restNameHeader" class="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-semibold border-orange-500/30">Загрузка...</span>
+        </div>
         <p class="text-sm text-zinc-500" id="dateTitle"></p>
       </div>
 
@@ -141,4 +145,4 @@
 <script src="chef-panel.js"></script>
 <script src="script.js"></script>
 </body>
-</html>
+  </html>
