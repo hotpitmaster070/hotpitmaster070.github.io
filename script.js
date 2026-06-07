@@ -33,6 +33,7 @@ if (!restaurantId) {
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }
+    await loadRestaurantNamePanel(); // ЗАГРУЖАЕМ НАЗВАНИЕ РЕСТОРАНА СРАЗУ
     await initApp();
   });
 }
@@ -40,8 +41,41 @@ if (!restaurantId) {
 async function initApp() {
   updateDateTitle();
   await loadCurrency();
-  await loadStaff(); // ЖДЁМ загрузки поваров
+  await loadStaff();
   setView(localStorage.getItem('hotpit_view') || 'day');
+}
+
+// НОВАЯ ФУНКЦИЯ - ТЯНЕТ НАЗВАНИЕ ИЗ ТАБЛИЦЫ restaurants
+async function loadRestaurantNamePanel() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('rest');
+  if(!restaurantId) {
+    document.getElementById('restNamePanel').textContent = 'Ошибка: нет ID ресторана';
+    return;
+  }
+  
+  const { data, error } = await _supabase.from('restaurants').select('name').eq('id', restaurantId).single();
+  
+  if(error) {
+    console.error('Ошибка загрузки ресторана:', error);
+    document.getElementById('restNamePanel').textContent = 'Ресторан';
+    const headerName = document.getElementById('restNameHeader');
+    if(headerName) headerName.textContent = 'Ресторан';
+    return;
+  }
+  
+  const restName = data?.name || 'Ресторан';
+  
+  // В панель шефа справа
+  const panelName = document.getElementById('restNamePanel');
+  if(panelName) panelName.textContent = restName;
+  
+  // В шапку страницы сверху
+  const headerName = document.getElementById('restNameHeader');
+  if(headerName) headerName.textContent = restName;
+  
+  // В память браузера для других скриптов
+  localStorage.setItem('restName', restName);
 }
 
 const currencyMap = {
@@ -238,11 +272,10 @@ async function loadStaff() {
   const { data } = await _supabase.from('staff')
     .select('*')
     .eq('restaurant_id', restaurantId)
-    .order('name'); // СОРТИРУЕМ ПО ИМЕНИ АЛФАВИТ
+    .order('name');
   
   staffList = data || [];
   
-  // Обновляем список поваров
   document.getElementById('staffList').innerHTML = staffList.map(s => {
     const isHourly = s.pay_type === 'hourly';
     const label = isHourly? `${currency}/час` : `${currency}/день`;
@@ -447,19 +480,6 @@ function closeKitchenPanel() {
   document.getElementById('kitchenOverlay').style.display = 'none';
 }
 
-async function loadRestaurantNamePanel() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const restaurantId = urlParams.get('rest');
-  if(!restaurantId) {
-    document.getElementById('restNamePanel').textContent = 'Ошибка: нет ID ресторана';
-    return;
-  }
-  
-  const { data } = await _supabase.from('restaurants').select('name').eq('id', restaurantId).single();
-  document.getElementById('restNamePanel').textContent = data?.name || 'Ресторан';
-}
-
-// ФУНКЦИИ ДЛЯ ЗАДАНИЙ ШЕФА - ИСПРАВЛЕНО
 function openTaskModal() {
   const select = document.getElementById('taskCook');
   if(!select) {
