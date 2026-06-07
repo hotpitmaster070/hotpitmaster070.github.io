@@ -1,7 +1,7 @@
 <div class="sidebar w-64 p-4 hidden md:block">
   <h2 class="text-xl font-bold mb-6 px-2">HotPit</h2>
   <div class="space-y-2">
-    <a href="chef.html?rest=" data-rest="true" class="kitchen-btn">
+    <a href="#" onclick="openKitchenPanel(); return false" data-rest="true" class="kitchen-btn">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path></svg>
       <div>
         <p>ЭКРАН ШЕФА</p>
@@ -29,7 +29,7 @@
     <button onclick="toggleSidebar()"><i data-lucide="x" class="w-6 h-6"></i></button>
   </div>
   <div class="space-y-2">
-    <a href="chef.html?rest=" data-rest="true" class="kitchen-btn">
+    <a href="#" onclick="openKitchenPanel(); return false" data-rest="true" class="kitchen-btn">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path></svg>
       <div>
         <p>ЭКРАН ШЕФА</p>
@@ -52,7 +52,7 @@
 </div>
 
 <div id="kitchenPanel" style="position:fixed; top:0; right:-400px; width:400px; max-width:100vw; height:100vh; background:#000; border-left:1px solid #222; transition:right 0.3s ease; z-index:9999; overflow-y:auto;">
-  <div style="padding:18px; background:linear-gradient(135deg,#f97316,#ea580c); color:white; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:10">
+  <div style="padding:18px; background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:10">
     <div>
       <b style="font-size:18px; display:block">Экран Шефа 🧱</b>
       <p id="restNamePanel" style="font-size:13px; opacity:0.9; margin:4px 0 0 0">Загрузка...</p>
@@ -61,7 +61,17 @@
   </div>
   <div style="padding:16px">
     <div style="display:grid; gap:12px">
-      <!-- Кнопки панели шефа добавь сюда -->
+      <button onclick="openModal('task')" style="background:#dc2626; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:pointer">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>1. [+ ПРИХОД ТОВАРА]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>4. [МОЙ СКЛАД]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>5. [МОИ ЗАГОТОВКИ]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>6. [СПИСАНИЕ]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>7. [ОТЧЁТ ПО СПИСАНИЮ]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>8. [ОТЧЁТ ЗА МЕСЯЦ]</button>
+      <button style="background:#3f3f46; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; cursor:not-allowed" disabled>9. [ИНВЕНТАРИЗАЦИЯ]</button>
+      <button onclick="closeKitchenPanel()" style="background:#27272a; color:white; padding:16px; border-radius:12px; border:none; font-weight:600; width:100%; margin-top:20px; cursor:pointer">ВЫЙТИ</button>
     </div>
   </div>
 </div>
+
+<div id="kitchenOverlay" onclick="closeKitchenPanel()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:9998; backdrop-filter:blur(4px)"></div>
