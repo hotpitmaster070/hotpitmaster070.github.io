@@ -137,9 +137,8 @@
   </div>
 </div>
 
-<div id="kitchenPanel"></div>
-<div id="kitchenOverlay" onclick="closeKitchenPanel()" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); display:none; z-index:9998; backdrop-filter:blur(4px)"></div>
-
+<!-- ВАЖНО: chef-panel.js подключаем ПЕРЕД script.js -->
+<script src="chef-panel.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
