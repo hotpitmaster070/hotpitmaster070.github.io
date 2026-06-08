@@ -1,6 +1,6 @@
 fetch('menu.html').then(r=>r.text()).then(html=>{
   document.getElementById('sidebarContainer').innerHTML=html;
-  
+
   const urlParams = new URLSearchParams(window.location.search);
   const restId = urlParams.get('rest');
   if(restId) {
@@ -8,13 +8,13 @@ fetch('menu.html').then(r=>r.text()).then(html=>{
       a.href = a.href.replace('?rest=', '?rest=' + restId);
     });
   }
-  
+
   const currentPage = window.location.pathname.split('/').pop();
   if(currentPage === 'chef.html') {
     document.querySelector('[data-rest]')?.classList.add('active');
   }
-  
-  if(typeof lucide !== 'undefined') lucide.createIcons();
+
+  if(typeof lucide!== 'undefined') lucide.createIcons();
 });
 
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
@@ -30,10 +30,10 @@ if (!restaurantId) {
   document.getElementById('errorBox').classList.remove('hidden');
 } else {
   document.addEventListener('DOMContentLoaded', async function() {
-    if (typeof lucide !== 'undefined') {
+    if (typeof lucide!== 'undefined') {
       lucide.createIcons();
     }
-    await loadRestaurantNamePanel(); // ЗАГРУЖАЕМ НАЗВАНИЕ РЕСТОРАНА СРАЗУ
+    await loadRestaurantNamePanel();
     await initApp();
   });
 }
@@ -45,7 +45,6 @@ async function initApp() {
   setView(localStorage.getItem('hotpit_view') || 'day');
 }
 
-// НОВАЯ ФУНКЦИЯ - ТЯНЕТ НАЗВАНИЕ ИЗ ТАБЛИЦЫ restaurants
 async function loadRestaurantNamePanel() {
   const urlParams = new URLSearchParams(window.location.search);
   const restaurantId = urlParams.get('rest');
@@ -53,9 +52,9 @@ async function loadRestaurantNamePanel() {
     document.getElementById('restNamePanel').textContent = 'Ошибка: нет ID ресторана';
     return;
   }
-  
+
   const { data, error } = await _supabase.from('restaurants').select('name').eq('id', restaurantId).single();
-  
+
   if(error) {
     console.error('Ошибка загрузки ресторана:', error);
     document.getElementById('restNamePanel').textContent = 'Ресторан';
@@ -63,18 +62,12 @@ async function loadRestaurantNamePanel() {
     if(headerName) headerName.textContent = 'Ресторан';
     return;
   }
-  
+
   const restName = data?.name || 'Ресторан';
-  
-  // В панель шефа справа
   const panelName = document.getElementById('restNamePanel');
   if(panelName) panelName.textContent = restName;
-  
-  // В шапку страницы сверху
   const headerName = document.getElementById('restNameHeader');
   if(headerName) headerName.textContent = restName;
-  
-  // В память браузера для других скриптов
   localStorage.setItem('restName', restName);
 }
 
@@ -183,7 +176,6 @@ function renderCalendar() {
   startDay = startDay === 0? 6 : startDay - 1;
 
   let html = '';
-
   for(let i = 0; i < startDay; i++) {
     html += '<div></div>';
   }
@@ -201,7 +193,7 @@ function renderCalendar() {
   }
 
   document.getElementById('calendarDays').innerHTML = html;
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (typeof lucide!== 'undefined') lucide.createIcons();
 }
 
 async function loadCurrency() {
@@ -270,12 +262,12 @@ async function updatePayType(staffId, type) {
 
 async function loadStaff() {
   const { data } = await _supabase.from('staff')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
-    .order('name');
-  
+   .select('*')
+   .eq('restaurant_id', restaurantId)
+   .order('name');
+
   staffList = data || [];
-  
+
   document.getElementById('staffList').innerHTML = staffList.map(s => {
     const isHourly = s.pay_type === 'hourly';
     const label = isHourly? `${currency}/час` : `${currency}/день`;
@@ -301,8 +293,8 @@ async function loadStaff() {
       </div>
     `;
   }).join('');
-  
-  if (typeof lucide !== 'undefined') lucide.createIcons();
+
+  if (typeof lucide!== 'undefined') lucide.createIcons();
 }
 
 async function loadSchedule() {
@@ -310,9 +302,9 @@ async function loadSchedule() {
   if (currentView === 'day') {
     const dateStr = currentDate.toISOString().split('T')[0];
     const { data: shifts } = await _supabase.from('work_schedules')
-      .select('*, staff(*)')
-      .eq('date', dateStr)
-      .eq('restaurant_id', restaurantId);
+     .select('*, staff(*)')
+     .eq('date', dateStr)
+     .eq('restaurant_id', restaurantId);
 
     let html = staffList.map(st => {
       const shift = shifts?.find(s => s.staff_id === st.id);
@@ -352,10 +344,10 @@ async function loadMonthSchedule() {
   const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
   const { data: shifts } = await _supabase.from('work_schedules')
-    .select('*')
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .eq('restaurant_id', restaurantId);
+   .select('*')
+   .gte('date', startDate)
+   .lte('date', endDate)
+   .eq('restaurant_id', restaurantId);
 
   let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
 
@@ -388,10 +380,10 @@ async function toggleStaffDay(staffId) {
   const dateStr = currentDate.toISOString().split('T')[0];
 
   const { data: existing } = await _supabase.from('work_schedules')
-    .select('*')
-    .eq('staff_id', staffId)
-    .eq('date', dateStr)
-    .single();
+   .select('*')
+   .eq('staff_id', staffId)
+   .eq('date', dateStr)
+   .single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -409,10 +401,10 @@ async function toggleStaffDay(staffId) {
 
 async function toggleShiftMonth(staffId, date) {
   const { data: existing } = await _supabase.from('work_schedules')
-    .select('*')
-    .eq('staff_id', staffId)
-    .eq('date', date)
-    .single();
+   .select('*')
+   .eq('staff_id', staffId)
+   .eq('date', date)
+   .single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -444,10 +436,10 @@ async function startQrScanner() {
       const date = now.toISOString().split('T')[0];
 
       const { data: existing } = await _supabase.from('work_schedules')
-        .select('*')
-        .eq('staff_id', staffId)
-        .eq('date', date)
-        .single();
+       .select('*')
+       .eq('staff_id', staffId)
+       .eq('date', date)
+       .single();
 
       if (!existing) {
         await _supabase.from('work_schedules').insert({
@@ -468,6 +460,87 @@ async function startQrScanner() {
     },
     (error) => {}
   );
+
+  // Загружаем кнопки ручного ввода
+  renderManualButtons();
+}
+
+// НОВЫЕ ФУНКЦИИ ДЛЯ РУЧНОГО ВВОДА
+async function renderManualButtons() {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: todayShifts } = await _supabase.from('work_schedules')
+  .select('staff_id, staff(name)')
+  .eq('date', today)
+  .eq('restaurant_id', restaurantId);
+
+  if(!todayShifts || todayShifts.length === 0) {
+    document.getElementById('manualStaffList').innerHTML =
+      '<div class="col-span-2 text-zinc-500 text-sm text-center py-4">Сегодня по графику никто не стоит</div>';
+    return;
+  }
+
+  const html = todayShifts.map(s => `
+    <div class="bg-zinc-800/50 rounded-xl p-4 border-zinc-700">
+      <div class="font-semibold mb-3 text-center">${s.staff.name}</div>
+      <div class="flex gap-2">
+        <button onclick="manualCheck('${s.staff_id}', 'in')"
+          class="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Пришёл
+        </button>
+        <button onclick="manualCheck('${s.staff_id}', 'out')"
+          class="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-out" class="w-4 h-4 inline mr-1"></i> Ушёл
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('manualStaffList').innerHTML = html;
+  if (typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+async function manualCheck(staffId, type) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const time = now.toTimeString().split(' ')[0];
+
+  if(type === 'in') {
+    await _supabase.from('time_logs').insert({
+      staff_id: staffId,
+      date: today,
+      time_in: time,
+      restaurant_id: restaurantId
+    });
+    showToast('Приход отмечен: ' + time);
+  } else {
+    const { data: log } = await _supabase.from('time_logs')
+    .select('id')
+    .eq('staff_id', staffId)
+    .eq('date', today)
+    .is('time_out', null)
+    .single();
+
+    if(log) {
+      await _supabase.from('time_logs')
+      .update({ time_out: time })
+      .eq('id', log.id);
+      showToast('Уход отмечен: ' + time);
+    } else {
+      alert('Нет открытой смены! Сначала нажми "Пришёл"');
+      return;
+    }
+  }
+
+  renderManualButtons();
+}
+
+function showToast(text) {
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50';
+  toast.innerText = text;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
 }
 
 function openKitchenPanel() {
@@ -486,12 +559,12 @@ function openTaskModal() {
     console.error('Не найден select #taskCook');
     return;
   }
-  
+
   if(staffList.length === 0) {
     select.innerHTML = '<option>Сначала добавь поваров...</option>';
     return;
   }
-  
+
   select.innerHTML = '<option value="">Выбери повара...</option>' +
     staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   document.getElementById('taskModal').classList.add('show');
@@ -509,8 +582,8 @@ async function saveTask() {
   const staff_id = document.getElementById('taskCook').value;
   const title = document.getElementById('taskTitle').value.trim();
   const description = document.getElementById('taskDesc').value.trim();
-  
-  if(!staff_id || !title) {
+
+  if(!staff_id ||!title) {
     alert('Выбери повара и напиши заголовок!');
     return;
   }
@@ -529,4 +602,4 @@ async function saveTask() {
   }
   alert('Задание отправлено!');
   closeTaskModal();
-}
+    }
