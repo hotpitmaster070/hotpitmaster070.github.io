@@ -693,4 +693,23 @@ async function saveTask() {
   const title = document.getElementById('taskTitle').value.trim();
   const description = document.getElementById('taskDesc').value.trim();
 
-  if(!staff_id ||!title)
+  if(!staff_id ||!title) {
+    alert('Выбери повара и напиши заголовок!');
+    return;
+  }
+
+  const { error } = await _supabase.from('tasks').insert({
+    restaurant_id: restaurantId,
+    staff_id: staff_id,
+    title: title,
+    description: description,
+    status: 'new'
+  });
+
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+  alert('Задание отправлено!');
+  closeTaskModal();
+}
