@@ -585,4 +585,112 @@ async function loadReports() {
     if(!l.time_in ||!l.time_out) return;
     const s = stats[l.staff_id];
     const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
-    s.hou
+    s.hours += hours;
+  });
+
+  Object.values(stats).forEach(s => {
+    s.pay = s.pay_type === 'hourly'? s.hours * s.hour_rate : s.shifts * s.day_rate;
+  });
+
+  const sorted = Object.values(stats).sort((a,b) => a.shifts - b.shifts);
+
+  let html = `<div class="text-sm text-zinc-400 mb-4">Период: ${startDate} → ${endDate}</div>`;
+
+  sorted.forEach(s => {
+    if(s.shifts === 0) return;
+    let colorClass = s.shifts <= 5? 'border-red-500/50 bg-red-500/10' : s.shifts >= 15? 'border-yellow-500/50 bg-yellow-500/10' : 'border-green-500/50 bg-green-500/10';
+    let statusText = s.shifts <= 5? '⚠️ Мало смен' : s.shifts >= 15? '🔥 Много' : '✓ Норма';
+
+    html += `
+      <div class="card mb-3 border-2 ${colorClass}">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name[0]}</div>
+            <div>
+              <div class="font-semibold text-lg">${s.name}</div>
+              <div class="text-xs ${colorClass.includes('red')? 'text-red-400' : colorClass.includes('yellow')? 'text-yellow-400' : 'text-green-400'}">${statusText}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-4xl font-bold">${s.shifts}</div>
+            <div class="text-xs text-zinc-400">смен</div>
+          </div>
+        </div>
+        ${showMoney? `
+        <div class="text-sm border-t border-zinc-700 pt-2 flex justify-between">
+          <span class="text-zinc-400">Заработал:</span>
+          <span class="font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</span>
+        </div>` : ''}
+        <div class="text-xs text-zinc-500 mt-1">Даты: ${s.dates.join(', ')}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('reportsContent').innerHTML = html || '<div class="text-zinc-500 text-center py-8">Нет данных</div>';
+
+  const toggle = document.getElementById('moneyToggle');
+  const btn = document.getElementById('moneyToggleBtn');
+  if(showMoney) {
+    toggle.className = 'w-12 h-6 bg-orange-500 rounded-full relative';
+    btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-6.5 transition-all';
+  } else {
+    toggle.className = 'w-12 h-6 bg-zinc-600 rounded-full relative';
+    btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all';
+  }
+}
+
+function toggleMoney() {
+  window.showMoneyReports =!window.showMoneyReports;
+  loadReports();
+}
+
+function showToast(text) {
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50';
+  toast.innerText = text;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function openKitchenPanel() {
+  document.getElementById('kitchenPanel').style.right = '0px';
+  document.getElementById('kitchenOverlay').style.display = 'block';
+  loadRestaurantNamePanel();
+}
+
+function closeKitchenPanel() {
+  document.getElementById('kitchenPanel').style.right = '-400px';
+  document.getElementById('kitchenOverlay').style.display = 'none';
+}
+
+function openTaskModal() {
+  const select = document.getElementById('taskCook');
+  if(!select) {
+    console.error('Не найден select #taskCook');
+    return;
+  }
+
+  if(staffList.length === 0) {
+    select.innerHTML = '<option>Сначала добавь поваров...</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="">Выбери повара...</option>' +
+    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('taskModal').classList.add('show');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('show');
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+}
+
+async function saveTask() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('rest');
+  const staff_id = document.getElementById('taskCook').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDesc').value.trim();
+
+  if(!staff_id ||!title)
