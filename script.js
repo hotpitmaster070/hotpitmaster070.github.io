@@ -608,4 +608,64 @@ function showToast(text) {
   setTimeout(() => toast.remove(), 3000);
 }
 
-function openKit
+function openKitchenPanel() {
+  document.getElementById('kitchenPanel').style.right = '0px';
+  document.getElementById('kitchenOverlay').style.display = 'block';
+  loadRestaurantNamePanel();
+}
+
+function closeKitchenPanel() {
+  document.getElementById('kitchenPanel').style.right = '-400px';
+  document.getElementById('kitchenOverlay').style.display = 'none';
+}
+
+function openTaskModal() {
+  const select = document.getElementById('taskCook');
+  if(!select) {
+    console.error('Не найден select #taskCook');
+    return;
+  }
+
+  if(staffList.length === 0) {
+    select.innerHTML = '<option>Сначала добавь поваров...</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="">Выбери повара...</option>' +
+    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('taskModal').classList.add('show');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.remove('show');
+  document.getElementById('taskTitle').value = '';
+  document.getElementById('taskDesc').value = '';
+}
+
+async function saveTask() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restaurantId = urlParams.get('rest');
+  const staff_id = document.getElementById('taskCook').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDesc').value.trim();
+
+  if(!staff_id || !title) {
+    alert('Выбери повара и напиши заголовок!');
+    return;
+  }
+
+  const { error } = await _supabase.from('tasks').insert({
+    restaurant_id: restaurantId,
+    staff_id: staff_id,
+    title: title,
+    description: description,
+    status: 'new'
+  });
+
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    return;
+  }
+  alert('Задание отправлено!');
+  closeTaskModal();
+}
