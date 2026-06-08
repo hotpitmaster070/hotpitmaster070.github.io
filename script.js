@@ -205,7 +205,7 @@ async function setTab(tab, e) {
   if(tab === 'prod') loadSchedule();
   if(tab === 'qr') startQrScanner();
   if(tab === 'staff') loadStaff();
-  if(tab === 'reports') loadReports(); // ВОТ ТУТ ВЫЗЫВАЕМ ОТЧЁТЫ
+  if(tab === 'reports') loadReports();
 }
 
 function setView(view) {
@@ -252,9 +252,9 @@ async function updatePayType(staffId, type) {
 
 async function loadStaff() {
   const { data } = await _supabase.from('staff')
-  .select('*')
-  .eq('restaurant_id', restaurantId)
-  .order('name');
+.select('*')
+.eq('restaurant_id', restaurantId)
+.order('name');
 
   staffList = data || [];
 
@@ -292,9 +292,9 @@ async function loadSchedule() {
   if (currentView === 'day') {
     const dateStr = currentDate.toISOString().split('T')[0];
     const { data: shifts } = await _supabase.from('work_schedules')
-    .select('*, staff(*)')
-    .eq('date', dateStr)
-    .eq('restaurant_id', restaurantId);
+  .select('*, staff(*)')
+  .eq('date', dateStr)
+  .eq('restaurant_id', restaurantId);
 
     let html = staffList.map(st => {
       const shift = shifts?.find(s => s.staff_id === st.id);
@@ -334,10 +334,10 @@ async function loadMonthSchedule() {
   const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
   const { data: shifts } = await _supabase.from('work_schedules')
-  .select('*')
-  .gte('date', startDate)
-  .lte('date', endDate)
-  .eq('restaurant_id', restaurantId);
+.select('*')
+.gte('date', startDate)
+.lte('date', endDate)
+.eq('restaurant_id', restaurantId);
 
   let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
 
@@ -370,10 +370,10 @@ async function toggleStaffDay(staffId) {
   const dateStr = currentDate.toISOString().split('T')[0];
 
   const { data: existing } = await _supabase.from('work_schedules')
-  .select('*')
-  .eq('staff_id', staffId)
-  .eq('date', dateStr)
-  .single();
+.select('*')
+.eq('staff_id', staffId)
+.eq('date', dateStr)
+.single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -391,10 +391,10 @@ async function toggleStaffDay(staffId) {
 
 async function toggleShiftMonth(staffId, date) {
   const { data: existing } = await _supabase.from('work_schedules')
-  .select('*')
-  .eq('staff_id', staffId)
-  .eq('date', date)
-  .single();
+.select('*')
+.eq('staff_id', staffId)
+.eq('date', date)
+.single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -410,7 +410,6 @@ async function toggleShiftMonth(staffId, date) {
   loadSchedule();
 }
 
-// ИСПРАВЛЕННЫЙ QR - ТЕПЕРЬ ПИШЕТ В TIME_LOGS
 async function startQrScanner() {
   if (html5QrCode) html5QrCode.stop();
   html5QrCode = new Html5Qrcode("qr-reader");
@@ -426,16 +425,14 @@ async function startQrScanner() {
       const time = now.toTimeString().slice(0,8);
       const date = now.toISOString().split('T')[0];
 
-      // Ищем незакрытую смену сегодня
       const { data: existing } = await _supabase.from('time_logs')
-      .select('*')
-      .eq('staff_id', staffId)
-      .eq('date', date)
-      .is('time_out', null)
-      .single();
+    .select('*')
+    .eq('staff_id', staffId)
+    .eq('date', date)
+    .is('time_out', null)
+    .single();
 
       if (!existing) {
-        // Приход
         await _supabase.from('time_logs').insert({
           restaurant_id: restaurantId,
           staff_id: staffId,
@@ -445,7 +442,6 @@ async function startQrScanner() {
         document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
         showToast('Приход: ' + staff.name);
       } else {
-        // Уход
         await _supabase.from('time_logs').update({time_out: time}).eq('id', existing.id);
         document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`;
         showToast('Уход: ' + staff.name);
@@ -457,14 +453,13 @@ async function startQrScanner() {
   renderManualButtons();
 }
 
-// РУЧНОЙ ВВОД
 async function renderManualButtons() {
   const today = new Date().toISOString().split('T')[0];
 
   const { data: todayShifts } = await _supabase.from('work_schedules')
- .select('staff_id, staff(name)')
- .eq('date', today)
- .eq('restaurant_id', restaurantId);
+.select('staff_id, staff(name)')
+.eq('date', today)
+.eq('restaurant_id', restaurantId);
 
   if(!todayShifts || todayShifts.length === 0) {
     document.getElementById('manualStaffList').innerHTML =
@@ -507,16 +502,16 @@ async function manualCheck(staffId, type) {
     showToast('Приход отмечен: ' + time);
   } else {
     const { data: log } = await _supabase.from('time_logs')
-   .select('id')
-   .eq('staff_id', staffId)
-   .eq('date', today)
-   .is('time_out', null)
-   .single();
+ .select('id')
+ .eq('staff_id', staffId)
+ .eq('date', today)
+ .is('time_out', null)
+ .single();
 
     if(log) {
       await _supabase.from('time_logs')
-     .update({ time_out: time })
-     .eq('id', log.id);
+   .update({ time_out: time })
+   .eq('id', log.id);
       showToast('Уход отмечен: ' + time);
     } else {
       alert('Нет открытой смены! Сначала нажми "Пришёл"');
@@ -527,145 +522,67 @@ async function manualCheck(staffId, type) {
   renderManualButtons();
 }
 
-// ОТЧЁТЫ - СЧИТАЕМ ПО TIME_LOGS
+// ТАБЛО СПРАВЕДЛИВОСТИ + ТУМБЛЕР ДЕНЕГ
 async function loadReports() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const startDate = `${year}-${String(month+1).padStart(2,'0')}-01`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+  let content = document.getElementById('tab-reports');
+  if(!document.getElementById('reportStart')) {
+    content.innerHTML = `
+      <h2 class="font-semibold mb-4">Табло справедливости</h2>
+      <div class="card mb-4">
+        <div class="text-sm text-zinc-400 mb-2">Выбери период</div>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div><label class="text-xs text-zinc-400">С</label><input type="date" id="reportStart" class="input-field w-full bg-zinc-900 border-zinc-700 rounded-lg p-2 text-white"></div>
+          <div><label class="text-xs text-zinc-400">По</label><input type="date" id="reportEnd" class="input-field w-full bg-zinc-900 border-zinc-700 rounded-lg p-2 text-white"></div>
+        </div>
 
-  const { data: logs } = await _supabase.from('time_logs')
-   .select('*, staff(id, name, pay_type, hourly_rate, daily_rate)')
-   .gte('date', startDate)
-   .lte('date', endDate)
-   .eq('restaurant_id', restaurantId);
+        <div class="flex items-center justify-between mb-3 p-3 bg-zinc-800/50 rounded-lg">
+          <span class="text-sm">Показать деньги</span>
+          <button id="moneyToggle" onclick="toggleMoney()" class="w-12 h-6 bg-zinc-600 rounded-full relative">
+            <div id="moneyToggleBtn" class="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all"></div>
+          </button>
+        </div>
+
+        <button onclick="loadReports()" class="w-full bg-orange-500 text-black font-semibold py-2 rounded-lg">Показать</button>
+      </div>
+      <div id="reportsContent"></div>
+    `;
+  }
+
+  const startInput = document.getElementById('reportStart');
+  const endInput = document.getElementById('reportEnd');
+  if(!startInput.value) startInput.value = new Date().toISOString().slice(0,7) + '-01';
+  if(!endInput.value) endInput.value = new Date().toISOString().split('T')[0];
+
+  const startDate = startInput.value;
+  const endDate = endInput.value;
+  const showMoney = window.showMoneyReports || false;
+
+  const { data: plan } = await _supabase.from('work_schedules')
+.select('staff_id, date, staff(name, pay_type, hourly_rate, daily_rate)')
+.gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
+
+  let logs = [];
+  if(showMoney) {
+    const { data } = await _supabase.from('time_logs')
+.select('staff_id, time_in, time_out')
+.gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
+    logs = data || [];
+  }
 
   const stats = {};
   staffList.forEach(st => {
-    stats[st.id] = {
-      name: st.name,
-      pay_type: st.pay_type,
-      hour_rate: st.hourly_rate || 0,
-      day_rate: st.daily_rate || 0,
-      hours: 0,
-      shifts: 0,
-      pay: 0
-    };
+    stats[st.id] = {name: st.name, pay_type: st.pay_type, hour_rate: st.hourly_rate||0, day_rate: st.daily_rate||0, shifts: 0, hours: 0, pay: 0, dates: []};
   });
 
-  logs?.forEach(l => {
-    if(!l.staff ||!l.time_in ||!l.time_out) return;
-    const s = stats[l.staff.id];
-    const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
-
-    s.hours += hours;
-    s.shifts += 1;
-  });
-
-  Object.values(stats).forEach(s => {
-    if(s.pay_type === 'hourly') {
-      s.pay = s.hours * s.hour_rate;
-    } else {
-      s.pay = s.shifts * s.day_rate;
+  plan?.forEach(p => {
+    if(stats[p.staff_id]) {
+      stats[p.staff_id].shifts += 1;
+      stats[p.staff_id].dates.push(p.date.slice(5));
     }
   });
 
-  let html = `<div class="text-sm text-zinc-400 mb-4">${monthsFull[month]} ${year}</div>`;
-
-  Object.values(stats).forEach(s => {
-    if(s.shifts === 0) return;
-    const typeText = s.pay_type === 'hourly'? `${s.hour_rate}${currency}/ч` : `${s.day_rate}${currency}/смена`;
-
-    html += `
-      <div class="card mb-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="font-semibold text-lg">${s.name}</div>
-            <div class="text-xs text-zinc-500 mt-1">${typeText}</div>
-            <div class="text-xs text-zinc-400 mt-2">${s.hours.toFixed(1)}ч / ${s.shifts} смен</div>
-          </div>
-          <div class="text-right">
-            <div class="text-3xl font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</div>
-          </div>
-        </div>
-      </div>
-    `;
-  });
-
-  document.getElementById('tab-reports').innerHTML = `
-    <h2 class="font-semibold mb-4">Отчёты</h2>
-    ${html || '<div class="text-zinc-500 text-center py-8">Нет данных за этот месяц</div>'}
-  `;
-}
-
-function showToast(text) {
-  const toast = document.createElement('div');
-  toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50';
-  toast.innerText = text;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
-
-function openKitchenPanel() {
-  document.getElementById('kitchenPanel').style.right = '0px';
-  document.getElementById('kitchenOverlay').style.display = 'block';
-  loadRestaurantNamePanel();
-}
-
-function closeKitchenPanel() {
-  document.getElementById('kitchenPanel').style.right = '-400px';
-  document.getElementById('kitchenOverlay').style.display = 'none';
-}
-
-function openTaskModal() {
-  const select = document.getElementById('taskCook');
-  if(!select) {
-    console.error('Не найден select #taskCook');
-    return;
-  }
-
-  if(staffList.length === 0) {
-    select.innerHTML = '<option>Сначала добавь поваров...</option>';
-    return;
-  }
-
-  select.innerHTML = '<option value="">Выбери повара...</option>' +
-    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('taskModal').classList.add('show');
-}
-
-function closeTaskModal() {
-  document.getElementById('taskModal').classList.remove('show');
-  document.getElementById('taskTitle').value = '';
-  document.getElementById('taskDesc').value = '';
-}
-
-async function saveTask() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const restaurantId = urlParams.get('rest');
-  const staff_id = document.getElementById('taskCook').value;
-  const title = document.getElementById('taskTitle').value.trim();
-  const description = document.getElementById('taskDesc').value.trim();
-
-  if(!staff_id || !title) {
-    alert('Выбери повара и напиши заголовок!');
-    return;
-  }
-
-  const { error } = await _supabase.from('tasks').insert({
-    restaurant_id: restaurantId,
-    staff_id: staff_id,
-    title: title,
-    description: description,
-    status: 'new'
-  });
-
-  if(error) {
-    alert('Ошибка: ' + error.message);
-    return;
-  }
-  alert('Задание отправлено!');
-  closeTaskModal();
-}
+  logs.forEach(l => {
+    if(!l.time_in ||!l.time_out) return;
+    const s = stats[l.staff_id];
+    const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
+    s.hou
