@@ -522,7 +522,6 @@ async function manualCheck(staffId, type) {
   renderManualButtons();
 }
 
-// ТАБЛО СПРАВЕДЛИВОСТИ + ТУМБЛЕР ДЕНЕГ
 async function loadReports() {
   let content = document.getElementById('tab-reports');
   if(!document.getElementById('reportStart')) {
@@ -534,17 +533,24 @@ async function loadReports() {
           <div><label class="text-xs text-zinc-400">С</label><input type="date" id="reportStart" class="input-field w-full bg-zinc-900 border-zinc-700 rounded-lg p-2 text-white"></div>
           <div><label class="text-xs text-zinc-400">По</label><input type="date" id="reportEnd" class="input-field w-full bg-zinc-900 border-zinc-700 rounded-lg p-2 text-white"></div>
         </div>
-
         <div class="flex items-center justify-between mb-3 p-3 bg-zinc-800/50 rounded-lg">
           <span class="text-sm">Показать деньги</span>
           <button id="moneyToggle" onclick="toggleMoney()" class="w-12 h-6 bg-zinc-600 rounded-full relative">
             <div id="moneyToggleBtn" class="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all"></div>
           </button>
         </div>
-
         <button onclick="loadReports()" class="w-full bg-orange-500 text-black font-semibold py-2 rounded-lg">Показать</button>
       </div>
       <div id="reportsContent"></div>
+      <div id="staffDetailModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-zinc-900 rounded-2xl p-6 w-11/12 max-w-md border-zinc-800">
+          <div class="flex justify-between items-center mb-4">
+            <h3 id="modalStaffName" class="text-xl font-bold"></h3>
+            <button onclick="closeStaffModal()" class="text-zinc-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+          </div>
+          <div id="modalStaffData" class="space-y-3 text-sm"></div>
+        </div>
+      </div>
     `;
   }
 
@@ -564,14 +570,14 @@ async function loadReports() {
   let logs = [];
   if(showMoney) {
     const { data } = await _supabase.from('time_logs')
-.select('staff_id, time_in, time_out')
+.select('staff_id, time_in, time_out, date')
 .gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
     logs = data || [];
   }
 
   const stats = {};
   staffList.forEach(st => {
-    stats[st.id] = {name: st.name, pay_type: st.pay_type, hour_rate: st.hourly_rate||0, day_rate: st.daily_rate||0, shifts: 0, hours: 0, pay: 0, dates: []};
+    stats[st.id] = {id: st.id, name: st.name, pay_type: st.pay_type, hour_rate: st.hourly_rate||0, day_rate: st.daily_rate||0, shifts: 0, hours: 0, pay: 0, dates: [], logs: []};
   });
 
   plan?.forEach(p => {
@@ -582,15 +588,18 @@ async function loadReports() {
   });
 
   logs.forEach(l => {
+    if(!stats[l.staff_id]) return;
+    stats[l.staff_id].logs.push(l);
     if(!l.time_in ||!l.time_out) return;
-    const s = stats[l.staff_id];
     const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
-    s.hours += hours;
+    stats[l.staff_id].hours += hours;
   });
 
   Object.values(stats).forEach(s => {
     s.pay = s.pay_type === 'hourly'? s.hours * s.hour_rate : s.shifts * s.day_rate;
   });
+
+  window.lastStats = stats;
 
   const sorted = Object.values(stats).sort((a,b) => a.shifts - b.shifts);
 
@@ -602,7 +611,7 @@ async function loadReports() {
     let statusText = s.shifts <= 5? '⚠️ Мало смен' : s.shifts >= 15? '🔥 Много' : '✓ Норма';
 
     html += `
-      <div class="card mb-3 border-2 ${colorClass}">
+      <div class="card mb-3 border-2 ${colorClass} cursor-pointer hover:border-orange-500/50 transition" onclick="openStaffModal('${s.id}')">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name[0]}</div>
@@ -637,6 +646,40 @@ async function loadReports() {
     toggle.className = 'w-12 h-6 bg-zinc-600 rounded-full relative';
     btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all';
   }
+
+  if(typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+function openStaffModal(staffId) {
+  const s = window.lastStats[staffId];
+  if(!s) return;
+  document.getElementById('modalStaffName').innerText = s.name;
+  let logsHtml = '';
+  if(s.logs.length > 0) {
+    logsHtml = '<div class="mt-3"><div class="text-zinc-400 text-xs mb-2">Отметки:</div>';
+    s.logs.forEach(l => {
+      logsHtml += `<div class="text-xs bg-zinc-800 p-2 rounded mb-1">${l.date}: ${l.time_in || '--'} → ${l.time_out || '--'}</div>`;
+    });
+    logsHtml += '</div>';
+  } else {
+    logsHtml = '<div class="text-xs text-zinc-500 mt-3">Нет отметок времени</div>';
+  }
+  document.getElementById('modalStaffData').innerHTML = `
+    <div class="flex justify-between"><span class="text-zinc-400">Тип оплаты:</span><span class="font-semibold">${s.pay_type === 'hourly'? 'Почасовой' : 'Фикс за день'}</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Ставка:</span><span class="font-semibold">${s.pay_type === 'hourly'? s.hour_rate : s.day_rate}${currency}</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Смен всего:</span><span class="font-semibold">${s.shifts}</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Часов всего:</span><span class="font-semibold">${s.hours.toFixed(2)} ч</span></div>
+    <div class="flex justify-between border-t border-zinc-700 pt-2"><span class="text-zinc-400">Заработал:</span><span class="font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</span></div>
+    ${logsHtml}
+  `;
+  document.getElementById('staffDetailModal').classList.remove('hidden');
+  document.getElementById('staffDetailModal').classList.add('flex');
+  if(typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+function closeStaffModal() {
+  document.getElementById('staffDetailModal').classList.add('hidden');
+  document.getElementById('staffDetailModal').classList.remove('flex');
 }
 
 function toggleMoney() {
