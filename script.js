@@ -487,48 +487,51 @@ async function renderManualButtons() {
   if (typeof lucide!== 'undefined') lucide.createIcons();
 }
 
+const restaurantId = new URLSearchParams(window.location.search).get('rest');
+
 async function manualCheck(staffId, type) {
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const time = now.toTimeString().split(' ')[0];
+  const now = new Date().toISOString();
+  const today = new Date().toISOString().split('T')[0];
 
   if(type === 'in') {
-    // Проверяем нет ли уже открытой смены
-    const { data: open } = await _supabase.from('time_logs')
-    .select('id')
-    .eq('staff_id', staffId)
-    .is('time_out', null)
-    .single();
+    // Проверяем нет ли открытой смены сегодня
+    const { data: open } = await supabase.from('time_logs')
+     .select('id')
+     .eq('staff_id', staffId)
+     .eq('restaurant_id', restaurantId)
+     .eq('shift_date', today)
+     .is('clock_out', null)
+     .single();
 
     if(open) {
-      alert('У него уже есть открытая смена! Сначала закрой её.');
+      alert('У него уже есть открытая смена!');
       return;
     }
 
-    await _supabase.from('time_logs').insert({
+    await supabase.from('time_logs').insert({
       staff_id: staffId,
-      date: today,
-      time_in: time,
-      restaurant_id: restaurantId
+      restaurant_id: restaurantId,
+      shift_date: today,
+      clock_in: now
     });
-    showToast('Приход отмечен: ' + time);
-  } else {
-    // Ищем ЛЮБУЮ открытую смену, без привязки к дате
-    const { data: log } = await _supabase.from('time_logs')
-    .select('id')
-    .eq('staff_id', staffId)
-    .is('time_out', null)
-    .single();
+    alert('Приход отмечен!');
+  }
 
-    if(log) {
-      await _supabase.from('time_logs')
-      .update({ time_out: time })
-      .eq('id', log.id);
-      showToast('Уход отмечен: ' + time);
-    } else {
-      alert('Нет открытой смены! Сначала нажми "Пришёл"');
+  if(type === 'out') {
+    // Закрываем открытую смену
+    const { data, error } = await supabase.from('time_logs')
+     .update({ clock_out: now })
+     .eq('staff_id', staffId)
+     .eq('restaurant_id', restaurantId)
+     .eq('shift_date', today)
+     .is('clock_out', null)
+     .select().single();
+
+    if(error ||!data) {
+      alert('Нет открытой смены! Сначала нажми Пришёл');
       return;
     }
+    alert('Уход отмечен! Часы: ' + data.hours.toFixed(2));
   }
 
   renderManualButtons();
