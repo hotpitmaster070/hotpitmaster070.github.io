@@ -18,7 +18,7 @@ fetch('menu.html').then(r=>r.text()).then(html=>{
 });
 
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7n1owNpYoqTpnGRKeEiMlTAIpT0bAe28v6MX-MyVs';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -428,7 +428,7 @@ async function startQrScanner() {
       const { data: existing } = await _supabase.from('time_logs')
    .select('*')
    .eq('staff_id', staffId)
-   .eq('date', date)
+   .eq('log_date', date)
    .is('time_out', null)
    .single();
 
@@ -436,7 +436,7 @@ async function startQrScanner() {
         await _supabase.from('time_logs').insert({
           restaurant_id: restaurantId,
           staff_id: staffId,
-          date: date,
+          log_date: date,
           time_in: time
         });
         document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
@@ -495,7 +495,7 @@ async function manualCheck(staffId, type) {
   if(type === 'in') {
     await _supabase.from('time_logs').insert({
       staff_id: staffId,
-      date: today,
+      log_date: today,
       time_in: time,
       restaurant_id: restaurantId
     });
@@ -504,7 +504,7 @@ async function manualCheck(staffId, type) {
     const { data: log } = await _supabase.from('time_logs')
 .select('id')
 .eq('staff_id', staffId)
-.eq('date', today)
+.eq('log_date', today)
 .is('time_out', null)
 .single();
 
@@ -570,189 +570,10 @@ async function loadReports() {
   let logs = [];
   if(showMoney) {
     const { data } = await _supabase.from('time_logs')
-.select('staff_id, time_in, time_out, date')
-.gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
+.select('staff_id, time_in, time_out, log_date')
+.gte('log_date', startDate).lte('log_date', endDate).eq('restaurant_id', restaurantId);
     logs = data || [];
   }
 
   const stats = {};
-  staffList.forEach(st => {
-    stats[st.id] = {id: st.id, name: st.name, pay_type: st.pay_type, hour_rate: st.hourly_rate||0, day_rate: st.daily_rate||0, shifts: 0, hours: 0, pay: 0, dates: [], logs: []};
-  });
-
-  plan?.forEach(p => {
-    if(stats[p.staff_id]) {
-      stats[p.staff_id].shifts += 1;
-      stats[p.staff_id].dates.push(p.date.slice(5));
-    }
-  });
-
-  logs.forEach(l => {
-    if(!stats[l.staff_id]) return;
-    stats[l.staff_id].logs.push(l);
-    if(!l.time_in ||!l.time_out) return;
-    const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
-    stats[l.staff_id].hours += hours;
-  });
-
-  Object.values(stats).forEach(s => {
-    s.pay = s.pay_type === 'hourly'? s.hours * s.hour_rate : s.shifts * s.day_rate;
-  });
-
-  window.lastStats = stats;
-
-  const sorted = Object.values(stats).sort((a,b) => a.shifts - b.shifts);
-
-  let html = `<div class="text-sm text-zinc-400 mb-4">Период: ${startDate} → ${endDate}</div>`;
-
-  sorted.forEach(s => {
-    if(s.shifts === 0) return;
-    let colorClass = s.shifts <= 5? 'border-red-500/50 bg-red-500/10' : s.shifts >= 15? 'border-yellow-500/50 bg-yellow-500/10' : 'border-green-500/50 bg-green-500/10';
-    let statusText = s.shifts <= 5? '⚠️ Мало смен' : s.shifts >= 15? '🔥 Много' : '✓ Норма';
-
-    html += `
-      <div class="card mb-3 border-2 ${colorClass} cursor-pointer hover:border-orange-500/50 transition" onclick="openStaffModal('${s.id}')">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name[0]}</div>
-            <div>
-              <div class="font-semibold text-lg">${s.name}</div>
-              <div class="text-xs ${colorClass.includes('red')? 'text-red-400' : colorClass.includes('yellow')? 'text-yellow-400' : 'text-green-400'}">${statusText}</div>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-4xl font-bold">${s.shifts}</div>
-            <div class="text-xs text-zinc-400">смен</div>
-          </div>
-        </div>
-        ${showMoney? `
-        <div class="text-sm border-t border-zinc-700 pt-2 flex justify-between">
-          <span class="text-zinc-400">Заработал:</span>
-          <span class="font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</span>
-        </div>` : ''}
-        <div class="text-xs text-zinc-500 mt-1">Даты: ${s.dates.join(', ')}</div>
-      </div>
-    `;
-  });
-
-  document.getElementById('reportsContent').innerHTML = html || '<div class="text-zinc-500 text-center py-8">Нет данных</div>';
-
-  const toggle = document.getElementById('moneyToggle');
-  const btn = document.getElementById('moneyToggleBtn');
-  if(showMoney) {
-    toggle.className = 'w-12 h-6 bg-orange-500 rounded-full relative';
-    btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-6.5 transition-all';
-  } else {
-    toggle.className = 'w-12 h-6 bg-zinc-600 rounded-full relative';
-    btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all';
-  }
-
-  if(typeof lucide!== 'undefined') lucide.createIcons();
-}
-
-function openStaffModal(staffId) {
-  const s = window.lastStats[staffId];
-  if(!s) return;
-  document.getElementById('modalStaffName').innerText = s.name;
-  let logsHtml = '';
-  if(s.logs.length > 0) {
-    logsHtml = '<div class="mt-3"><div class="text-zinc-400 text-xs mb-2">Отметки:</div>';
-    s.logs.forEach(l => {
-      logsHtml += `<div class="text-xs bg-zinc-800 p-2 rounded mb-1">${l.date}: ${l.time_in || '--'} → ${l.time_out || '--'}</div>`;
-    });
-    logsHtml += '</div>';
-  } else {
-    logsHtml = '<div class="text-xs text-zinc-500 mt-3">Нет отметок времени</div>';
-  }
-  document.getElementById('modalStaffData').innerHTML = `
-    <div class="flex justify-between"><span class="text-zinc-400">Тип оплаты:</span><span class="font-semibold">${s.pay_type === 'hourly'? 'Почасовой' : 'Фикс за день'}</span></div>
-    <div class="flex justify-between"><span class="text-zinc-400">Ставка:</span><span class="font-semibold">${s.pay_type === 'hourly'? s.hour_rate : s.day_rate}${currency}</span></div>
-    <div class="flex justify-between"><span class="text-zinc-400">Смен всего:</span><span class="font-semibold">${s.shifts}</span></div>
-    <div class="flex justify-between"><span class="text-zinc-400">Часов всего:</span><span class="font-semibold">${s.hours.toFixed(2)} ч</span></div>
-    <div class="flex justify-between border-t border-zinc-700 pt-2"><span class="text-zinc-400">Заработал:</span><span class="font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</span></div>
-    ${logsHtml}
-  `;
-  document.getElementById('staffDetailModal').classList.remove('hidden');
-  document.getElementById('staffDetailModal').classList.add('flex');
-  if(typeof lucide!== 'undefined') lucide.createIcons();
-}
-
-function closeStaffModal() {
-  document.getElementById('staffDetailModal').classList.add('hidden');
-  document.getElementById('staffDetailModal').classList.remove('flex');
-}
-
-function toggleMoney() {
-  window.showMoneyReports =!window.showMoneyReports;
-  loadReports();
-}
-
-function showToast(text) {
-  const toast = document.createElement('div');
-  toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50';
-  toast.innerText = text;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
-}
-
-function openKitchenPanel() {
-  document.getElementById('kitchenPanel').style.right = '0px';
-  document.getElementById('kitchenOverlay').style.display = 'block';
-  loadRestaurantNamePanel();
-}
-
-function closeKitchenPanel() {
-  document.getElementById('kitchenPanel').style.right = '-400px';
-  document.getElementById('kitchenOverlay').style.display = 'none';
-}
-
-function openTaskModal() {
-  const select = document.getElementById('taskCook');
-  if(!select) {
-    console.error('Не найден select #taskCook');
-    return;
-  }
-
-  if(staffList.length === 0) {
-    select.innerHTML = '<option>Сначала добавь поваров...</option>';
-    return;
-  }
-
-  select.innerHTML = '<option value="">Выбери повара...</option>' +
-    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('taskModal').classList.add('show');
-}
-
-function closeTaskModal() {
-  document.getElementById('taskModal').classList.remove('show');
-  document.getElementById('taskTitle').value = '';
-  document.getElementById('taskDesc').value = '';
-}
-
-async function saveTask() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const restaurantId = urlParams.get('rest');
-  const staff_id = document.getElementById('taskCook').value;
-  const title = document.getElementById('taskTitle').value.trim();
-  const description = document.getElementById('taskDesc').value.trim();
-
-  if(!staff_id ||!title) {
-    alert('Выбери повара и напиши заголовок!');
-    return;
-  }
-
-  const { error } = await _supabase.from('tasks').insert({
-    restaurant_id: restaurantId,
-    staff_id: staff_id,
-    title: title,
-    description: description,
-    status: 'new'
-  });
-
-  if(error) {
-    alert('Ошибка: ' + error.message);
-    return;
-  }
-  alert('Задание отправлено!');
-  closeTaskModal();
-}
+  staffList.forE
