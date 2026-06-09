@@ -579,14 +579,14 @@ async function loadReports() {
   const showMoney = window.showMoneyReports || false;
 
   const { data: plan } = await _supabase.from('work_schedules')
-.select('staff_id, shift_date, staff(name, pay_type, hourly_rate, daily_rate)')
-.gte('shift_date', startDate).lte('shift_date', endDate).eq('restaurant_id', restaurantId);
+.select('staff_id, date, staff(name, pay_type, hourly_rate, daily_rate)')
+.gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
 
   let logs = [];
   if(showMoney) {
     const { data } = await _supabase.from('time_logs')
-.select('staff_id, hours, shift_date')
-.gte('shift_date', startDate).lte('shift_date', endDate).eq('restaurant_id', restaurantId);
+.select('staff_id, time_in, time_out, date')
+.gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
     logs = data || [];
   }
 
@@ -598,14 +598,16 @@ async function loadReports() {
   plan?.forEach(p => {
     if(stats[p.staff_id]) {
       stats[p.staff_id].shifts += 1;
-      stats[p.staff_id].dates.push(p.shift_date.slice(5));
+      stats[p.staff_id].dates.push(p.date.slice(5));
     }
   });
 
   logs.forEach(l => {
     if(!stats[l.staff_id]) return;
     stats[l.staff_id].logs.push(l);
-    stats[l.staff_id].hours += Number(l.hours) || 0;
+    if(!l.time_in ||!l.time_out) return;
+    const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
+    stats[l.staff_id].hours += hours;
   });
 
   Object.values(stats).forEach(s => {
