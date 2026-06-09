@@ -493,6 +493,18 @@ async function manualCheck(staffId, type) {
   const time = now.toTimeString().split(' ')[0];
 
   if(type === 'in') {
+    // Проверяем нет ли уже открытой смены
+    const { data: open } = await _supabase.from('time_logs')
+    .select('id')
+    .eq('staff_id', staffId)
+    .is('time_out', null)
+    .single();
+
+    if(open) {
+      alert('У него уже есть открытая смена! Сначала закрой её.');
+      return;
+    }
+
     await _supabase.from('time_logs').insert({
       staff_id: staffId,
       date: today,
@@ -501,17 +513,17 @@ async function manualCheck(staffId, type) {
     });
     showToast('Приход отмечен: ' + time);
   } else {
+    // Ищем ЛЮБУЮ открытую смену, без привязки к дате
     const { data: log } = await _supabase.from('time_logs')
- .select('id')
- .eq('staff_id', staffId)
- .eq('date', today)
- .is('time_out', null)
- .single();
+    .select('id')
+    .eq('staff_id', staffId)
+    .is('time_out', null)
+    .single();
 
     if(log) {
       await _supabase.from('time_logs')
-   .update({ time_out: time })
-   .eq('id', log.id);
+      .update({ time_out: time })
+      .eq('id', log.id);
       showToast('Уход отмечен: ' + time);
     } else {
       alert('Нет открытой смены! Сначала нажми "Пришёл"');
