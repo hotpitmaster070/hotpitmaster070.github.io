@@ -18,7 +18,7 @@ fetch('menu.html').then(r=>r.text()).then(html=>{
 });
 
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7n1owNpYoqTpnGRKeEiMlTAIpT0bAe28v6MX-MyVs';
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -292,9 +292,9 @@ async function loadSchedule() {
   if (currentView === 'day') {
     const dateStr = currentDate.toISOString().split('T')[0];
     const { data: shifts } = await _supabase.from('work_schedules')
-  .select('*, staff(*)')
-  .eq('date', dateStr)
-  .eq('restaurant_id', restaurantId);
+ .select('*, staff(*)')
+ .eq('date', dateStr)
+ .eq('restaurant_id', restaurantId);
 
     let html = staffList.map(st => {
       const shift = shifts?.find(s => s.staff_id === st.id);
@@ -426,11 +426,11 @@ async function startQrScanner() {
       const date = now.toISOString().split('T')[0];
 
       const { data: existing } = await _supabase.from('time_logs')
-    .select('*')
-    .eq('staff_id', staffId)
-    .eq('date', date)
-    .is('time_out', null)
-    .single();
+   .select('*')
+   .eq('staff_id', staffId)
+   .eq('date', date)
+   .is('time_out', null)
+   .single();
 
       if (!existing) {
         await _supabase.from('time_logs').insert({
@@ -487,51 +487,36 @@ async function renderManualButtons() {
   if (typeof lucide!== 'undefined') lucide.createIcons();
 }
 
-const restaurantId = new URLSearchParams(window.location.search).get('rest');
-
 async function manualCheck(staffId, type) {
-  const now = new Date().toISOString();
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const time = now.toTimeString().split(' ')[0];
 
   if(type === 'in') {
-    // Проверяем нет ли открытой смены сегодня
-    const { data: open } = await supabase.from('time_logs')
-     .select('id')
-     .eq('staff_id', staffId)
-     .eq('restaurant_id', restaurantId)
-     .eq('shift_date', today)
-     .is('clock_out', null)
-     .single();
-
-    if(open) {
-      alert('У него уже есть открытая смена!');
-      return;
-    }
-
-    await supabase.from('time_logs').insert({
+    await _supabase.from('time_logs').insert({
       staff_id: staffId,
-      restaurant_id: restaurantId,
-      shift_date: today,
-      clock_in: now
+      date: today,
+      time_in: time,
+      restaurant_id: restaurantId
     });
-    alert('Приход отмечен!');
-  }
+    showToast('Приход отмечен: ' + time);
+  } else {
+    const { data: log } = await _supabase.from('time_logs')
+.select('id')
+.eq('staff_id', staffId)
+.eq('date', today)
+.is('time_out', null)
+.single();
 
-  if(type === 'out') {
-    // Закрываем открытую смену
-    const { data, error } = await supabase.from('time_logs')
-     .update({ clock_out: now })
-     .eq('staff_id', staffId)
-     .eq('restaurant_id', restaurantId)
-     .eq('shift_date', today)
-     .is('clock_out', null)
-     .select().single();
-
-    if(error ||!data) {
-      alert('Нет открытой смены! Сначала нажми Пришёл');
+    if(log) {
+      await _supabase.from('time_logs')
+  .update({ time_out: time })
+  .eq('id', log.id);
+      showToast('Уход отмечен: ' + time);
+    } else {
+      alert('Нет открытой смены! Сначала нажми "Пришёл"');
       return;
     }
-    alert('Уход отмечен! Часы: ' + data.hours.toFixed(2));
   }
 
   renderManualButtons();
