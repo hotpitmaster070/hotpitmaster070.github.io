@@ -334,10 +334,10 @@ async function loadMonthSchedule() {
   const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
   const { data: shifts } = await _supabase.from('work_schedules')
-.select('*')
-.gte('date', startDate)
-.lte('date', endDate)
-.eq('restaurant_id', restaurantId);
+ .select('*')
+ .gte('date', startDate)
+ .lte('date', endDate)
+ .eq('restaurant_id', restaurantId);
 
   let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
 
@@ -369,10 +369,33 @@ async function loadMonthSchedule() {
 async function toggleStaffDay(staffId) {
   const dateStr = currentDate.toISOString().split('T')[0];
 
-const { data: existing } = await _supabase
+  const { data: existing } = await _supabase.from('work_schedules')
  .select('*')
  .eq('staff_id', staffId)
  .eq('date', dateStr)
+ .single();
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+    showToast('Убран из смены');
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: dateStr,
+      start_time: '09:00',
+      end_time: '18:00'
+    });
+    showToast('Добавлен в смену');
+  }
+  loadSchedule();
+}
+
+async function toggleShiftMonth(staffId, date) {
+  const { data: existing } = await _supabase.from('work_schedules')
+ .select('*')
+ .eq('staff_id', staffId)
+ .eq('date', date)
  .single();
 
   if (existing) {
@@ -381,30 +404,9 @@ const { data: existing } = await _supabase
     await _supabase.from('work_schedules').insert({
       restaurant_id: restaurantId,
       staff_id: staffId,
-      date: dateStr,
-      start_time: '00:00',
-      end_time: '23:59'
-    });
-  }
-  loadSchedule();
-}
-
-async function toggleShiftMonth(staffId, date) {
-  const { data: existing } = await _supabase.from('work_schedules')
-.select('*')
-.eq('staff_id', staffId)
-.eq('date', date)
-.single();
-
-  if (existing) {
-    await _supabase.from('work_schedules').delete().eq('id', existing.id);
-  } else {
-    await _supabase.from('work_schedules').insert({
-      restaurant_id: restaurantId,
-      staff_id: staffId,
       date: date,
-      start_time: '00:00',
-      end_time: '23:59'
+      start_time: '09:00',
+      end_time: '18:00'
     });
   }
   loadSchedule();
@@ -426,23 +428,23 @@ async function startQrScanner() {
       const date = now.toISOString().split('T')[0];
 
       const { data: existing } = await _supabase.from('time_logs')
-   .select('*')
-   .eq('staff_id', staffId)
-   .eq('log_date', date)
-   .is('time_out', null)
-   .single();
+     .select('*')
+     .eq('staff_id', staffId)
+     .eq('shift_date', date)
+     .is('clock_out', null)
+     .single();
 
       if (!existing) {
         await _supabase.from('time_logs').insert({
           restaurant_id: restaurantId,
           staff_id: staffId,
-          log_date: date,
-          time_in: time
+          shift_date: date,
+          clock_in: time
         });
         document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
         showToast('Приход: ' + staff.name);
       } else {
-        await _supabase.from('time_logs').update({time_out: time}).eq('id', existing.id);
+        await _supabase.from('time_logs').update({clock_out: time}).eq('id', existing.id);
         document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`;
         showToast('Уход: ' + staff.name);
       }
@@ -457,9 +459,9 @@ async function renderManualButtons() {
   const today = new Date().toISOString().split('T')[0];
 
   const { data: todayShifts } = await _supabase.from('work_schedules')
-.select('staff_id, staff(name)')
-.eq('date', today)
-.eq('restaurant_id', restaurantId);
+ .select('staff_id, staff(name)')
+ .eq('date', today)
+ .eq('restaurant_id', restaurantId);
 
   if(!todayShifts || todayShifts.length === 0) {
     document.getElementById('manualStaffList').innerHTML =
@@ -495,23 +497,23 @@ async function manualCheck(staffId, type) {
   if(type === 'in') {
     await _supabase.from('time_logs').insert({
       staff_id: staffId,
-      log_date: today,
-      time_in: time,
+      shift_date: today,
+      clock_in: time,
       restaurant_id: restaurantId
     });
     showToast('Приход отмечен: ' + time);
   } else {
     const { data: log } = await _supabase.from('time_logs')
-.select('id')
-.eq('staff_id', staffId)
-.eq('log_date', today)
-.is('time_out', null)
-.single();
+   .select('id')
+   .eq('staff_id', staffId)
+   .eq('shift_date', today)
+   .is('clock_out', null)
+   .single();
 
     if(log) {
       await _supabase.from('time_logs')
-  .update({ time_out: time })
-  .eq('id', log.id);
+     .update({ clock_out: time })
+     .eq('id', log.id);
       showToast('Уход отмечен: ' + time);
     } else {
       alert('Нет открытой смены! Сначала нажми "Пришёл"');
