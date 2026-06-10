@@ -686,3 +686,43 @@ async function saveTask() {
   alert('Задание отправлено!');
   closeTaskModal();
 }
+
+async function markIn(staffId, name) {
+  const restId = new URLSearchParams(window.location.search).get('rest');
+  const today = new Date().toISOString().split('T')[0];
+
+  const { error } = await _supabase.from('time_logs').insert({
+    staff_id: staffId,
+    restaurant_id: restId,
+    shift_date: today,
+    clock_in: new Date().toISOString()
+  });
+
+  if(error) return alert('Ошибка: ' + error.message);
+  alert(name + ' отмечен: Пришёл');
+  loadStaffList(); // обновим список
+}
+
+async function loadStaffList() {
+  const restId = new URLSearchParams(window.location.search).get('rest');
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: staff } = await _supabase.from('staff').select('id, name').eq('restaurant_id', restId);
+  const { data: logs } = await _supabase.from('time_logs').select('staff_id, clock_in').eq('shift_date', today);
+
+  const container = document.getElementById('manualStaffList');
+  container.innerHTML = staff.map(s => {
+    const hasLog = logs.find(l => l.staff_id === s.id);
+    return `
+      <div class="bg-zinc-800 p-3 rounded-lg flex justify-between">
+        <span>${s.name}</span>
+        <button ${hasLog? 'disabled' : ''} onclick="markIn('${s.id}', '${s.name}')"
+          class="px-3 py-1 rounded ${hasLog? 'bg-green-600' : 'bg-orange-500'}">
+          ${hasLog? 'Пришёл ✓' : 'Пришёл'}
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+setTimeout(loadStaffList, 1000);
