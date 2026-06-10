@@ -1,85 +1,72 @@
-// chef-panel.js - боковая панель как на скрине
+// chef-panel.js - старая версия с оранжевой шапкой
 let currentTab = 'tab-staff';
 
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('overlay');
-  if (sidebar) sidebar.classList.toggle('-translate-x-full');
-  if (overlay) overlay.classList.toggle('hidden');
+  sidebar?.classList.toggle('-translate-x-full');
+  overlay?.classList.toggle('hidden');
 }
 window.toggleSidebar = toggleSidebar;
 
 function showTab(tabId) {
-  // Прячем все вкладки
   ['tab-staff', 'tab-prod', 'tab-qr', 'tab-reports'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('hidden');
+    document.getElementById(id)?.classList.add('hidden');
   });
-  
-  // Показываем нужную
-  const tab = document.getElementById(tabId);
-  if (tab) tab.classList.remove('hidden');
+  document.getElementById(tabId)?.classList.remove('hidden');
   currentTab = tabId;
-
-  // Подсвечиваем активную кнопку в меню - оранжевый фон
-  document.querySelectorAll('[data-tab]').forEach(btn => {
-    if (btn.getAttribute('data-tab') === tabId) {
-      btn.classList.add('bg-orange-500', 'text-white');
-      btn.classList.remove('text-zinc-400');
-    } else {
-      btn.classList.remove('bg-orange-500', 'text-white');
-      btn.classList.add('text-zinc-400');
-    }
-  });
-
-  // На мобиле закрываем меню после клика
+  
+  // Закрываем меню на мобиле
   if (window.innerWidth < 768) toggleSidebar();
 }
 window.showTab = showTab;
+
+function setRestName() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const restId = urlParams.get('rest');
+  const restName = localStorage.getItem('restName') || 'Land';
+  
+  // В шапке меню
+  const panelName = document.getElementById('restNamePanel');
+  if(panelName) panelName.textContent = restName;
+  
+  // В бейдже сверху
+  const headerName = document.getElementById('restNameHeader');
+  if(headerName) headerName.textContent = restName;
+}
 
 function renderSidebar() {
   const container = document.getElementById('sidebarContainer');
   if (!container) return;
 
   container.innerHTML = `
-    <aside id="sidebar" class="fixed md:relative z-50 w-64 h-full bg-black border-r border-zinc-800 p-4 flex-col -translate-x-full md:translate-x-0 transition-transform">
-      <div class="flex items-center justify-between mb-6">
-        <div class="text-xl font-bold">HotPit</div>
-        <button class="md:hidden" onclick="toggleSidebar()">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
+    <aside id="sidebar" class="fixed md:relative z-50 w-72 h-full bg-black border-r border-zinc-800 -translate-x-full md:translate-x-0 transition-transform">
+      <div class="bg-orange-500 p-4">
+        <div class="flex items-center justify-between mb-1">
+          <div class="font-bold text-white">Экран Шефа 🧱</div>
+          <button class="md:hidden text-white" onclick="toggleSidebar()">✕</button>
+        </div>
+        <div class="text-sm text-orange-100" id="restNamePanel">Land</div>
       </div>
       
-      <div class="mb-6">
-        <div class="flex items-center gap-3 mb-1">
-          <i data-lucide="sliders" class="w-5 h-5 text-zinc-400"></i>
-          <div class="font-semibold">ЭКРАН ШЕФА</div>
-        </div>
-        <div class="text-xs text-zinc-500 ml-8">Панель управления</div>
-      </div>
-
-      <nav class="flex-1 space-y-2">
-        <button data-tab="tab-staff" onclick="showTab('tab-staff')" class="w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 bg-orange-500 text-white font-semibold">
-          <i data-lucide="users" class="w-5 h-5"></i> Повара
-        </button>
-        <button data-tab="tab-prod" onclick="showTab('tab-prod')" class="w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 text-zinc-400 hover:bg-zinc-900">
-          <i data-lucide="calendar" class="w-5 h-5"></i> График
-        </button>
-        <button data-tab="tab-qr" onclick="showTab('tab-qr')" class="w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 text-zinc-400 hover:bg-zinc-900">
-          <i data-lucide="qr-code" class="w-5 h-5"></i> QR Сканер
-        </button>
-        <button data-tab="tab-reports" onclick="showTab('tab-reports')" class="w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 text-zinc-400 hover:bg-zinc-900">
-          <i data-lucide="bar-chart-3" class="w-5 h-5"></i> Отчёты
-        </button>
+      <nav class="p-3 space-y-2">
+        <button onclick="showTab('tab-staff')" class="w-full text-left px-4 py-3 rounded-lg bg-orange-500 text-white font-semibold">2. [СОЗДАТЬ ЗАДАНИЕ]</button>
+        <button onclick="alert('1. [+ ПРИХОД ТОВАРА] - скоро')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">1. [+ ПРИХОД ТОВАРА] - скоро</button>
+        <button onclick="alert('4. [МОЙ СКЛАД] - скоро')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">4. [МОЙ СКЛАД] - скоро</button>
+        <button onclick="alert('5. [МОИ ЗАГОТОВКИ] - скоро')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">5. [МОИ ЗАГОТОВКИ] - скоро</button>
+        <button onclick="alert('6. [СПИСАНИЕ] - скоро')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">6. [СПИСАНИЕ] - скоро</button>
+        <button onclick="showTab('tab-reports')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">7. [ОТЧЁТ ПО СПИСАНИЮ]</button>
+        <button onclick="alert('8. [ОТЧЁТ ЗА МЕСЯЦ] - скоро')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">8. [ОТЧЁТ ЗА МЕСЯЦ] - скоро</button>
+        <button onclick="alert('9. [ИНВЕНТАРИЗАЦИЯ] - скоро')" class="w-full text-left px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300">9. [ИНВЕНТАРИЗАЦИЯ] - скоро</button>
+        <button onclick="alert('Выход')" class="w-full text-center px-4 py-3 rounded-lg bg-zinc-800 text-zinc-300 mt-4">ВЫЙТИ</button>
       </nav>
     </aside>
   `;
-  
-  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// Запускаем при загрузке
+// Запуск
 document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
-  showTab('tab-staff'); // По умолчанию Повара как на скрине
+  setRestName();
+  showTab('tab-staff');
 });
