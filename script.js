@@ -369,11 +369,13 @@ async function loadMonthSchedule() {
 async function toggleStaffDay(staffId) {
   const dateStr = currentDate.toISOString().split('T')[0];
 
-  const { data: existing } = await _supabase.from('work_schedules')
-.select('*')
-.eq('staff_id', staffId)
-.eq('date', dateStr)
-.single();
+  const { data: existing } = await supabase
+  .from('time_logs')
+  .select('*')
+  .eq('staff_id', staffId)
+  .eq('shift_date', today)
+  .is('clock_out', null)
+  .single(); 
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
