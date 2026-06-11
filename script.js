@@ -727,3 +727,115 @@ function showToast(msg) {
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 2000);
     }
+
+// ====== 16. МОДАЛКА ПОВАРА С ОТМЕТКАМИ ======
+function openStaffModal(staffId) {
+  const s = window.lastStats?.[staffId];
+  if(!s) return;
+
+  const nameEl = document.getElementById('modalStaffName');
+  const dataEl = document.getElementById('modalStaffData');
+  const modalEl = document.getElementById('staffDetailModal');
+  if(!nameEl ||!dataEl ||!modalEl) return;
+
+  nameEl.innerText = s.name;
+
+  let logsHtml = '';
+  if(s.logs && s.logs.length > 0) {
+    logsHtml = '<div class="mt-3"><div class="text-zinc-400 text-xs mb-2">Отметки:</div>';
+    s.logs.forEach(l => {
+      logsHtml += `<div class="text-xs bg-zinc-800 p-2 rounded mb-1">${l.log_date}: ${l.time_in || '--'} → ${l.time_out || '--'}</div>`;
+    });
+    logsHtml += '</div>';
+  } else {
+    logsHtml = '<div class="text-xs text-zinc-500 mt-3">Нет отметок времени</div>';
+  }
+
+  dataEl.innerHTML = `
+    <div class="flex justify-between"><span class="text-zinc-400">Тип оплаты:</span><span class="font-semibold">${s.pay_type === 'hourly'? 'Почасовой' : 'Фикс за день'}</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Ставка:</span><span class="font-semibold">${s.pay_type === 'hourly'? s.hour_rate : s.day_rate}${currency}</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Смен всего:</span><span class="font-semibold">${s.shifts}</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Часов всего:</span><span class="font-semibold">${s.hours.toFixed(2)} ч</span></div>
+    <div class="flex justify-between border-t border-zinc-700 pt-2"><span class="text-zinc-400">Заработал:</span><span class="font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</span></div>
+    ${logsHtml}
+  `;
+  modalEl.classList.remove('hidden');
+  modalEl.classList.add('flex');
+  if(typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+function closeStaffModal() {
+  document.getElementById('staffDetailModal')?.classList.add('hidden');
+  document.getElementById('staffDetailModal')?.classList.remove('flex');
+}
+
+// showToast и toggleMoney уже есть выше, не дублируем
+
+// ====== 17. КУХОННАЯ ПАНЕЛЬ ======
+function openKitchenPanel() {
+  document.getElementById('kitchenPanel') && (document.getElementById('kitchenPanel').style.right = '0px');
+  document.getElementById('kitchenOverlay') && (document.getElementById('kitchenOverlay').style.display = 'block');
+  loadRestaurantNamePanel();
+}
+
+function closeKitchenPanel() {
+  document.getElementById('kitchenPanel') && (document.getElementById('kitchenPanel').style.right = '-400px');
+  document.getElementById('kitchenOverlay') && (document.getElementById('kitchenOverlay').style.display = 'none');
+}
+
+// ====== 18. ЗАДАЧИ ПОВАРАМ ======
+function openTaskModal() {
+  const select = document.getElementById('taskCook');
+  if(!select) {
+    console.error('Не найден select #taskCook');
+    return;
+  }
+
+  if(staffList.length === 0) {
+    select.innerHTML = '<option>Сначала добавь поваров...</option>';
+    return;
+  }
+
+  select.innerHTML = '<option value="">Выбери повара...</option>' +
+    staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('taskModal')?.classList.add('show');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal')?.classList.remove('show');
+  const title = document.getElementById('taskTitle');
+  const desc = document.getElementById('taskDesc');
+  if(title) title.value = '';
+  if(desc) desc.value = '';
+}
+
+async function saveTask() {
+  const staff_id = document.getElementById('taskCook')?.value;
+  const title = document.getElementById('taskTitle')?.value.trim();
+  const description = document.getElementById('taskDesc')?.value.trim();
+
+  if(!staff_id ||!title) {
+    alert('Выбери повара и напиши заголовок!');
+    return;
+  }
+  if(!restaurantId) {
+    alert('Нет restaurantId');
+    return;
+  }
+
+  const { error } = await _supabase.from('tasks').insert({
+    restaurant_id: restaurantId,
+    staff_id: staff_id,
+    title: title,
+    description: description,
+    status: 'new'
+  });
+
+  if(error) {
+    alert('Ошибка: ' + error.message);
+    console.error(error);
+    return;
+  }
+  alert('Задание отправлено!');
+  closeTaskModal();
+}
