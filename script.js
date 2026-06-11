@@ -511,3 +511,219 @@ async function renderManualButtons() {
   manualList.innerHTML = html;
   if (typeof lucide!== 'undefined') lucide.createIcons();
   }
+
+// ====== 14. РУЧНЫЕ ОТМЕТКИ ПРИХОД/УХОД ======
+async function manualCheck(staffId, type) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const time = now.toTimeString().split(' ')[0];
+
+  if(type === 'in') {
+    const { error } = await _supabase.from('time_logs').insert({
+      staff_id: staffId,
+      log_date: today,
+      time_in: time,
+      restaurant_id: restaurantId
+    });
+    if(error) { console.error('Ошибка прихода:', error.message); showToast('Ошибка прихода'); return; }
+    showToast('Приход отмечен: ' + time);
+  } else {
+    const { data: log, error: findErr } = await _supabase.from('time_logs')
+   .select('id')
+   .eq('staff_id', staffId)
+   .eq('log_date', today)
+   .is('time_out', null)
+   .single();
+
+    if(findErr && findErr.code!== 'PGRST116') {
+      console.error('Ошибка поиска лога:', findErr.message);
+      return;
+    }
+
+    if(log) {
+      const { error } = await _supabase.from('time_logs').update({ time_out: time }).eq('id', log.id);
+      if(error) { console.error('Ошибка ухода:', error.message); showToast('Ошибка ухода'); return; }
+      showToast('Уход отмечен: ' + time);
+    } else {
+      alert('Нет открытой смены! Сначала нажми "Пришёл"');
+      return;
+    }
+  }
+
+  renderManualButtons();
+}
+
+// ====== 15. ОТЧЁТЫ: ТАБЛО СПРАВЕДЛИВОСТИ ======
+window.showMoneyReports = false;
+
+function toggleMoney() {
+  window.showMoneyReports =!window.showMoneyReports;
+  loadReports();
+}
+
+async function loadReports() {
+  let content = document.getElementById('tab-reports');
+  if(!content) return;
+
+  if(!document.getElementById('reportStart')) {
+    content.innerHTML = `
+      <h2 class="font-semibold mb-4">Табло справедливости</h2>
+      <div class="card mb-4">
+        <div class="text-sm text-zinc-400 mb-2">Выбери период</div>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div><label class="text-xs text-zinc-400">С</label><input type="date" id="reportStart" class="input-field w-full bg-zinc-900 border-zinc-700 rounded-lg p-2 text-white"></div>
+          <div><label class="text-xs text-zinc-400">По</label><input type="date" id="reportEnd" class="input-field w-full bg-zinc-900 border-zinc-700 rounded-lg p-2 text-white"></div>
+        </div>
+        <div class="flex items-center justify-between mb-3 p-3 bg-zinc-800/50 rounded-lg">
+          <span class="text-sm">Показать деньги</span>
+          <button id="moneyToggle" onclick="toggleMoney()" class="w-12 h-6 bg-zinc-600 rounded-full relative">
+            <div id="moneyToggleBtn" class="w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all"></div>
+          </button>
+        </div>
+        <button onclick="loadReports()" class="w-full bg-orange-500 text-black font-semibold py-2 rounded-lg">Показать</button>
+      </div>
+      <div id="reportsContent"></div>
+      <div id="staffDetailModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <div class="bg-zinc-900 rounded-2xl p-6 w-11/12 max-w-md border-zinc-800">
+          <div class="flex justify-between items-center mb-4">
+            <h3 id="modalStaffName" class="text-xl font-bold"></h3>
+            <button onclick="closeStaffModal()" class="text-zinc-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+          </div>
+          <div id="modalStaffData" class="space-y-3 text-sm"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  const startInput = document.getElementById('reportStart');
+  const endInput = document.getElementById('reportEnd');
+  if(!startInput.value) startInput.value = new Date().toISOString().slice(0,7) + '-01';
+  if(!endInput.value) endInput.value = new Date().toISOString().split('T')[0];
+
+  const startDate = startInput.value;
+  const endDate = endInput.value;
+  const showMoney = window.showMoneyReports || false;
+
+  const { data: plan, error: planErr } = await _supabase.from('work_schedules')
+ .select('staff_id, date, staff(name, pay_type, hourly_rate, daily_rate)')
+ .gte('date', startDate).lte('date', endDate).eq('restaurant_id', restaurantId);
+
+  if(planErr) { console.error('Ошибка загрузки плана:', planErr.message); }
+
+  let logs = [];
+  if(showMoney) {
+    const { data, error: logErr } = await _supabase.from('time_logs')
+   .select('staff_id, time_in, time_out, log_date')
+   .gte('log_date', startDate).lte('log_date', endDate).eq('restaurant_id', restaurantId);
+    if(logErr) { console.error('Ошибка загрузки логов:', logErr.message); }
+    logs = data || [];
+  }
+
+  const stats = {};
+  staffList.forEach(st => {
+    stats[st.id] = {id: st.id, name: st.name, pay_type: st.pay_type, hour_rate: st.hourly_rate||0, day_rate: st.daily_rate||0, shifts: 0, hours: 0, pay: 0, dates: [], logs: []};
+  });
+
+  plan?.forEach(p => {
+    if(stats[p.staff_id]) {
+      stats[p.staff_id].shifts += 1;
+      stats[p.staff_id].dates.push(p.date.slice(5));
+    }
+  });
+
+  logs.forEach(l => {
+    if(!stats[l.staff_id]) return;
+    stats[l.staff_id].logs.push(l);
+    if(!l.time_in ||!l.time_out) return;
+    const hours = (new Date(`1970-01-01T${l.time_out}`) - new Date(`1970-01-01T${l.time_in}`)) / 1000 / 60 / 60;
+    stats[l.staff_id].hours += hours;
+  });
+
+  Object.values(stats).forEach(s => {
+    s.pay = s.pay_type === 'hourly'? s.hours * s.hour_rate : s.shifts * s.day_rate;
+  });
+
+  window.lastStats = stats;
+
+  const sorted = Object.values(stats).sort((a,b) => a.shifts - b.shifts);
+
+  let html = `<div class="text-sm text-zinc-400 mb-4">Период: ${startDate} → ${endDate}</div>`;
+
+  sorted.forEach(s => {
+    if(s.shifts === 0) return;
+    let colorClass = s.shifts <= 5? 'border-red-500/50 bg-red-500/10' : s.shifts >= 15? 'border-yellow-500/50 bg-yellow-500/10' : 'border-green-500/50 bg-green-500/10';
+    let statusText = s.shifts <= 5? '⚠️ Мало смен' : s.shifts >= 15? '🔥 Много' : '✓ Норма';
+
+    html += `
+      <div class="card mb-3 border-2 ${colorClass} cursor-pointer hover:border-orange-500/50 transition" onclick="openStaffModal('${s.id}')">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name[0]}</div>
+            <div>
+              <div class="font-semibold text-lg">${s.name}</div>
+              <div class="text-xs ${colorClass.includes('red')? 'text-red-400' : colorClass.includes('yellow')? 'text-yellow-400' : 'text-green-400'}">${statusText}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-4xl font-bold">${s.shifts}</div>
+            <div class="text-xs text-zinc-400">смен</div>
+          </div>
+        </div>
+        ${showMoney? `
+        <div class="text-sm border-t border-zinc-700 pt-2 flex justify-between">
+          <span class="text-zinc-400">Заработал:</span>
+          <span class="font-bold text-orange-500">${s.pay.toFixed(0)}${currency}</span>
+        </div>` : ''}
+        <div class="text-xs text-zinc-500 mt-1">Даты: ${s.dates.join(', ')}</div>
+      </div>
+    `;
+  });
+
+  const reportsContent = document.getElementById('reportsContent');
+  if(reportsContent) reportsContent.innerHTML = html || '<div class="text-zinc-500 text-center py-8">Нет данных</div>';
+
+  const toggle = document.getElementById('moneyToggle');
+  const btn = document.getElementById('moneyToggleBtn');
+  if(showMoney && toggle && btn) {
+    toggle.className = 'w-12 h-6 bg-orange-500 rounded-full relative';
+    btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-6.5 transition-all';
+  } else if(toggle && btn) {
+    toggle.className = 'w-12 h-6 bg-zinc-600 rounded-full relative';
+    btn.className = 'w-5 h-5 bg-white rounded-full absolute top-0.5 left-0.5 transition-all';
+  }
+
+  if(typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+function openStaffModal(staffId) {
+  const stats = window.lastStats?.[staffId];
+  if(!stats) return;
+  document.getElementById('modalStaffName') && (document.getElementById('modalStaffName').textContent = stats.name);
+
+  const moneyBlock = window.showMoneyReports? `
+    <div class="flex justify-between"><span class="text-zinc-400">Часы:</span><span>${stats.hours.toFixed(1)}ч</span></div>
+    <div class="flex justify-between"><span class="text-zinc-400">Ставка:</span><span>${stats.pay_type==='hourly'? stats.hour_rate+currency+'/ч' : stats.day_rate+currency+'/день'}</span></div>
+    <div class="flex justify-between font-bold text-orange-500 text-lg"><span>Итого:</span><span>${stats.pay.toFixed(0)}${currency}</span></div>
+  ` : '';
+
+  document.getElementById('modalStaffData') && (document.getElementById('modalStaffData').innerHTML = `
+    <div class="flex justify-between"><span class="text-zinc-400">Смен:</span><span>${stats.shifts}</span></div>
+    ${moneyBlock}
+    <div class="pt-2 border-t border-zinc-700"><span class="text-zinc-400">Даты:</span><div class="mt-1 text-xs">${stats.dates.join(', ')}</div></div>
+  `);
+  document.getElementById('staffDetailModal')?.classList.remove('hidden');
+  document.getElementById('staffDetailModal')?.classList.add('flex');
+}
+
+function closeStaffModal() {
+  document.getElementById('staffDetailModal')?.classList.add('hidden');
+  document.getElementById('staffDetailModal')?.classList.remove('flex');
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-orange-500 text-black px-4 py-2 rounded-lg font-semibold shadow-lg z-50';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+    }
