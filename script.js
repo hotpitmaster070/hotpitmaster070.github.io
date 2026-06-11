@@ -374,3 +374,140 @@ async function toggleStaffDay(staffId) {
 async function toggleShiftMonth(staffId, dateStr) {
   await toggleStaffDay(staffId, dateStr);
 }
+
+// ====== 12. ГРАФИК: МЕСЯЦ - ПЕРЕКЛЮЧЕНИЕ СМЕНЫ ======
+async function toggleShiftMonth(staffId, date) {
+  const { data: existing, error: findErr } = await _supabase.from('work_schedules')
+  .select('*')
+  .eq('staff_id', staffId)
+  .eq('date', date)
+  .single();
+
+  if(findErr && findErr.code!== 'PGRST116') {
+    console.error('Ошибка поиска смены:', findErr.message);
+    return;
+  }
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: date,
+      start_time: '00:00',
+      end_time: '23:59'
+    });
+  }
+  loadSchedule();
+}
+
+// ====== 13. QR СКАНЕР + РУЧНЫЕ ОТМЕТКИ ======
+async function startQrScanner() {
+  const qrBox = document.getElementById('qr-reader');
+  const resultBox = document.getElementById('qr-result');
+  if(!qrBox) return;
+
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch(e) {}
+    html5QrCode = null;
+  }
+
+  html5QrCode = new Html5Qrcode("qr-reader");
+
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      async (decodedText) => {
+        const staffId = decodedText.trim();
+        const staff = staffList.find(s => s.id === staffId);
+        if (!staff) {
+          showToast('Повар не найден');
+          return;
+        }
+
+        const now = new Date();
+        const time = now.toTimeString().slice(0,8);
+        const date = now.toISOString().split('T')[0];
+
+        const { data: existing, error: findErr } = await _supabase.from('time_logs')
+        .select('*')
+        .eq('staff_id', staffId)
+        .eq('log_date', date)
+        .is('time_out', null)
+        .single();
+
+        if(findErr && findErr.code!== 'PGRST116') {
+          console.error('Ошибка поиска лога:', findErr.message);
+          return;
+        }
+
+        if (!existing) {
+          const { error } = await _supabase.from('time_logs').insert({
+            restaurant_id: restaurantId,
+            staff_id: staffId,
+            log_date: date,
+            time_in: time
+          });
+          if(error) { console.error(error); showToast('Ошибка прихода'); return; }
+          if(resultBox) resultBox.innerText = `${staff.name} отметил приход в ${time}`;
+          showToast('Приход: ' + staff.name);
+        } else {
+          const { error } = await _supabase.from('time_logs').update({time_out: time}).eq('id', existing.id);
+          if(error) { console.error(error); showToast('Ошибка ухода'); return; }
+          if(resultBox) resultBox.innerText = `${staff.name} отметил уход в ${time}`;
+          showToast('Уход: ' + staff.name);
+        }
+      },
+      (error) => {} // игнорим ошибки сканирования
+    );
+  } catch(err) {
+    console.error('Не удалось запустить камеру:', err);
+    if(resultBox) resultBox.innerText = 'Камера не доступна. Используй ручные кнопки ниже.';
+  }
+
+  renderManualButtons();
+}
+
+async function renderManualButtons() {
+  const manualList = document.getElementById('manualStaffList');
+  if(!manualList) return;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: todayShifts, error } = await _supabase.from('work_schedules')
+  .select('staff_id, staff(name)')
+  .eq('date', today)
+  .eq('restaurant_id', restaurantId);
+
+  if(error) {
+    console.error('Ошибка загрузки смен на сегодня:', error.message);
+    manualList.innerHTML = '<div class="col-span-2 text-red-500 text-sm text-center py-4">Ошибка загрузки</div>';
+    return;
+  }
+
+  if(!todayShifts || todayShifts.length === 0) {
+    manualList.innerHTML = '<div class="col-span-2 text-zinc-500 text-sm text-center py-4">Сегодня по графику никто не стоит</div>';
+    return;
+  }
+
+  const html = todayShifts.map(s => `
+    <div class="bg-zinc-800/50 rounded-xl p-4 border-zinc-700">
+      <div class="font-semibold mb-3 text-center">${s.staff.name}</div>
+      <div class="flex gap-2">
+        <button onclick="manualCheck('${s.staff_id}', 'in')"
+          class="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Пришёл
+        </button>
+        <button onclick="manualCheck('${s.staff_id}', 'out')"
+          class="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-out" class="w-4 h-4 inline mr-1"></i> Ушёл
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  manualList.innerHTML = html;
+  if (typeof lucide!== 'undefined') lucide.createIcons();
+  }
