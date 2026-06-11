@@ -334,10 +334,10 @@ async function loadMonthSchedule() {
   const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
   const { data: shifts } = await _supabase.from('work_schedules')
- .select('*')
- .gte('date', startDate)
- .lte('date', endDate)
- .eq('restaurant_id', restaurantId);
+.select('*')
+.gte('date', startDate)
+.lte('date', endDate)
+.eq('restaurant_id', restaurantId);
 
   let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
 
@@ -370,33 +370,31 @@ async function toggleStaffDay(staffId) {
   const dateStr = currentDate.toISOString().split('T')[0];
 
   const { data: existing } = await _supabase.from('work_schedules')
- .select('*')
- .eq('staff_id', staffId)
- .eq('date', dateStr)
- .single();
+.select('*')
+.eq('staff_id', staffId)
+.eq('date', dateStr)
+.single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
-    showToast('Убран из смены');
   } else {
     await _supabase.from('work_schedules').insert({
       restaurant_id: restaurantId,
       staff_id: staffId,
       date: dateStr,
-      start_time: '09:00',
-      end_time: '18:00'
+      start_time: '00:00',
+      end_time: '23:59'
     });
-    showToast('Добавлен в смену');
   }
   loadSchedule();
 }
 
 async function toggleShiftMonth(staffId, date) {
   const { data: existing } = await _supabase.from('work_schedules')
- .select('*')
- .eq('staff_id', staffId)
- .eq('date', date)
- .single();
+.select('*')
+.eq('staff_id', staffId)
+.eq('date', date)
+.single();
 
   if (existing) {
     await _supabase.from('work_schedules').delete().eq('id', existing.id);
@@ -405,8 +403,8 @@ async function toggleShiftMonth(staffId, date) {
       restaurant_id: restaurantId,
       staff_id: staffId,
       date: date,
-      start_time: '09:00',
-      end_time: '18:00'
+      start_time: '00:00',
+      end_time: '23:59'
     });
   }
   loadSchedule();
@@ -428,29 +426,101 @@ async function startQrScanner() {
       const date = now.toISOString().split('T')[0];
 
       const { data: existing } = await _supabase.from('time_logs')
-     .select('*')
-     .eq('staff_id', staffId)
-     .eq('shift_date', date)
-     .is('clock_out', null)
-     .single();
+   .select('*')
+   .eq('staff_id', staffId)
+   .eq('log_date', date)
+   .is('time_out', null)
+   .single();
 
       if (!existing) {
         await _supabase.from('time_logs').insert({
           restaurant_id: restaurantId,
           staff_id: staffId,
-          shift_date: date,
-          clock_in: time
+          log_date: date,
+          time_in: time
         });
         document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`;
         showToast('Приход: ' + staff.name);
       } else {
-        await _supabase.from('time_logs').update({clock_out: time}).eq('id', existing.id);
+        await _supabase.from('time_logs').update({time_out: time}).eq('id', existing.id);
         document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`;
         showToast('Уход: ' + staff.name);
       }
     },
     (error) => {}
   );
+
+  renderManualButtons();
+}
+
+async function renderManualButtons() {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: todayShifts } = await _supabase.from('work_schedules')
+.select('staff_id, staff(name)')
+.eq('date', today)
+.eq('restaurant_id', restaurantId);
+
+  if(!todayShifts || todayShifts.length === 0) {
+    document.getElementById('manualStaffList').innerHTML =
+      '<div class="col-span-2 text-zinc-500 text-sm text-center py-4">Сегодня по графику никто не стоит</div>';
+    return;
+  }
+
+  const html = todayShifts.map(s => `
+    <div class="bg-zinc-800/50 rounded-xl p-4 border-zinc-700">
+      <div class="font-semibold mb-3 text-center">${s.staff.name}</div>
+      <div class="flex gap-2">
+        <button onclick="manualCheck('${s.staff_id}', 'in')"
+          class="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Пришёл
+        </button>
+        <button onclick="manualCheck('${s.staff_id}', 'out')"
+          class="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-out" class="w-4 h-4 inline mr-1"></i> Ушёл
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('manualStaffList').innerHTML = html;
+  if (typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+async function manualCheck(staffId, type) {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const time = now.toTimeString().split(' ')[0];
+
+  if(type === 'in') {
+    await _supabase.from('time_logs').insert({
+      staff_id: staffId,
+      log_date: today,
+      time_in: time,
+      restaurant_id: restaurantId
+    });
+    showToast('Приход отмечен: ' + time);
+  } else {
+    const { data: log } = await _supabase.from('time_logs')
+.select('id')
+.eq('staff_id', staffId)
+.eq('log_date', today)
+.is('time_out', null)
+.single();
+
+    if(log) {
+      await _supabase.from('time_logs')
+  .update({ time_out: time })
+  .eq('id', log.id);
+      showToast('Уход отмечен: ' + time);
+    } else {
+      alert('Нет открытой смены! Сначала нажми "Пришёл"');
+      return;
+    }
+  }
+
+  renderManualButtons();
+}
 
 async function loadReports() {
   let content = document.getElementById('tab-reports');
@@ -686,43 +756,3 @@ async function saveTask() {
   alert('Задание отправлено!');
   closeTaskModal();
 }
-
-async function markIn(staffId, name) {
-  const restId = new URLSearchParams(window.location.search).get('rest');
-  const today = new Date().toISOString().split('T')[0];
-
-  const { error } = await _supabase.from('time_logs').insert({
-    staff_id: staffId,
-    restaurant_id: restId,
-    shift_date: today,
-    clock_in: new Date().toISOString()
-  });
-
-  if(error) return alert('Ошибка: ' + error.message);
-  alert(name + ' отмечен: Пришёл');
-  loadStaffList(); // обновим список
-}
-
-async function loadStaffList() {
-  const restId = new URLSearchParams(window.location.search).get('rest');
-  const today = new Date().toISOString().split('T')[0];
-
-  const { data: staff } = await _supabase.from('staff').select('id, name').eq('restaurant_id', restId);
-  const { data: logs } = await _supabase.from('time_logs').select('staff_id, clock_in').eq('shift_date', today);
-
-  const container = document.getElementById('manualStaffList');
-  container.innerHTML = staff.map(s => {
-    const hasLog = logs.find(l => l.staff_id === s.id);
-    return `
-      <div class="bg-zinc-800 p-3 rounded-lg flex justify-between">
-        <span>${s.name}</span>
-        <button ${hasLog? 'disabled' : ''} onclick="markIn('${s.id}', '${s.name}')"
-          class="px-3 py-1 rounded ${hasLog? 'bg-green-600' : 'bg-orange-500'}">
-          ${hasLog? 'Пришёл ✓' : 'Пришёл'}
-        </button>
-      </div>
-    `;
-  }).join('');
-}
-
-setTimeout(loadStaffList, 1000);
