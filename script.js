@@ -1,3 +1,14 @@
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPABASE_ANON_KEY = 'сюда_вставь_свой_ключ_который_ты_скинул';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let restaurantId = null;
+let staffList = [];
+let currentDate = new Date();
+let currentView = 'day';
+let html5QrCode = null;
+const currency = '₽';
+
 // ====== 1. ЗАГРУЗКА МЕНЮ В SIDEBAR ======
 fetch('menu.html').then(r=>r.text()).then(html=>{
   const sidebar = document.getElementById('sidebarContainer');
