@@ -3,7 +3,50 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ====== 2. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ======
+const urlParams = new URLSearchParams(window.location.search);
+const restaurantId = urlParams.get('rest');
+
+if(!restaurantId) {
+  document.getElementById('errorBox').classList.remove('hidden');
+} else {
+  document.getElementById('mainContent').classList.remove('hidden');
+  init();
+}
+
+async function init() {
+  await loadRestaurantName();
+  await loadStaff();
+  loadSidebar();
+  setTab('staff');
+  lucide.createIcons();
+}
+
+function loadSidebar() {
+  const html = `
+  <div class="sidebar w-64 p-4 hidden md:block">
+    <h2 class="text-xl font-bold mb-6 px-2">HotPit</h2>
+    <div class="space-y-2">
+      <button onclick="openKitchenPanel()" class="kitchen-btn w-full text-left">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path></svg>
+        <div><p>ЭКРАН ШЕФА</p><p class="text-xs text-zinc-400">Панель управления</p></div>
+      </button>
+      <div class="sidebar-item active" onclick="setTab('staff', event)"><i data-lucide="users" class="w-5 h-5"></i><span>Повара</span></div>
+      <div class="sidebar-item" onclick="setTab('prod', event)"><i data-lucide="calendar" class="w-5 h-5"></i><span>График</span></div>
+      <div class="sidebar-item" onclick="setTab('qr', event)"><i data-lucide="qr-code" class="w-5 h-5"></i><span>QR Сканер</span></div>
+      <div class="sidebar-item" onclick="setTab('reports', event)"><i data-lucide="bar-chart" class="w-5 h-5"></i><span>Отчёты</span></div>
+    </div>
+  </div>`;
+  document.getElementById('sidebarContainer').innerHTML = html;
+}
+
+let currentPayType = 'hourly';
+function openAddModal(){ document.getElementById('addModal').classList.remove('hidden'); document.getElementById('addModal').classList.add('flex'); }
+function closeAddModal(){ document.getElementById('addModal').classList.add('hidden'); document.getElementById('newStaffName').value=''; document.getElementById('newStaffRate').value=''; }
+function selectPayType(type){
+  currentPayType = type;
+  document.getElementById('payHourly').className = type==='hourly'? 'active flex-1 bg-orange-500 text-black py-2 rounded-lg' : 'inactive flex-1 bg-zinc-700 py-2 rounded-lg';
+  document.getElementById('payDaily').className = type==='daily'? 'active flex-1 bg-orange-500 text-black py-2 rounded-lg' : 'inactive flex-1 bg-zinc-700 py-2 rounded-lg';
+}// ====== 2. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ======
 const urlParams = new URLSearchParams(window.location.search);
 const restaurantId = urlParams.get('rest');
 
