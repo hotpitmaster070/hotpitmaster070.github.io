@@ -159,3 +159,120 @@ async function loadCurrency(rId) {
   const code = (data?.currency || 'RUB').toUpperCase();
   currency = currencyMap[code] || '₽';
 }
+
+// ====== 7. ВКЛАДКИ + ВИДЫ ======
+async function setTab(tab, e) {
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  // если кликнули из меню - подсвечиваем, если из кода - ищем по data-tab
+  const item = e?.target?.closest('.sidebar-item') || document.querySelector(`[data-tab="${tab}"]`);
+  item?.classList.add('active');
+
+  ['staff','prod','qr','reports'].forEach(t => {
+    document.getElementById('tab-'+t)?.classList.add('hidden');
+  });
+  document.getElementById('tab-'+tab)?.classList.remove('hidden');
+
+  if(window.innerWidth < 768) toggleSidebar();
+
+  if(tab === 'prod') loadSchedule();
+  if(tab === 'qr') startQrScanner();
+  if(tab === 'staff') loadStaff();
+  if(tab === 'reports') loadReports();
+}
+
+function setView(view) {
+  currentView = view;
+  localStorage.setItem('hotpit_view', view);
+
+  ['day','month'].forEach(v => {
+    const btn = document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1));
+    if(btn) btn.className = view === v? 'active' : 'inactive';
+  });
+
+  document.getElementById('dayNav')?.classList.toggle('hidden', view!== 'day');
+  document.getElementById('monthNav')?.classList.toggle('hidden', view!== 'month');
+
+  loadSchedule();
+}
+
+// ====== 8. ПОВАРА CRUD ======
+async function addStaff() {
+  const name = document.getElementById('newStaffName')?.value.trim();
+  const rate = parseInt(document.getElementById('newStaffRate')?.value) || 300;
+  if (!name) return alert('Введи имя повара');
+
+  await _supabase.from('staff').insert({
+    restaurant_id: restaurantId,
+    name,
+    pay_type: selectedPayType,
+    hourly_rate: selectedPayType === 'hourly'? rate : null,
+    daily_rate: selectedPayType === 'daily'? rate : null
+  });
+  closeAddModal();
+  loadStaff();
+}
+
+async function deleteStaff(id, name) {
+  if (!confirm(`Удалить ${name}?`)) return;
+  // проверяем есть ли смены у повара
+  const { data: shifts } = await _supabase.from('staff_schedule').select('id').eq('staff_id', id).limit(1);
+  if(shifts?.length) return alert('Сначала удали смены этого повара в графике');
+  await _supabase.from('staff').delete().eq('id', id);
+  loadStaff();
+}
+
+async function updatePayType(staffId, type) {
+  const s = staffList.find(x=>x.id===staffId);
+  const rate = s?.hourly_rate || s?.daily_rate || 300;
+  await _supabase.from('staff').update({
+    pay_type: type,
+    hourly_rate: type==='hourly'? rate : null,
+    daily_rate: type==='daily'? rate : null
+  }).eq('id', staffId);
+  loadStaff();
+}
+
+async function loadStaff() {
+  if(!restaurantId) return;
+  const { data } = await _supabase.from('staff')
+    .select('*')
+    .eq('restaurant_id', restaurantId)
+    .order('name');
+
+  staffList = data || [];
+
+  document.getElementById('staffList') && (document.getElementById('staffList').innerHTML = staffList.map(s => {
+    const isHourly = s.pay_type === 'hourly';
+    const label = isHourly? `${currency}/час` : `${currency}/день`;
+
+    return `
+      <div class="card">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${s.name?.[0] || '?'}</div>
+            <div>
+              <div class="font-semibold">${s.name}</div>
+              <div class="text-xs text-zinc-500">${label}</div>
+            </div>
+          </div>
+          <button onclick="deleteStaff('${s.id}', '${s.name}')" class="btn-danger">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="pay-toggle flex gap-2">
+          <button onclick="updatePayType('${s.id}', 'hourly')" class="${isHourly? 'active' : 'inactive'}">Почасовой</button>
+          <button onclick="updatePayType('${s.id}', 'daily')" class="${!isHourly? 'active' : 'inactive'}">Фикс за день</button>
+        </div>
+      </div>
+    `;
+  }).join(''));
+
+  if (typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+// ====== 9. ЭКСПОРТ ДЛЯ HTML ======
+window.setTab = setTab;
+window.setView = setView;
+window.addStaff = addStaff;
+window.deleteStaff = deleteStaff;
+window.updatePayType = updatePayType;
