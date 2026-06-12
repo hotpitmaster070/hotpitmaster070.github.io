@@ -276,3 +276,141 @@ window.setView = setView;
 window.addStaff = addStaff;
 window.deleteStaff = deleteStaff;
 window.updatePayType = updatePayType;
+
+// ====== 10. ГРАФИК ДЕНЬ/МЕСЯЦ ======
+async function loadSchedule() {
+  updateDateTitle();
+  if (!restaurantId ||!staffList.length) {
+    document.getElementById('scheduleContent') && (document.getElementById('scheduleContent').innerHTML = '<div class="text-zinc-500 text-sm">Сначала добавь поваров</div>');
+    return;
+  }
+
+  if (currentView === 'day') {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const { data: shifts, error } = await _supabase.from('work_schedules')
+     .select('*, staff(*)')
+     .eq('date', dateStr)
+     .eq('restaurant_id', restaurantId);
+
+    if(error) console.warn('Ошибка загрузки смен:', error.message);
+
+    let html = staffList.map(st => {
+      const shift = shifts?.find(s => s.staff_id === st.id);
+      const isActive =!!shift;
+
+      return `
+        <div class="card">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold">${st.name?.[0] || '?'}</div>
+              <div>
+                <div class="font-semibold">${st.name}</div>
+                <div class="text-xs text-zinc-500">${dateStr}</div>
+              </div>
+            </div>
+            <button onclick="toggleStaffDay('${st.id}')" class="staff-day-btn ${isActive? 'active' : ''}">
+              ${isActive? 'В смене ✓' : 'Не в смене'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('scheduleContent') && (document.getElementById('scheduleContent').innerHTML = html || '<div class="text-zinc-500 text-sm">Нет поваров</div>');
+  }
+
+  if (currentView === 'month') {
+    await loadMonthSchedule();
+  }
+}
+
+async function loadMonthSchedule() {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+
+  const startDate = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const endDate = `${year}-${String(month+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+
+  const { data: shifts, error } = await _supabase.from('work_schedules')
+   .select('*')
+   .gte('date', startDate)
+   .lte('date', endDate)
+   .eq('restaurant_id', restaurantId);
+
+  if(error) console.warn('Ошибка загрузки месяца:', error.message);
+
+  let html = `<div class="text-sm text-zinc-500 mb-3">Жми на дату чтобы добавить/убрать смену</div>`;
+
+  staffList.forEach(st => {
+    html += `<div class="card mb-3">
+      <div class="font-semibold mb-2 flex items-center gap-2">
+        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-black font-bold text-sm">${st.name?.[0] || '?'}</div>
+        ${st.name}
+      </div>
+      <div class="grid grid-cols-7 gap-1">`;
+
+    for(let d = 1; d <= lastDay; d++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const hasShift = shifts?.some(s => s.staff_id === st.id && s.date === dateStr);
+
+      html += `<button
+        onclick="toggleShiftMonth('${st.id}', '${dateStr}')"
+        class="month-day-btn ${hasShift? 'active' : ''}">
+        ${d}
+      </button>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  document.getElementById('scheduleContent') && (document.getElementById('scheduleContent').innerHTML = html);
+}
+
+async function toggleStaffDay(staffId) {
+  const dateStr = currentDate.toISOString().split('T')[0];
+
+  const { data: existing } = await _supabase.from('work_schedules')
+   .select('*')
+   .eq('staff_id', staffId)
+   .eq('date', dateStr)
+   .maybeSingle(); // single() падал если 0 строк. maybeSingle() - норм
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: dateStr,
+      start_time: '09:00', // поставил адекватное время вместо 00:00-23:59
+      end_time: '21:00'
+    });
+  }
+  loadSchedule();
+}
+
+async function toggleShiftMonth(staffId, dateStr) {
+  const { data: existing } = await _supabase.from('work_schedules')
+   .select('*')
+   .eq('staff_id', staffId)
+   .eq('date', dateStr)
+   .maybeSingle();
+
+  if (existing) {
+    await _supabase.from('work_schedules').delete().eq('id', existing.id);
+  } else {
+    await _supabase.from('work_schedules').insert({
+      restaurant_id: restaurantId,
+      staff_id: staffId,
+      date: dateStr,
+      start_time: '09:00',
+      end_time: '21:00'
+    });
+  }
+  loadSchedule();
+}
+
+// ====== 11. ЭКСПОРТ ДЛЯ HTML ======
+window.loadSchedule = loadSchedule;
+window.toggleStaffDay = toggleStaffDay;
+window.toggleShiftMonth = toggleShiftMonth;
