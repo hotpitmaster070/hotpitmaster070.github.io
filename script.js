@@ -414,3 +414,142 @@ async function toggleShiftMonth(staffId, dateStr) {
 window.loadSchedule = loadSchedule;
 window.toggleStaffDay = toggleStaffDay;
 window.toggleShiftMonth = toggleShiftMonth;
+
+// ====== 12. QR СКАНЕР + РУЧНОЙ ВВОД ======
+async function startQrScanner() {
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch(e){}
+  }
+  html5QrCode = new Html5Qrcode("qr-reader");
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    async (decodedText) => {
+      const staffId = decodedText;
+      const staff = staffList.find(s => s.id === staffId);
+      if (!staff) {
+        showToast('Повар не найден');
+        return;
+      }
+
+      const now = new Date();
+      const time = now.toTimeString().slice(0,8);
+      const date = now.toISOString().split('T')[0];
+
+      const { data: existing } = await _supabase.from('time_logs')
+      .select('*')
+      .eq('staff_id', staffId)
+      .eq('log_date', date)
+      .is('time_out', null)
+      .maybeSingle(); // single() падал если нет записи
+
+      if (!existing) {
+        await _supabase.from('time_logs').insert({
+          restaurant_id: restaurantId,
+          staff_id: staffId,
+          log_date: date,
+          time_in: time
+        });
+        document.getElementById('qr-result') && (document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`);
+        showToast('Приход: ' + staff.name);
+      } else {
+        await _supabase.from('time_logs').update({time_out: time}).eq('id', existing.id);
+        document.getElementById('qr-result') && (document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`);
+        showToast('Уход: ' + staff.name);
+      }
+      renderManualButtons(); // обновляем кнопки после скана
+    },
+    (error) => {}
+  ).catch(err => {
+    console.warn('QR не запустился:', err);
+    document.getElementById('qr-result') && (document.getElementById('qr-result').innerText = 'Камера не доступна');
+  });
+
+  renderManualButtons();
+}
+
+async function renderManualButtons() {
+  const today = new Date().toISOString().split('T')[0];
+  const listEl = document.getElementById('manualStaffList');
+  if(!listEl) return;
+
+  const { data: todayShifts } = await _supabase.from('work_schedules')
+  .select('staff_id, staff(name)')
+  .eq('date', today)
+  .eq('restaurant_id', restaurantId);
+
+  if(!todayShifts || todayShifts.length === 0) {
+    listEl.innerHTML = '<div class="col-span-2 text-zinc-500 text-sm text-center py-4">Сегодня по графику никто не стоит</div>';
+    return;
+  }
+
+  const html = todayShifts.map(s => `
+    <div class="bg-zinc-800/50 rounded-xl p-4 border-zinc-700">
+      <div class="font-semibold mb-3 text-center">${s.staff.name}</div>
+      <div class="flex gap-2">
+        <button onclick="manualCheck('${s.staff_id}', 'in')"
+          class="flex-1 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-in" class="w-4 h-4 inline mr-1"></i> Пришёл
+        </button>
+        <button onclick="manualCheck('${s.staff_id}', 'out')"
+          class="flex-1 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white py-3 rounded-lg font-semibold">
+          <i data-lucide="log-out" class="w-4 h-4 inline mr-1"></i> Ушёл
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.innerHTML = html;
+  if (typeof lucide!== 'undefined') lucide.createIcons();
+}
+
+async function manualCheck(staffId, type) {
+  const now = new Date();
+  const time = now.toTimeString().slice(0,8);
+  const date = now.toISOString().split('T')[0];
+  const staff = staffList.find(s => s.id === staffId);
+
+  const { data: existing } = await _supabase.from('time_logs')
+  .select('*')
+  .eq('staff_id', staffId)
+  .eq('log_date', date)
+  .maybeSingle();
+
+  if(type === 'in') {
+    if(existing?.time_in) return showToast('Приход уже отмечен');
+    if(existing) {
+      await _supabase.from('time_logs').update({time_in: time}).eq('id', existing.id);
+    } else {
+      await _supabase.from('time_logs').insert({
+        restaurant_id: restaurantId,
+        staff_id: staffId,
+        log_date: date,
+        time_in: time
+      });
+    }
+    showToast(`Приход: ${staff.name}`);
+    document.getElementById('qr-result') && (document.getElementById('qr-result').innerText = `${staff.name} отметил приход в ${time}`);
+  } else {
+    if(!existing?.time_in) return showToast('Сначала отметь приход');
+    if(existing.time_out) return showToast('Уход уже отмечен');
+    await _supabase.from('time_logs').update({time_out: time}).eq('id', existing.id);
+    showToast(`Уход: ${staff.name}`);
+    document.getElementById('qr-result') && (document.getElementById('qr-result').innerText = `${staff.name} отметил уход в ${time}`);
+  }
+  renderManualButtons();
+}
+
+function showToast(msg) {
+  // простая тост-заглушка, если у тебя нет своей
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-lg z-50';
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2000);
+}
+
+// ====== 13. ЭКСПОРТ ДЛЯ HTML ======
+window.startQrScanner = startQrScanner;
+window.renderManualButtons = renderManualButtons;
+window.manualCheck = manualCheck;
