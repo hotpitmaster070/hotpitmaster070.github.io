@@ -1,4 +1,4 @@
-// chef-panel.js - боковая панель как на скрине
+// chef-panels.js - боковая панель + бейдж ресторана из БД
 let currentTab = 'tab-staff';
 
 function toggleSidebar() {
@@ -10,18 +10,15 @@ function toggleSidebar() {
 window.toggleSidebar = toggleSidebar;
 
 function showTab(tabId) {
-  // Прячем все вкладки
   ['tab-staff', 'tab-prod', 'tab-qr', 'tab-reports'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.add('hidden');
   });
   
-  // Показываем нужную
   const tab = document.getElementById(tabId);
   if (tab) tab.classList.remove('hidden');
   currentTab = tabId;
 
-  // Подсвечиваем активную кнопку в меню - оранжевый фон
   document.querySelectorAll('[data-tab]').forEach(btn => {
     if (btn.getAttribute('data-tab') === tabId) {
       btn.classList.add('bg-orange-500', 'text-white');
@@ -32,8 +29,11 @@ function showTab(tabId) {
     }
   });
 
-  // На мобиле закрываем меню после клика
   if (window.innerWidth < 768) toggleSidebar();
+
+  if (tabId === 'tab-prod' && typeof lucide !== 'undefined') {
+    setTimeout(() => lucide.createIcons(), 50);
+  }
 }
 window.showTab = showTab;
 
@@ -78,8 +78,47 @@ function renderSidebar() {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// Запускаем при загрузке
+// Тянем название ресторана из Supabase по restaurantId
+async function loadRestaurantName() {
+  const header = document.getElementById('restNameHeader');
+  if (!header) return;
+  
+  if (typeof restaurantId === 'undefined' || !restaurantId) {
+    header.textContent = 'Ресторан не указан';
+    header.classList.remove('bg-zinc-800', 'text-zinc-300');
+    header.classList.add('bg-red-500/20', 'text-red-400');
+    return;
+  }
+  
+  if (typeof _supabase === 'undefined') {
+    header.textContent = 'Нет Supabase';
+    header.classList.remove('bg-zinc-800', 'text-zinc-300');
+    header.classList.add('bg-red-500/20', 'text-red-400');
+    return;
+  }
+
+  try {
+    const { data, error } = await _supabase
+      .from('restaurants')
+      .select('name')
+      .eq('id', restaurantId)
+      .single();
+    
+    if (error) throw error;
+    header.textContent = data?.name || 'Без названия';
+    header.classList.remove('bg-red-500/20', 'text-red-400');
+    header.classList.add('bg-orange-500/20', 'text-orange-400');
+  } catch (e) {
+    console.error('Ошибка загрузки ресторана:', e);
+    header.textContent = 'Ошибка';
+    header.classList.remove('bg-zinc-800', 'text-zinc-300');
+    header.classList.add('bg-red-500/20', 'text-red-400');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderSidebar();
-  showTab('tab-staff'); // По умолчанию Повара как на скрине
+  showTab('tab-staff');
+  // loadRestaurantName() вызовем из script.js после инициализации _supabase и restaurantId
 });
+window.loadRestaurantName = loadRestaurantName;
