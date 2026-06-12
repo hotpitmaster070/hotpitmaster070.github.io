@@ -3,101 +3,100 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>HotPit - Управление кухней</title>
+<title>HotPit Экран Шефа</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
-<link rel="stylesheet" href="style.css">
+<style>
+body{background:#000;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+.sidebar-item{transition:all .2s}
+</style>
 </head>
-<body class="bg-zinc-900 text-zinc-100">
-<div class="flex min-h-screen" id="app">
-  <div id="sidebarContainer"></div>
+<body class="text-zinc-100">
+<div id="app" class="flex min-h-screen">
+  <!-- Боковая панель как на скрине -->
+  <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-black p-4 z-50 transform -translate-x-full md:translate-x-0 transition-transform border-r border-zinc-800">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">HotPit</h2>
+      <button onclick="toggleSidebar()" class="md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+    <div class="text-xs text-zinc-500 mb-1">ЭКРАН ШЕФА</div>
+    <div class="text-sm text-zinc-400 mb-6">Панель управления</div>
+    
+    <div class="space-y-2">
+      <div id="tabBtn-staff" class="sidebar-item flex items-center gap-3 p-3 rounded-lg bg-orange-500 cursor-pointer" onclick="setTab('staff', this)">
+        <i data-lucide="users" class="w-5 h-5"></i>Повара
+      </div>
+      <div id="tabBtn-prod" class="sidebar-item flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 cursor-pointer" onclick="setTab('prod', this)">
+        <i data-lucide="calendar" class="w-5 h-5"></i>График
+      </div>
+      <div id="tabBtn-qr" class="sidebar-item flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 cursor-pointer" onclick="setTab('qr', this)">
+        <i data-lucide="qr-code" class="w-5 h-5"></i>QR Сканер
+      </div>
+      <div id="tabBtn-reports" class="sidebar-item flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 cursor-pointer" onclick="setTab('reports', this)">
+        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>Отчёты
+      </div>
+    </div>
+  </div>
+
+  <!-- Затемнение при открытом меню на телефоне -->
   <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
 
+  <!-- Контент справа -->
   <div class="flex-1 md:ml-64 p-4">
-    <button class="md:hidden mb-4" onclick="toggleSidebar()">
-      <i data-lucide="menu" class="w-6 h-6"></i>
-    </button>
-
-    <div class="mb-6">
-      <div class="flex items-center gap-3 flex-wrap mb-2">
-        <h1 class="text-2xl font-bold">Управление кухней</h1>
-        <span id="restNameHeader" class="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm font-semibold">Ресторан</span>
-      </div>
-      <p class="text-sm text-zinc-500" id="dateTitle"></p>
+    <button class="md:hidden mb-4" onclick="toggleSidebar()"><i data-lucide="menu" class="w-6 h-6"></i></button>
+    
+    <div class="mb-4">
+      <h1 class="text-2xl font-bold" id="pageTitle">Повара</h1>
+      <div id="restNameHeader" class="text-sm text-zinc-500 mt-1">Загрузка...</div>
     </div>
 
     <!-- Вкладка Повара -->
-    <div id="tab-staff" class="card bg-zinc-800 rounded-xl p-4">
-      <div class="flex items-center justify-between mb-4">
+    <div id="tab-staff" class="bg-zinc-900 rounded-xl p-4 border-zinc-800">
+      <div class="flex justify-between items-center mb-4">
         <h2 class="font-semibold">Повара</h2>
-        <button onclick="openAddModal()" class="bg-orange-500 text-black px-4 py-2 rounded-lg text-sm font-semibold">+ Добавить</button>
+        <button onclick="openAddModal()" class="bg-orange-500 text-black px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>Добавить
+        </button>
       </div>
-      <div id="staffList" class="space-y-3"></div>
+      <div id="staffList" class="space-y-2">Загрузка...</div>
     </div>
 
     <!-- Вкладка График -->
-    <div id="tab-prod" class="hidden card bg-zinc-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-4">График смен</h2>
+    <div id="tab-prod" class="hidden bg-zinc-900 rounded-xl p-4 border-zinc-800">
       <div class="flex gap-2 mb-4">
-        <button id="viewDay" onclick="setView('day')" class="bg-orange-500 text-black px-4 py-2 rounded-lg">День</button>
-        <button id="viewMonth" onclick="setView('month')" class="bg-zinc-700 px-4 py-2 rounded-lg">Месяц</button>
+        <button id="viewDay" onclick="setView('day')" class="bg-orange-500 text-black px-4 py-2 rounded-lg text-sm">День</button>
+        <button id="viewMonth" onclick="setView('month')" class="bg-zinc-800 px-4 py-2 rounded-lg text-sm">Месяц</button>
       </div>
-      <div id="scheduleContent" class="space-y-3"></div>
+      <div id="scheduleContent" class="text-zinc-400">Выбери вид</div>
     </div>
 
     <!-- Вкладка QR -->
-    <div id="tab-qr" class="hidden card bg-zinc-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-4">QR Сканер</h2>
+    <div id="tab-qr" class="hidden bg-zinc-900 rounded-xl p-4 border-zinc-800">
       <div id="qr-reader" class="w-full rounded-xl overflow-hidden"></div>
       <div id="qr-result" class="mt-3 text-sm text-zinc-400"></div>
     </div>
 
     <!-- Вкладка Отчёты -->
-    <div id="tab-reports" class="hidden card bg-zinc-800 rounded-xl p-4">
-      <h2 class="font-semibold mb-4">Табло справедливости</h2>
-      <div class="flex gap-2 mb-4">
-        <input type="date" id="reportFrom" class="bg-zinc-700 px-3 py-2 rounded-lg">
-        <input type="date" id="reportTo" class="bg-zinc-700 px-3 py-2 rounded-lg">
-      </div>
-      <label class="flex items-center gap-2 mb-4">
-        <input type="checkbox" id="showMoney" onchange="toggleMoney()"> Показать деньги
-      </label>
-      <button onclick="loadReports()" class="w-full bg-orange-500 text-black py-3 rounded-lg font-semibold">Показать</button>
-      <div id="reportsContent" class="mt-4 space-y-3"></div>
+    <div id="tab-reports" class="hidden bg-zinc-900 rounded-xl p-4 border-zinc-800">
+      <div class="text-zinc-400">Отчёты будут тут</div>
     </div>
   </div>
 </div>
 
-<!-- Модалка добавления повара -->
-<div id="addModal" class="hidden fixed inset-0 bg-black/60 items-center justify-center z-50" onclick="if(event.target.id==='addModal') closeAddModal()">
-  <div class="bg-zinc-800 w-full max-w-md mx-4 rounded-xl p-4" onclick="event.stopPropagation()">
-    <h3 class="text-lg font-bold mb-4">Добавить повара</h3>
-    <input id="newStaffName" placeholder="Имя повара" class="w-full bg-zinc-700 rounded-lg px-4 py-3 mb-3">
-    <input id="newStaffRate" type="number" placeholder="Ставка 300" class="w-full bg-zinc-700 rounded-lg px-4 py-3 mb-3">
-    <div class="flex gap-2 mb-4">
-      <button id="payHourly" onclick="selectPayType('hourly')" class="flex-1 bg-orange-500 text-black py-2 rounded-lg">Почасовой</button>
-      <button id="payDaily" onclick="selectPayType('daily')" class="flex-1 bg-zinc-700 py-2 rounded-lg">Фикс за день</button>
-    </div>
+<!-- Модалка добавления -->
+<div id="addModal" class="hidden fixed inset-0 bg-black/70 items-center justify-center z-50" onclick="closeAddModal()">
+  <div class="bg-zinc-900 w-80 rounded-xl p-4 border-zinc-800" onclick="event.stopPropagation()">
+    <h3 class="font-bold mb-3">Новый повар</h3>
+    <input id="newStaffName" placeholder="Имя" class="w-full bg-zinc-800 rounded px-3 py-2 mb-2 outline-none">
+    <input id="newStaffRate" type="number" placeholder="Ставка 300" class="w-full bg-zinc-800 rounded px-3 py-2 mb-3 outline-none">
     <div class="flex gap-2">
-      <button onclick="closeAddModal()" class="flex-1 bg-zinc-700 py-3 rounded-lg">Отмена</button>
-      <button onclick="addStaff()" class="flex-1 bg-orange-500 text-black py-3 rounded-lg">Добавить</button>
+      <button onclick="closeAddModal()" class="flex-1 bg-zinc-800 py-2 rounded">Отмена</button>
+      <button onclick="addStaff()" class="flex-1 bg-orange-500 text-black py-2 rounded font-semibold">Добавить</button>
     </div>
-  </div>
-</div>
-
-<!-- Модалка карточки повара -->
-<div id="staffDetailModal" class="hidden fixed inset-0 bg-black/60 items-center justify-center z-50" onclick="if(event.target.id==='staffDetailModal') closeStaffModal()">
-  <div class="bg-zinc-800 w-full max-w-md mx-4 rounded-xl p-4" onclick="event.stopPropagation()">
-    <div class="flex justify-between mb-4">
-      <h3 id="modalStaffName" class="text-lg font-bold"></h3>
-      <button onclick="closeStaffModal()" class="text-2xl">×</button>
-    </div>
-    <div id="modalStaffData" class="space-y-2 text-sm"></div>
   </div>
 </div>
 
 <script src="script.js"></script>
 </body>
-      </html>
+          </html>
