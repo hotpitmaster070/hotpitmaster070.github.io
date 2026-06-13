@@ -3,194 +3,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HotPit - Отметка</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>Моя смена - HotPit</title>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://unpkg.com/html5-qrcode"></script>
+<style>
+body{font-family:system-ui;background:#0a0a0a;color:#fff;margin:0;padding:20px}
+.card{background:#111;border:1px solid #222;border-radius:16px;padding:24px;margin-bottom:16px}
+.logo{color:#f97316;font-weight:800;font-size:24px}
+h2{margin:8px 0}
+.btn{width:100%;padding:18px;border:none;border-radius:14px;font-size:18px;font-weight:700;cursor:pointer}
+.btn-in{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+.btn-out{background:#ef4444;color:#fff}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.day{aspect-ratio:1;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.day.work{background:#22c55e;color:#000;font-weight:700}
+.banner{background:#ef444420;border:1px solid #ef4444;border-radius:12px;padding:16px;margin-bottom:16px}
+.banner button{background:#ef4444;color:#fff;border:none;padding:10px 16px;border-radius:8px;margin-top:8px;font-weight:600}
+.hidden{display:none}
+</style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex items-center justify-center p-4">
+<body>
+<div id="termBanner" class="banner hidden">
+  <b>Запрос на увольнение</b><br>
+  Шеф хочет уволить вас. Подтвердить?
+  <button onclick="approveTermination()">Да, претензий нет</button>
+</div>
 
-<div class="w-full max-w-md space-y-6">
+<div class="card">
+  <div class="logo">HotPit</div>
+  <h2 id="name">Загрузка...</h2>
+  <p id="role" style="color:#a1a1aa"></p>
+  <button id="btn" class="btn hidden">Загрузка...</button>
+</div>
 
-  <!-- Приветствие после сканирования -->
-  <div id="messageBlock" class="text-center hidden">
-    <i id="messageIcon" data-lucide="sun" class="w-16 h-16 text-orange-500 mx-auto mb-4"></i>
-    <div id="messageTitle" class="text-2xl font-bold mb-2">Хорошего рабочего дня!</div>
-    <div class="text-lg text-zinc-300" id="staffName">Вася</div>
-    <div class="text-sm text-zinc-500 mt-4" id="messageSub">Переходим к задачам...</div>
-  </div>
-
-  <!-- Блок сканирования -->
-  <div id="scanBlock">
-    <div class="text-center mb-4">
-      <div class="text-3xl font-extrabold text-orange-500">HotPit</div>
-      <div class="text-zinc-400">Отсканируй QR на входе</div>
-    </div>
-    <div id="qr-reader" class="rounded-xl overflow-hidden"></div>
-
-    <div id="manualButtons" class="space-y-3 mt-4 hidden">
-      <button onclick="logTime('in')" class="w-full bg-green-600 hover:bg-green-700 rounded-lg p-4 font-semibold text-lg">
-        <i data-lucide="log-in" class="inline w-5 h-5"></i> Пришел на работу
-      </button>
-      <button onclick="logTime('out')" class="w-full bg-red-600 hover:bg-red-700 rounded-lg p-4 font-semibold text-lg">
-        <i data-lucide="log-out" class="inline w-5 h-5"></i> Ушел с работы
-      </button>
-    </div>
-  </div>
+<div class="card">
+  <h3>Календарь смен</h3>
+  <div id="calendar" class="calendar"></div>
+  <p style="margin-top:12px;color:#a1a1aa" id="earnings">Заработано за месяц:...</p>
 </div>
 
 <script>
-const _supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-lucide.createIcons();
+const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 
-const urlParams = new URLSearchParams(window.location.search);
-const staffId = urlParams.get('staff');
-const restaurantId = urlParams.get('rest');
+const staffId = new URLSearchParams(location.search).get('staff');
+let staffData, shiftId, termId;
 
-if (!staffId ||!restaurantId) {
-  document.body.innerHTML = '<div class="text-center p-10 text-red-400">Ошибка: неправильная ссылка</div>';
-}
+async function init(){
+  // 1. Данные повара
+  const {data:s} = await supabase.from('staff').select('*').eq('id',staffId).single();
+  staffData = s;
+  document.getElementById('name').textContent = s.name;
+  document.getElementById('role').textContent = s.role;
 
-loadStaff();
-
-async function loadStaff() {
-  const { data } = await _supabase.from('staff').select('name').eq('id', staffId).single();
-  if (data) document.getElementById('staffName').innerText = data.name;
-  startQRScanner();
-}
-
-function startQRScanner() {
-  const html5QrCode = new Html5Qrcode("qr-reader");
-  html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    (decodedText) => {
-      if (decodedText === 'checkin' || decodedText === 'checkout') {
-        html5QrCode.stop();
-        const type = decodedText === 'checkin'? 'in' : 'out';
-        logTime(type);
-      }
-    },
-    () => {}
-  ).catch(() => {
-    document.getElementById('manualButtons').classList.remove('hidden');
-  });
-}
-
-async function getGreeting(type) {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-  // Проверяем есть ли смена завтра
-  const { data: tomorrowShift } = await _supabase
-   .from('work_schedules')
-   .select('id')
-   .eq('staff_id', staffId)
-   .eq('date', tomorrowStr)
-   .eq('status', 'active')
-   .single();
-
-  const hasShiftTomorrow =!!tomorrowShift;
-
-  if (type === 'in') {
-    return {
-      title: "Хорошего рабочего дня!",
-      icon: "sun",
-      sub: "Переходим к задачам..."
-    };
-  } else {
-    // Уход с работы
-    if (hasShiftTomorrow) {
-      return {
-        title: "Хорошего вечера!",
-        icon: "moon",
-        sub: "До встречи завтра"
-      };
-    } else {
-      return {
-        title: "Хорошего отдыха!",
-        icon: "coffee",
-        sub: "Завтра выходной"
-      };
-    }
+  // 2. Проверка запроса на увольнение
+  const {data:term} = await supabase.from('termination_requests').select('*').eq('staff_id',staffId).eq('status','pending').single();
+  if(term){
+    termId = term.id;
+    document.getElementById('termBanner').classList.remove('hidden');
   }
-}
 
-async function logTime(type) {
+  // 3. Статус смены сегодня
   const today = new Date().toISOString().split('T')[0];
+  const {data:shift} = await supabase.from('shifts').select('*').eq('staff_id',staffId).eq('date',today).single();
+  shiftId = shift?.id;
 
-  // Ищем смену на сегодня
-  let { data: schedule } = await _supabase
-  .from('work_schedules')
-  .select('id')
-  .eq('staff_id', staffId)
-  .eq('date', today)
-  .single();
-
-  // Если смены нет - создаём на лету при приходе
-  if (!schedule && type === 'in') {
-    const now = new Date();
-    const { data: newSchedule } = await _supabase.from('work_schedules').insert({
-      restaurant_id: restaurantId,
-      staff_id: staffId,
-      date: today,
-      start_time: now.toTimeString().slice(0,5),
-      end_time: now.toTimeString().slice(0,5),
-      status: 'active'
-    }).select('id').single();
-    schedule = newSchedule;
-  }
-
-  if (!schedule) {
-    alert('Нет смены на сегодня. Скажи шефу чтобы добавил тебя в график.');
-    return;
-  }
-
-  // Пишем отметку
-  await _supabase.from('time_logs').insert({
-    restaurant_id: restaurantId,
-    staff_id: staffId,
-    schedule_id: schedule.id,
-    type: type
-  });
-
-  // Если это уход - обновляем время окончания смены
-  if (type === 'out') {
-    const now = new Date();
-    await _supabase.from('work_schedules')
-    .update({
-        end_time: now.toTimeString().slice(0,5),
-        status: 'active'
-      })
-    .eq('id', schedule.id);
-  }
-
-  if (navigator.vibrate) navigator.vibrate(200);
-  new Audio('https://cdn.freesound.org/previews/270/270404_5123851-lq.mp3').play();
-
-  const greeting = await getGreeting(type);
-
-  document.getElementById('scanBlock').classList.add('hidden');
-  document.getElementById('messageBlock').classList.remove('hidden');
-  document.getElementById('messageTitle').innerText = greeting.title;
-  document.getElementById('messageIcon').setAttribute('data-lucide', greeting.icon);
-  document.getElementById('messageSub').innerText = greeting.sub;
-  lucide.createIcons();
-
-  // Если приход - кидаем на задачи через 2 сек
-  if (type === 'in') {
-    setTimeout(() => {
-      window.location.href = `tasks.html?staff=${staffId}&rest=${restaurantId}`;
-    }, 2000);
+  const btn = document.getElementById('btn');
+  btn.classList.remove('hidden');
+  if(!shift ||!shift.check_in){
+    btn.textContent = 'Пришёл на работу';
+    btn.className = 'btn btn-in';
+    btn.onclick = checkIn;
+  } else if(!shift.check_out){
+    btn.textContent = 'Закончить смену';
+    btn.className = 'btn btn-out';
+    btn.onclick = checkOut;
   } else {
-    setTimeout(() => {
-      document.getElementById('messageSub').innerText = "Смена закрыта. Можно закрыть страницу";
-    }, 3000);
+    btn.textContent = 'Смена закрыта';
+    btn.disabled = true;
+  }
+
+  // 4. Календарь + деньги
+  renderCalendar();
+  calcEarnings();
+}
+
+async function checkIn(){
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const {data} = await supabase.from('shifts').insert({
+    staff_id: staffId,
+    restaurant_id: staffData.restaurant_id,
+    date: today,
+    check_in: now.toISOString(),
+    source: 'manual',
+    status: 'active'
+  }).select().single();
+  shiftId = data.id;
+  init();
+}
+
+async function checkOut(){
+  await supabase.from('shifts').update({check_out:new Date().toISOString(),status:'done'}).eq('id',shiftId);
+  init();
+}
+
+async function renderCalendar(){
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+  const start = new Date(year,month,1).toISOString().split('T')[0];
+  const end = new Date(year,month+1,0).toISOString().split('T')[0];
+
+  const {data} = await supabase.from('work_schedules').select('date').eq('staff_id',staffId).gte('date',start).lte('date',end);
+  const workDays = new Set(data.map(d=>d.date));
+
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  for(let i=1;i<=daysInMonth;i++){
+    const d = new Date(year,month,i).toISOString().split('T')[0];
+    const div = document.createElement('div');
+    div.className = 'day' + (workDays.has(d)?' work':'');
+    div.textContent = i;
+    cal.appendChild(div);
   }
 }
+
+async function calcEarnings(){
+  const {data:shifts} = await supabase.from('shifts').select('check_in,check_out').eq('staff_id',staffId).not('check_out','is',null);
+  let total = 0;
+  if(staffData.pay_type=='hourly'){
+    const hours = shifts.reduce((s,sh)=>(new Date(sh.check_out)-new Date(sh.check_in))/3600000,0);
+    total = hours * staffData.hourly_rate;
+  } else {
+    total = shifts.length * staffData.daily_rate;
+  }
+  document.getElementById('earnings').textContent = `Заработано за месяц: ${total.toFixed(0)}₽`;
+}
+
+async function approveTermination(){
+  await supabase.from('termination_requests').update({status:'approved',approved_at:new Date()}).eq('id',termId);
+  alert('Увольнение подтверждено. Шеф теперь может удалить вас из системы.');
+  document.getElementById('termBanner').classList.add('hidden');
+}
+
+init();
 </script>
 </body>
-  </html>
+</html>
