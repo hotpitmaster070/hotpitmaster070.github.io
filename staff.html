@@ -2,148 +2,151 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Моя смена - HotPit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Мой кабинет</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
-body{font-family:system-ui;background:#0a0a0a;color:#fff;margin:0;padding:20px}
-.card{background:#111;border:1px solid #222;border-radius:16px;padding:24px;margin-bottom:16px}
-.logo{color:#f97316;font-weight:800;font-size:24px}
-h2{margin:8px 0}
-.btn{width:100%;padding:18px;border:none;border-radius:14px;font-size:18px;font-weight:700;cursor:pointer}
-.btn-in{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
-.btn-out{background:#ef4444;color:#fff}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
-.day{aspect-ratio:1;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px}
-.day.work{background:#22c55e;color:#000;font-weight:700}
-.banner{background:#ef444420;border:1px solid #ef4444;border-radius:12px;padding:16px;margin-bottom:16px}
-.banner button{background:#ef4444;color:#fff;border:none;padding:10px 16px;border-radius:8px;margin-top:8px;font-weight:600}
-.hidden{display:none}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+body{background:#060606;color:#f4f4f5;font-family:'Inter',system-ui;-webkit-tap-highlight-color:transparent}
+.glass{background:rgba(20,20,20,0.6);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:24px}
+.btn{font-weight:900;border-radius:20px;transition:all.15s;font-size:18px}
+.btn:active{transform:scale(0.97)}
+.btn-start{background:linear-gradient(135deg,#22c55e,#4ade80);color:#000;box-shadow:0 10px 30px rgba(34,197,94,0.4)}
+.btn-stop{background:linear-gradient(135deg,#ef4444,#f87171);color:#fff;box-shadow:0 10px 30px rgba(239,68,68,0.4)}
+.day{width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
+.day.active{background:linear-gradient(135deg,#22c55e,#4ade80);color:#000;border-color:#22c55e;box-shadow:0 4px 12px rgba(34,197,94,0.5)}
+.banner{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:20px}
+.error{color:#fca5a5;text-align:center;padding:40px}
 </style>
 </head>
-<body>
-<div id="termBanner" class="banner hidden">
-  <b>Запрос на увольнение</b><br>
-  Шеф хочет уволить вас. Подтвердить?
-  <button onclick="approveTermination()">Да, претензий нет</button>
-</div>
-
-<div class="card">
-  <div class="logo">HotPit</div>
-  <h2 id="name">Загрузка...</h2>
-  <p id="role" style="color:#a1a1aa"></p>
-  <button id="btn" class="btn hidden">Загрузка...</button>
-</div>
-
-<div class="card">
-  <h3>Календарь смен</h3>
-  <div id="calendar" class="calendar"></div>
-  <p style="margin-top:12px;color:#a1a1aa" id="earnings">Заработано за месяц:...</p>
+<body class="p-5">
+<div class="max-w-md mx-auto" id="app">
+  <div class="error">Загрузка...</div>
 </div>
 
 <script>
-const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-
+const db = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 const staffId = new URLSearchParams(location.search).get('staff');
-let staffData, shiftId, termId;
+let staffData = {};
+let activeShift = null;
+let currentDate = new Date();
 
 async function init(){
-  // 1. Данные повара
-  const {data:s} = await supabase.from('staff').select('*').eq('id',staffId).single();
-  staffData = s;
-  document.getElementById('name').textContent = s.name;
-  document.getElementById('role').textContent = s.role;
-
-  // 2. Проверка запроса на увольнение
-  const {data:term} = await supabase.from('termination_requests').select('*').eq('staff_id',staffId).eq('status','pending').single();
-  if(term){
-    termId = term.id;
-    document.getElementById('termBanner').classList.remove('hidden');
+  if(!staffId){
+    document.getElementById('app').innerHTML='<div class="error">Ошибка: нет ID повара в ссылке.<br>Открывай кабинет через кнопку "Открыть кабинет повара" из schedule.html</div>';
+    return;
   }
-
-  // 3. Статус смены сегодня
-  const today = new Date().toISOString().split('T')[0];
-  const {data:shift} = await supabase.from('shifts').select('*').eq('staff_id',staffId).eq('date',today).single();
-  shiftId = shift?.id;
-
-  const btn = document.getElementById('btn');
-  btn.classList.remove('hidden');
-  if(!shift ||!shift.check_in){
-    btn.textContent = 'Пришёл на работу';
-    btn.className = 'btn btn-in';
-    btn.onclick = checkIn;
-  } else if(!shift.check_out){
-    btn.textContent = 'Закончить смену';
-    btn.className = 'btn btn-out';
-    btn.onclick = checkOut;
-  } else {
-    btn.textContent = 'Смена закрыта';
-    btn.disabled = true;
+  const {data, error} = await db.from('staff').select('*').eq('id',staffId).single();
+  if(error ||!data){
+    document.getElementById('app').innerHTML='<div class="error">Повар не найден в базе.<br>Проверь что у него есть qr_uuid в Supabase</div>';
+    return;
   }
-
-  // 4. Календарь + деньги
+  staffData = data;
+  renderUI();
+  checkActiveShift();
+  checkFireRequest();
   renderCalendar();
-  calcEarnings();
+  calcSalary();
 }
 
-async function checkIn(){
-  const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const {data} = await supabase.from('shifts').insert({
-    staff_id: staffId,
-    restaurant_id: staffData.restaurant_id,
-    date: today,
-    check_in: now.toISOString(),
-    source: 'manual',
-    status: 'active'
-  }).select().single();
-  shiftId = data.id;
-  init();
+function renderUI(){
+  document.getElementById('app').innerHTML=`
+  <h1 class="text-3xl font-black mb-1">${staffData.name}</h1>
+  <p class="text-zinc-400 text-sm mb-6">${staffData.role=='cook'?'Повар':'Мойщик'} • ${staffData.pay_type=='hourly'?staffData.hourly_rate+'₽/ч':staffData.daily_rate+'₽/смена'}</p>
+  <div id="fireBanner" class="hidden banner p-5 mb-5">
+    <p class="font-bold text-lg mb-2">Шеф хочет уволить вас</p>
+    <p class="text-sm text-zinc-300 mb-4">Подтвердите что долгов по зарплате нет</p>
+    <button class="btn btn-start w-full h-14" onclick="confirmFire()">Подтверждаю, долгов нет</button>
+  </div>
+  <div class="glass p-6 text-center mb-6">
+    <p class="text-zinc-400 text-sm mb-4">Отметка смены</p>
+    <button id="btnStart" class="btn btn-start w-full h-20" onclick="startShift()">НАЧАТЬ СМЕНУ</button>
+    <button id="btnStop" class="btn btn-stop w-full h-20 hidden" onclick="stopShift()">ЗАВЕРШИТЬ СМЕНУ</button>
+    <p id="shiftInfo" class="text-xs text-zinc-500 mt-3"></p>
+  </div>
+  <div class="glass p-6">
+    <h3 class="font-bold text-lg mb-4" id="monthTitle"></h3>
+    <div id="calendar" class="grid grid-cols-7 gap-2 mb-6"></div>
+    <div class="text-center border-t border-white/10 pt-4">
+      <p class="text-zinc-400 text-sm">Отработано за месяц</p>
+      <p class="text-4xl font-black mt-1" id="total">0ч</p>
+      <p class="text-2xl font-bold text-orange-400 mt-1" id="salary">0₽</p>
+    </div>
+  </div>`;
 }
 
-async function checkOut(){
-  await supabase.from('shifts').update({check_out:new Date().toISOString(),status:'done'}).eq('id',shiftId);
-  init();
+async function checkActiveShift(){
+  const {data} = await db.from('shifts').select('*').eq('staff_id',staffId).is('end_at',null).order('start_at',{ascending:false}).limit(1);
+  if(data && data[0]){
+    activeShift = data[0];
+    document.getElementById('btnStart').classList.add('hidden');
+    document.getElementById('btnStop').classList.remove('hidden');
+    document.getElementById('shiftInfo').textContent = 'Смена идёт с ' + new Date(activeShift.start_at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  }
+}
+
+async function startShift(){
+  if(navigator.vibrate) navigator.vibrate(50);
+  const {data, error} = await db.from('shifts').insert({staff_id: staffId, start_at: new Date().toISOString()}).select().single();
+  if(error){alert('Ошибка: '+error.message); return;}
+  activeShift = data;
+  document.getElementById('btnStart').classList.add('hidden');
+  document.getElementById('btnStop').classList.remove('hidden');
+  document.getElementById('shiftInfo').textContent = 'Смена идёт с ' + new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+}
+
+async function stopShift(){
+  if(navigator.vibrate) navigator.vibrate(100);
+  await db.from('shifts').update({end_at: new Date().toISOString()}).eq('id',activeShift.id);
+  activeShift = null;
+  document.getElementById('btnStart').classList.remove('hidden');
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('shiftInfo').textContent = 'Смена завершена';
+  renderCalendar();
+  calcSalary();
 }
 
 async function renderCalendar(){
-  const now = new Date();
-  const month = now.getMonth();
-  const year = now.getFullYear();
-  const start = new Date(year,month,1).toISOString().split('T')[0];
-  const end = new Date(year,month+1,0).toISOString().split('T')[0];
-
-  const {data} = await supabase.from('work_schedules').select('date').eq('staff_id',staffId).gte('date',start).lte('date',end);
-  const workDays = new Set(data.map(d=>d.date));
-
-  const cal = document.getElementById('calendar');
-  cal.innerHTML = '';
-  const daysInMonth = new Date(year,month+1,0).getDate();
-  for(let i=1;i<=daysInMonth;i++){
-    const d = new Date(year,month,i).toISOString().split('T')[0];
-    const div = document.createElement('div');
-    div.className = 'day' + (workDays.has(d)?' work':'');
-    div.textContent = i;
-    cal.appendChild(div);
+  const y = currentDate.getFullYear(), m = currentDate.getMonth();
+  document.getElementById('monthTitle').textContent = currentDate.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  const start = new Date(y,m,1).toISOString().split('T')[0];
+  const end = new Date(y,m+1,0).toISOString().split('T')[0];
+  const {data: shifts} = await db.from('shifts').select('*').eq('staff_id',staffId)
+ .gte('start_at',start+'T00:00').lte('start_at',end+'T23:59');
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  let html = '';
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasShift = shifts.some(s => s.start_at.startsWith(dateStr) && s.end_at);
+    html += `<div class="day ${hasShift?'active':''}">${d}</div>`;
   }
+  document.getElementById('calendar').innerHTML = html;
 }
 
-async function calcEarnings(){
-  const {data:shifts} = await supabase.from('shifts').select('check_in,check_out').eq('staff_id',staffId).not('check_out','is',null);
-  let total = 0;
-  if(staffData.pay_type=='hourly'){
-    const hours = shifts.reduce((s,sh)=>(new Date(sh.check_out)-new Date(sh.check_in))/3600000,0);
-    total = hours * staffData.hourly_rate;
-  } else {
-    total = shifts.length * staffData.daily_rate;
-  }
-  document.getElementById('earnings').textContent = `Заработано за месяц: ${total.toFixed(0)}₽`;
+async function calcSalary(){
+  const y = currentDate.getFullYear(), m = currentDate.getMonth();
+  const start = new Date(y,m,1).toISOString();
+  const end = new Date(y,m+1,0).toISOString();
+  const {data: shifts} = await db.from('shifts').select('*').eq('staff_id',staffId)
+ .gte('start_at',start).lte('start_at',end).not('end_at','is',null);
+  let hours = 0;
+  shifts.forEach(s => {hours += (new Date(s.end_at) - new Date(s.start_at)) / 1000 / 3600;});
+  const pay = staffData.pay_type=='hourly'? hours * staffData.hourly_rate : shifts.length * staffData.daily_rate;
+  document.getElementById('total').textContent = hours.toFixed(1)+'ч';
+  document.getElementById('salary').textContent = Math.round(pay)+'₽';
 }
 
-async function approveTermination(){
-  await supabase.from('termination_requests').update({status:'approved',approved_at:new Date()}).eq('id',termId);
-  alert('Увольнение подтверждено. Шеф теперь может удалить вас из системы.');
-  document.getElementById('termBanner').classList.add('hidden');
+async function checkFireRequest(){
+  const {data} = await db.from('termination_requests').select('*').eq('staff_id',staffId).eq('status','pending');
+  if(data && data[0]) document.getElementById('fireBanner').classList.remove('hidden');
+}
+
+async function confirmFire(){
+  await db.from('termination_requests').update({status:'approved',resolved_at:new Date().toISOString()})
+ .eq('staff_id',staffId).eq('status','pending');
+  document.getElementById('fireBanner').classList.add('hidden');
+  alert('Увольнение подтверждено');
 }
 
 init();
