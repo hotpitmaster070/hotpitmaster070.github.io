@@ -57,7 +57,7 @@ h1{font-size:28px;font-weight:800;margin-bottom:4px;}
   transition:0.15s;
 }
 .day:active{transform:scale(0.9)}
-.day.active{background:#10b981;color:#000;border-color:#10b981;} /* зелёный = смена есть */
+.day.active{background:#10b981;color:#000;border-color:#10b981;}
 .link{color:#f97316;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;margin-top:12px;}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:20px;}
 .modal.show{display:flex}
@@ -82,7 +82,6 @@ h3{font-size:20px;font-weight:700;margin-bottom:16px;}
   <div id="staffList"></div>
 </div>
 
-<!-- Модалка добавления -->
 <div id="addModal" class="modal">
   <div class="modal-card">
     <h3>Новый сотрудник</h3>
@@ -96,7 +95,6 @@ h3{font-size:20px;font-weight:700;margin-bottom:16px;}
   </div>
 </div>
 
-<!-- Модалка времени -->
 <div id="timeModal" class="modal">
   <div class="modal-card">
     <h3>Время смены</h3>
@@ -117,7 +115,7 @@ let pendingToggle = null;
 let saving = false;
 
 function openAdd(){document.getElementById('addModal').classList.add('show')}
-function closeAdd(){document.getElementById('addModal').classList.remove('show');document.getElementById('qrBox').style.display='none'}
+function closeAdd(){document.getElementById('addModal').classList.remove('show');document.getElementById('qrBox').style.display='none';document.getElementById('qr').getContext('2d').clearRect(0,0,200,200)}
 function closeTime(){document.getElementById('timeModal').classList.remove('show')}
 function toggleRate(){document.getElementById('rate').placeholder = document.getElementById('pay').value=='hourly'?'Ставка ₽/час':'Ставка ₽/смена'}
 
@@ -129,16 +127,37 @@ async function saveStaff(){
   const pay = document.getElementById('pay').value;
   const rate = parseFloat(document.getElementById('rate').value);
   if(!name ||!rate){alert('Введи имя и ставку'); return;}
+
   saving = true;
   document.getElementById('saveBtn').disabled = true;
   document.getElementById('saveBtn').textContent = 'Сохраняю...';
-  const obj = {name, role, restaurant_id: restId, pay_type: pay};
-  if(pay=='hourly') obj.hourly_rate = rate; else obj.daily_rate = rate;
-  const {data, error} = await db.from('staff').insert(obj).select().single();
-  if(error){alert('Ошибка: '+error.message); saving=false; document.getElementById('saveBtn').disabled=false; document.getElementById('saveBtn').textContent='Сохранить'; return;}
-  QRCode.toCanvas(document.getElementById('qr'), data.qr_uuid, {width:200});
-  document.getElementById('qrBox').style.display='block';
-  setTimeout(()=>{closeAdd(); document.getElementById('name').value=''; document.getElementById('rate').value=''; saving=false; document.getElementById('saveBtn').disabled=false; document.getElementById('saveBtn').textContent='Сохранить'; loadStaff();}, 2500);
+
+  try{
+    const obj = {name, role, restaurant_id: restId, pay_type: pay};
+    if(pay=='hourly') obj.hourly_rate = rate; else obj.daily_rate = rate;
+
+    const {data, error} = await db.from('staff').insert(obj).select().single();
+    if(error) throw error;
+
+    // ждём реальную отрисовку QR
+    await QRCode.toCanvas(document.getElementById('qr'), data.qr_uuid, {width:200});
+    document.getElementById('qrBox').style.display='block';
+
+    // даём 1.5с отсканировать, потом закрываем и сразу обновляем список
+    await new Promise(r => setTimeout(r, 1500));
+
+    closeAdd();
+    document.getElementById('name').value='';
+    document.getElementById('rate').value='';
+    await loadStaff(); // без рефреша страницы Али появится сразу
+
+  } catch(e){
+    alert('Ошибка: '+e.message);
+  } finally {
+    saving = false;
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('saveBtn').textContent = 'Сохранить';
+  }
 }
 
 async function loadStaff(){
@@ -212,4 +231,4 @@ function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1); loadStaff()
 loadStaff();
 </script>
 </body>
-      </html>
+</html>
