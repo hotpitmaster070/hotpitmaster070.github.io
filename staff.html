@@ -4,27 +4,70 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>Мой кабинет</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-body{background:#0a0a0a;color:#f5f5f5;font-family:'Inter'}
-.glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:24px}
-.btn{font-weight:700;border-radius:20px;transition:all.15s;font-size:17px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0a0a0a;color:#f5f5f5;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  padding:20px;
+}
+.wrap{max-width:420px;margin:0 auto;}
+.card{
+  background:#171717;
+  border-radius:16px;
+  padding:24px;
+  margin-bottom:16px;
+  box-shadow:0 20px 50px rgba(0,0,0,0.5);
+}
+h1{font-size:28px;font-weight:800;margin-bottom:4px;}
+.sub{color:#71717a;font-size:14px;margin-bottom:20px;}
+.btn{
+  width:100%;height:56px;
+  border-radius:10px;border:none;
+  font-weight:600;font-size:17px;
+  cursor:pointer;transition:0.2s;
+}
 .btn:active{transform:scale(0.98)}
-.btn-start{background:linear-gradient(135deg,#10b981,#34d399);color:#000}
-.btn-stop{background:linear-gradient(135deg,#ef4444,#f87171);color:#fff}
-.day{width:40px;height:40px;border-radius:14px;border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600}
-.day.active{background:#10b981;color:#000;border-color:#10b981}
-.task{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(255,255,255,0.08);border-radius:16px;margin-bottom:8px}
+.btn-start{background:#f97316;color:#fff;} /* оранжевый как в index */
+.btn-start:hover{background:#ea580c;}
+.btn-stop{background:#ef4444;color:#fff;}
+.btn-stop:hover{background:#dc2626;}
+h3{font-size:18px;font-weight:700;margin-bottom:16px;}
+.task{
+  display:flex;align-items:center;gap:12px;
+  padding:14px;border:1px solid #262626;
+  border-radius:10px;margin-bottom:8px;
+  background:#262626;
+}
 .task.done{opacity:0.5}
-.checkbox{width:24px;height:24px;border-radius:8px;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;font-size:16px}
-.task.done.checkbox{background:#10b981;color:#000}
-.salary{font-size:48px;font-weight:800;background:linear-gradient(135deg,#f97316,#fb923c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.checkbox{
+  width:24px;height:24px;border-radius:6px;
+  border:2px solid #f97316;display:flex;
+  align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.task.done.checkbox{background:#f97316;color:#000;border-color:#f97316}
+.salary{
+  font-size:44px;font-weight:800;
+  background:linear-gradient(135deg,#f97316,#fb923c);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.calendar{
+  display:grid;grid-template-columns:repeat(7,1fr);gap:8px;
+}
+.day{
+  height:40px;border-radius:10px;
+  border:1px solid #262626;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:600;background:#262626;
+}
+.day.active{background:#10b981;color:#000;border-color:#10b981} /* зелёный только для отработанных дней */
+.month-title{font-size:16px;font-weight:700;margin-bottom:12px;color:#f5f5f5;}
 </style>
 </head>
-<body class="p-5">
-<div class="max-w-md mx-auto" id="app"><p class="text-center mt-40 text-zinc-500">Загрузка...</p></div>
+<body>
+<div class="wrap" id="app"><p style="text-align:center;margin-top:160px;color:#71717a;">Загрузка...</p></div>
 
 <script>
 const db = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
@@ -32,9 +75,9 @@ const staffId = new URLSearchParams(location.search).get('staff');
 let staffData = {}, activeShift = null, currentDate = new Date();
 
 async function init(){
-  if(!staffId){document.getElementById('app').innerHTML='<p class="text-center text-red-400 mt-40">Ошибка: нет ID повара в ссылке</p>';return;}
+  if(!staffId){document.getElementById('app').innerHTML='<p style="text-align:center;color:#ef4444;margin-top:160px;">Ошибка: нет ID повара</p>';return;}
   const {data} = await db.from('staff').select('*').eq('id',staffId).single();
-  if(!data){document.getElementById('app').innerHTML='<p class="text-center text-red-400 mt-40">Повар не найден</p>';return;}
+  if(!data){document.getElementById('app').innerHTML='<p style="text-align:center;color:#ef4444;margin-top:160px;">Повар не найден</p>';return;}
   staffData = data;
   renderUI();
   checkShift();
@@ -45,27 +88,28 @@ async function init(){
 
 function renderUI(){
   document.getElementById('app').innerHTML=`
-  <div class="mb-6">
-    <h1 class="text-3xl font-bold">${staffData.name}</h1>
-    <p class="text-zinc-400 text-sm mt-1">${staffData.role=='cook'?'Повар':'Мойщик'} • ${staffData.pay_type=='hourly'?staffData.hourly_rate+'₽/ч':staffData.daily_rate+'₽/смена'}</p>
+  <div class="card">
+    <h1>${staffData.name}</h1>
+    <p class="sub">${staffData.role=='cook'?'Повар':'Мойщик'} • ${staffData.pay_type=='hourly'?staffData.hourly_rate+'₽/ч':staffData.daily_rate+'₽/смена'}</p>
+    <button id="btnStart" class="btn btn-start" onclick="startShift()">Начать смену</button>
+    <button id="btnStop" class="btn btn-stop" style="display:none" onclick="stopShift()">Завершить смену</button>
+    <p id="shiftInfo" style="color:#71717a;font-size:13px;margin-top:12px;text-align:center;"></p>
   </div>
-  <div class="glass p-6 text-center mb-5">
-    <button id="btnStart" class="btn btn-start w-full h-16" onclick="startShift()">Начать смену</button>
-    <button id="btnStop" class="btn btn-stop w-full h-16 hidden" onclick="stopShift()">Завершить смену</button>
-    <p id="shiftInfo" class="text-xs text-zinc-500 mt-3"></p>
+
+  <div class="card">
+    <h3>Задания</h3>
+    <div id="tasksList"><p style="color:#71717a;font-size:14px;">Загрузка...</p></div>
   </div>
-  <div class="glass p-5 mb-5">
-    <h3 class="font-bold text-lg mb-3">Задания</h3>
-    <div id="tasksList"><p class="text-zinc-500 text-sm">Загрузка...</p></div>
+
+  <div class="card">
+    <div class="month-title" id="monthTitle"></div>
+    <div id="calendar" class="calendar"></div>
   </div>
-  <div class="glass p-5 mb-5">
-    <h3 class="font-bold text-lg mb-3" id="monthTitle"></h3>
-    <div id="calendar" class="grid grid-cols-7 gap-2"></div>
-  </div>
-  <div class="glass p-6 text-center">
-    <p class="text-zinc-400 text-sm">Заработано за месяц</p>
-    <p class="salary mt-2" id="salary">0₽</p>
-    <p class="text-zinc-500 text-sm" id="total">0 часов</p>
+
+  <div class="card" style="text-align:center;">
+    <p style="color:#71717a;font-size:14px;">Заработано за месяц</p>
+    <p class="salary" id="salary">0₽</p>
+    <p style="color:#71717a;font-size:14px;margin-top:4px;" id="total">0 часов</p>
   </div>`;
 }
 
@@ -73,8 +117,8 @@ async function checkShift(){
   const {data} = await db.from('shifts').select('*').eq('staff_id',staffId).is('check_out',null).order('check_in',{ascending:false}).limit(1);
   if(data&&data[0]){
     activeShift=data[0];
-    document.getElementById('btnStart').classList.add('hidden');
-    document.getElementById('btnStop').classList.remove('hidden');
+    document.getElementById('btnStart').style.display='none';
+    document.getElementById('btnStop').style.display='block';
     document.getElementById('shiftInfo').textContent='Смена с '+new Date(activeShift.check_in).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
   }
 }
@@ -83,16 +127,16 @@ async function startShift(){
   const {data,error}=await db.from('shifts').insert({staff_id:staffId,restaurant_id:staffData.restaurant_id,check_in:new Date().toISOString(),status:'active'}).select().single();
   if(error){alert('Ошибка: '+error.message);return;}
   activeShift=data;
-  document.getElementById('btnStart').classList.add('hidden');
-  document.getElementById('btnStop').classList.remove('hidden');
+  document.getElementById('btnStart').style.display='none';
+  document.getElementById('btnStop').style.display='block';
   document.getElementById('shiftInfo').textContent='Смена с '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 }
 async function stopShift(){
   if(navigator.vibrate) navigator.vibrate(80);
   await db.from('shifts').update({check_out:new Date().toISOString(),status:'completed'}).eq('id',activeShift.id);
   activeShift=null;
-  document.getElementById('btnStart').classList.remove('hidden');
-  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('btnStart').style.display='block';
+  document.getElementById('btnStop').style.display='none';
   document.getElementById('shiftInfo').textContent='Смена закрыта';
   renderCalendar(); calcSalary();
 }
@@ -100,11 +144,11 @@ async function loadTasks(){
   const today = new Date().toISOString().split('T')[0];
   const {data} = await db.from('tasks').select('*').eq('staff_id',staffId).gte('created_at',today+'T00:00:00').order('created_at',{ascending:false});
   const container = document.getElementById('tasksList');
-  if(!data||!data.length){container.innerHTML='<p class="text-zinc-500 text-sm">Заданий нет</p>';return;}
+  if(!data||!data.length){container.innerHTML='<p style="color:#71717a;font-size:14px;">Заданий нет</p>';return;}
   container.innerHTML = data.map(t=>`
     <div class="task ${t.status=='done'?'done':''}" onclick="toggleTask('${t.id}','${t.status}')">
       <div class="checkbox">${t.status=='done'?'✓':''}</div>
-      <div><p class="font-semibold text-sm">${t.title}</p>${t.description?`<p class="text-xs text-zinc-400 mt-1">${t.description}</p>`:''}</div>
+      <div><p style="font-weight:600;font-size:15px;">${t.title}</p>${t.description?`<p style="font-size:13px;color:#71717a;margin-top:4px;">${t.description}</p>`:''}</div>
     </div>
   `).join('');
 }
