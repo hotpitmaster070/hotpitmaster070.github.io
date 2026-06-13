@@ -2,101 +2,305 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-<title>HotPit Экран Шефа</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HotPit - Расписание</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
-body{background:#000;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
-.sidebar-item{transition:all .2s}
+body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui}
+.card{background:#111;border:1px solid #222;border-radius:16px;padding:20px}
+.btn{background:#f97316;color:#fff;padding:12px 20px;border-radius:10px;font-weight:600;border:none;cursor:pointer}
+.btn:hover{background:#ea580c}
+.btn-danger{background:#ef4444}
+.btn-danger:disabled{background:#444;cursor:not-allowed}
+.input{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;width:100%}
+.select{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff;width:100%}
+.calendar-day{height:80px;border-radius:8px;display:flex;flex-direction:column;padding:6px;cursor:pointer;background:#1a1a1a;border:1px solid #333;overflow:hidden}
+.calendar-day:hover{border-color:#f97316}
+.calendar-day.date{font-size:12px;color:#a1a1aa}
+.calendar-day.shift{font-size:10px;background:#f97316;color:#000;padding:2px 4px;border-radius:4px;margin-top:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.show{display:flex}
 </style>
 </head>
-<body class="text-zinc-100">
-<div id="app" class="flex min-h-screen">
-  <!-- Боковая панель как на скрине -->
-  <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-black p-4 z-50 transform -translate-x-full md:translate-x-0 transition-transform border-r border-zinc-800">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-bold">HotPit</h2>
-      <button onclick="toggleSidebar()" class="md:hidden"><i data-lucide="x" class="w-6 h-6"></i></button>
-    </div>
-    <div class="text-xs text-zinc-500 mb-1">ЭКРАН ШЕФА</div>
-    <div class="text-sm text-zinc-400 mb-6">Панель управления</div>
-    
-    <div class="space-y-2">
-      <div id="tabBtn-staff" class="sidebar-item flex items-center gap-3 p-3 rounded-lg bg-orange-500 cursor-pointer" onclick="setTab('staff', this)">
-        <i data-lucide="users" class="w-5 h-5"></i>Повара
-      </div>
-      <div id="tabBtn-prod" class="sidebar-item flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 cursor-pointer" onclick="setTab('prod', this)">
-        <i data-lucide="calendar" class="w-5 h-5"></i>График
-      </div>
-      <div id="tabBtn-qr" class="sidebar-item flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 cursor-pointer" onclick="setTab('qr', this)">
-        <i data-lucide="qr-code" class="w-5 h-5"></i>QR Сканер
-      </div>
-      <div id="tabBtn-reports" class="sidebar-item flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 cursor-pointer" onclick="setTab('reports', this)">
-        <i data-lucide="bar-chart-3" class="w-5 h-5"></i>Отчёты
-      </div>
-    </div>
+<body class="p-4 md:p-8">
+<div class="max-w-7xl mx-auto space-y-6">
+
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold">Кабинет шефа</h1>
+    <button class="btn" onclick="openAddStaff()">+ Добавить повара</button>
   </div>
 
-  <!-- Затемнение при открытом меню на телефоне -->
-  <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+  <!-- Список поваров + QR + заработок -->
+  <div id="staffList" class="grid md:grid-cols-3 gap-4"></div>
 
-  <!-- Контент справа -->
-  <div class="flex-1 md:ml-64 p-4">
-    <button class="md:hidden mb-4" onclick="toggleSidebar()"><i data-lucide="menu" class="w-6 h-6"></i></button>
-    
-    <div class="mb-4">
-      <h1 class="text-2xl font-bold" id="pageTitle">Повара</h1>
-      <div id="restNameHeader" class="text-sm text-zinc-500 mt-1">Загрузка...</div>
+  <!-- Календарь -->
+  <div class="card">
+    <div class="flex justify-between items-center mb-4">
+      <button class="btn bg-zinc-800" onclick="prevMonth()">←</button>
+      <h2 id="monthTitle" class="text-xl font-bold"></h2>
+      <button class="btn bg-zinc-800" onclick="nextMonth()">→</button>
+    </div>
+    <div class="grid grid-cols-7 gap-2 text-center text-xs text-zinc-500 mb-2">
+      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+    </div>
+    <div id="calendar" class="grid grid-cols-7 gap-2"></div>
+  </div>
+
+</div>
+
+<!-- Модалка добавления повара -->
+<div id="addModal" class="modal">
+  <div class="card w-full max-w-md">
+    <h3 class="text-xl font-bold mb-4">Новый сотрудник</h3>
+    <input id="staffName" placeholder="Имя" class="input mb-3">
+    <select id="staffRole" class="input mb-3">
+      <option value="cook">Повар</option>
+      <option value="dishwasher">Мойщик</option>
+    </select>
+    <select id="payType" class="input mb-3" onchange="togglePay()">
+      <option value="hourly">По часам</option>
+      <option value="daily">За смену</option>
+    </select>
+    <input id="hourlyRate" type="number" placeholder="Ставка в час ₽" class="input mb-3">
+    <input id="dailyRate" type="number" placeholder="Ставка за смену ₽" class="input mb-3 hidden">
+
+    <div id="qrBlock" class="hidden mt-4 text-center">
+      <p class="text-sm text-zinc-400 mb-2">QR-код для повара:</p>
+      <canvas id="qrCanvas" class="mx-auto"></canvas>
+      <a id="staffLink" target="_blank" class="text-orange-400 text-xs break-all block mt-2"></a>
     </div>
 
-    <!-- Вкладка Повара -->
-    <div id="tab-staff" class="bg-zinc-900 rounded-xl p-4 border-zinc-800">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="font-semibold">Повара</h2>
-        <button onclick="openAddModal()" class="bg-orange-500 text-black px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4"></i>Добавить
-        </button>
-      </div>
-      <div id="staffList" class="space-y-2">Загрузка...</div>
-    </div>
-
-    <!-- Вкладка График -->
-    <div id="tab-prod" class="hidden bg-zinc-900 rounded-xl p-4 border-zinc-800">
-      <div class="flex gap-2 mb-4">
-        <button id="viewDay" onclick="setView('day')" class="bg-orange-500 text-black px-4 py-2 rounded-lg text-sm">День</button>
-        <button id="viewMonth" onclick="setView('month')" class="bg-zinc-800 px-4 py-2 rounded-lg text-sm">Месяц</button>
-      </div>
-      <div id="scheduleContent" class="text-zinc-400">Выбери вид</div>
-    </div>
-
-    <!-- Вкладка QR -->
-    <div id="tab-qr" class="hidden bg-zinc-900 rounded-xl p-4 border-zinc-800">
-      <div id="qr-reader" class="w-full rounded-xl overflow-hidden"></div>
-      <div id="qr-result" class="mt-3 text-sm text-zinc-400"></div>
-    </div>
-
-    <!-- Вкладка Отчёты -->
-    <div id="tab-reports" class="hidden bg-zinc-900 rounded-xl p-4 border-zinc-800">
-      <div class="text-zinc-400">Отчёты будут тут</div>
+    <div class="flex gap-2 mt-4">
+      <button class="btn flex-1" onclick="saveStaff()">Сохранить</button>
+      <button class="btn bg-zinc-700" onclick="closeAddStaff()">Закрыть</button>
     </div>
   </div>
 </div>
 
-<!-- Модалка добавления -->
-<div id="addModal" class="hidden fixed inset-0 bg-black/70 items-center justify-center z-50" onclick="closeAddModal()">
-  <div class="bg-zinc-900 w-80 rounded-xl p-4 border-zinc-800" onclick="event.stopPropagation()">
-    <h3 class="font-bold mb-3">Новый повар</h3>
-    <input id="newStaffName" placeholder="Имя" class="w-full bg-zinc-800 rounded px-3 py-2 mb-2 outline-none">
-    <input id="newStaffRate" type="number" placeholder="Ставка 300" class="w-full bg-zinc-800 rounded px-3 py-2 mb-3 outline-none">
+<!-- Модалка создания смены -->
+<div id="shiftModal" class="modal">
+  <div class="card w-full max-w-md">
+    <h3 class="text-xl font-bold mb-4">Новая смена на <span id="shiftDate"></span></h3>
+    <select id="shiftStaff" class="select mb-3"></select>
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <input id="shiftStart" type="time" value="12:00" class="input">
+      <input id="shiftEnd" type="time" value="20:00" class="input">
+    </div>
     <div class="flex gap-2">
-      <button onclick="closeAddModal()" class="flex-1 bg-zinc-800 py-2 rounded">Отмена</button>
-      <button onclick="addStaff()" class="flex-1 bg-orange-500 text-black py-2 rounded font-semibold">Добавить</button>
+      <button class="btn flex-1" onclick="saveShift()">Добавить</button>
+      <button class="btn bg-zinc-700" onclick="closeShift()">Отмена</button>
     </div>
   </div>
 </div>
 
-<script src="script.js"></script>
+<script>
+const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+
+const restaurantId = new URLSearchParams(location.search).get('rest');
+let currentDate = new Date();
+let staffList = [];
+let schedules = [];
+let selectedDate = '';
+
+if(!restaurantId){document.body.innerHTML='<div class="p-10 text-red-400">Ошибка: нет rest в ссылке. Открой через schedule.html?rest=ID</div>'}
+
+// --- ПОВАРА ---
+function togglePay(){
+  const type = document.getElementById('payType').value;
+  document.getElementById('hourlyRate').classList.toggle('hidden', type=='daily');
+  document.getElementById('dailyRate').classList.toggle('hidden', type=='hourly');
+}
+
+function openAddStaff(){
+  document.getElementById('addModal').classList.add('show');
+  document.getElementById('qrBlock').classList.add('hidden');
+  document.getElementById('staffName').value='';
+}
+
+function closeAddStaff(){
+  document.getElementById('addModal').classList.remove('show');
+}
+
+async function saveStaff(){
+  const name = document.getElementById('staffName').value.trim();
+  const role = document.getElementById('staffRole').value;
+  const payType = document.getElementById('payType').value;
+  const hourly = parseFloat(document.getElementById('hourlyRate').value) || null;
+  const daily = parseFloat(document.getElementById('dailyRate').value) || null;
+
+  if(!name){alert('Введи имя'); return;}
+
+  const {data, error} = await supabase.from('staff').insert({
+    name, role, restaurant_id: restaurantId,
+    pay_type: payType,
+    hourly_rate: hourly,
+    daily_rate: daily
+  }).select().single();
+
+  if(error){alert('Ошибка: '+error.message); return;}
+
+  QRCode.toCanvas(document.getElementById('qrCanvas'), data.qr_uuid, {width:200});
+  document.getElementById('staffLink').href = `https://hotpitmaster070.github.io/staff.html?staff=${data.id}`;
+  document.getElementById('staffLink').textContent = `Кабинет ${name}`;
+  document.getElementById('qrBlock').classList.remove('hidden');
+
+  loadStaff();
+}
+
+async function loadStaff(){
+  const {data} = await supabase.from('staff').select('*').eq('restaurant_id',restaurantId);
+  staffList = data || [];
+
+  const html = staffList.map(s=>{
+    const qrLink = `https://hotpitmaster070.github.io/checkin.html?qr=${s.qr_uuid}`;
+    const staffLink = `https://hotpitmaster070.github.io/staff.html?staff=${s.id}`;
+    const rate = s.pay_type=='hourly'? s.hourly_rate+'₽/ч' : s.daily_rate+'₽/смена';
+
+    return `
+    <div class="card">
+      <div class="flex justify-between items-start mb-3">
+        <div>
+          <p class="font-bold text-lg">${s.name}</p>
+          <p class="text-sm text-zinc-400">${s.role} • ${rate}</p>
+          <p class="text-xs text-zinc-500 mt-1" id="earn-${s.id}">За месяц:...</p>
+        </div>
+        <button class="btn-danger px-3 py-1 text-sm" onclick="fireStaff('${s.id}','${s.name}')">Уволить</button>
+      </div>
+      <canvas id="qr-${s.id}" class="mb-2"></canvas>
+      <a href="${staffLink}" target="_blank" class="text-orange-400 text-xs">Кабинет повара</a>
+    </div>`;
+  }).join('');
+
+  document.getElementById('staffList').innerHTML = html || '<p class="text-zinc-400">Поваров нет. Добавь первого.</p>';
+
+  staffList.forEach(s=>{
+    QRCode.toCanvas(document.getElementById(`qr-${s.id}`), s.qr_uuid, {width:120});
+    calcEarnings(s);
+  });
+
+  // заполняем select в модалке смены
+  const sel = document.getElementById('shiftStaff');
+  sel.innerHTML = staffList.map(s=>`<option value="${s.id}">${s.name} - ${s.role}</option>`).join('');
+}
+
+async function calcEarnings(s){
+  const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+  const end = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0, 23,59,59).toISOString();
+  const {data:shifts} = await supabase.from('shifts')
+   .select('check_in,check_out').eq('staff_id',s.id)
+   .gte('check_in',start).lte('check_in',end).not('check_out','is',null);
+
+  let total = 0;
+  if(s.pay_type=='hourly'){
+    const hours = shifts.reduce((sum,sh)=>(new Date(sh.check_out)-new Date(sh.check_in))/3600000,0);
+    total = hours * s.hourly_rate;
+  } else {
+    total = shifts.length * s.daily_rate;
+  }
+  document.getElementById(`earn-${s.id}`).textContent = `За месяц: ${total.toFixed(0)}₽`;
+}
+
+async function fireStaff(id, name){
+  const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+  const {data:shifts} = await supabase.from('shifts').select('check_in,check_out').eq('staff_id',id).gte('check_in',start).not('check_out','is',null);
+  const staff = staffList.find(x=>x.id==id);
+  let earned = 0;
+  if(staff.pay_type=='hourly'){
+    const hours = shifts.reduce((s,sh)=>(new Date(sh.check_out)-new Date(sh.check_in))/3600000,0);
+    earned = hours * staff.hourly_rate;
+  } else {
+    earned = shifts.length * staff.daily_rate;
+  }
+
+  if(earned > 1){
+    alert(`Уволить нельзя. Долг повару: ${earned.toFixed(0)}₽`);
+    return;
+  }
+
+  const {error} = await supabase.from('termination_requests').insert({
+    staff_id: id,
+    restaurant_id: restaurantId,
+    status: 'pending'
+  });
+
+  if(error){alert('Ошибка: '+error.message); return;}
+  alert(`Запрос отправлен ${name}. Повар подтвердит в своем кабинете.`);
+}
+
+// --- КАЛЕНДАРЬ ---
+async function loadSchedules(){
+  const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
+  const end = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).toISOString().split('T')[0];
+  const {data} = await supabase.from('work_schedules')
+   .select('*,staff(name)').eq('restaurant_id',restaurantId)
+   .gte('date',start).lte('date',end);
+  schedules = data || [];
+  renderCalendar();
+}
+
+function renderCalendar(){
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDay = new Date(year,month,1).getDay();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+
+  document.getElementById('monthTitle').textContent =
+    currentDate.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+
+  const cal = document.getElementById('calendar');
+  cal.innerHTML = '';
+
+  const offset = firstDay==0?6:firstDay-1;
+  for(let i=0;i<offset;i++) cal.innerHTML += '<div></div>';
+
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr = new Date(year,month,d).toISOString().split('T')[0];
+    const dayShifts = schedules.filter(s=>s.date==dateStr);
+
+    const shiftsHtml = dayShifts.map(s=>`<div class="shift">${s.staff.name} ${s.start_time}-${s.end_time}</div>`).join('');
+
+    cal.innerHTML += `
+      <div class="calendar-day" onclick="openShift('${dateStr}')">
+        <div class="date">${d}</div>
+        ${shiftsHtml}
+      </div>`;
+  }
+}
+
+function openShift(date){
+  selectedDate = date;
+  document.getElementById('shiftDate').textContent = new Date(date).toLocaleDateString('ru-RU');
+  document.getElementById('shiftModal').classList.add('show');
+}
+
+function closeShift(){
+  document.getElementById('shiftModal').classList.remove('show');
+}
+
+async function saveShift(){
+  const staff_id = document.getElementById('shiftStaff').value;
+  const start_time = document.getElementById('shiftStart').value;
+  const end_time = document.getElementById('shiftEnd').value;
+
+  const {error} = await supabase.from('work_schedules').insert({
+    staff_id, restaurant_id: restaurantId,
+    date: selectedDate, start_time, end_time,
+    status: 'scheduled'
+  });
+
+  if(error){alert('Ошибка: '+error.message); return;}
+  closeShift();
+  loadSchedules();
+}
+
+function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1); loadSchedules();}
+function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1); loadSchedules();}
+
+// --- СТАРТ ---
+loadStaff();
+loadSchedules();
+</script>
 </body>
-          </html>
+</html>
