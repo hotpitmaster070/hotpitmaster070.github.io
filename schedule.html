@@ -11,12 +11,12 @@
 body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui}
 .card{background:#111;border:1px solid #222;border-radius:16px;padding:16px;margin-bottom:16px}
 .btn{background:#f97316;color:#fff;padding:10px 16px;border-radius:8px;border:none;font-weight:600}
+.btn-red{background:#ef4444}
 .input{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:8px;color:#fff;width:100%}
-.day{width:36px;height:36px;border-radius:6px;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer}
+.day{width:32px;height:32px;border-radius:6px;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer}
 .day.active{background:#22c55e;color:#000;border-color:#22c55e;font-weight:700}
-.day:hover{border-color:#f97316}
-.avatar{width:32px;height:32px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-weight:700}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:50}
+.avatar{width:36px;height:36px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:50}
 .modal.show{display:flex}
 </style>
 </head>
@@ -30,23 +30,25 @@ body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui}
     <button class="btn flex-1" onclick="nextMonth()">→</button>
   </div>
 
-  <button class="btn w-full mb-4" onclick="openAdd()">+ Добавить повара</button>
-
-  <div id="staffCalendars"></div>
+  <button class="btn w-full mb-4" onclick="openAdd()">+ Добавить сотрудника</button>
+  <div id="staffList"></div>
 </div>
 
+<!-- Модал добавления -->
 <div id="addModal" class="modal">
   <div class="card w-full max-w-sm">
-    <h3 class="font-bold mb-3">Новый повар</h3>
+    <h3 class="font-bold mb-3">Новый сотрудник</h3>
     <input id="name" placeholder="Имя" class="input mb-2">
+    <select id="role" class="input mb-2"><option value="cook">Повар</option><option value="dishwasher">Мойщик</option></select>
     <select id="pay" class="input mb-2"><option value="hourly">По часам</option><option value="daily">За смену</option></select>
     <input id="rate" type="number" placeholder="Ставка ₽" class="input mb-3">
-    <div id="qrBox" class="hidden text-center"><canvas id="qr"></canvas></div>
+    <div id="qrBox" class="hidden text-center"><canvas id="qr"></canvas><p class="text-xs text-zinc-400 mt-2">Пусть повар отсканирует</p></div>
     <button class="btn w-full mb-2" onclick="saveStaff()">Сохранить</button>
     <button class="btn w-full bg-zinc-700" onclick="closeAdd()">Закрыть</button>
   </div>
 </div>
 
+<!-- Модал времени смены -->
 <div id="timeModal" class="modal">
   <div class="card w-full max-w-xs">
     <h3 class="font-bold mb-3">Время смены</h3>
@@ -58,24 +60,28 @@ body{background:#0a0a0a;color:#e4e4e7;font-family:system-ui}
 </div>
 
 <script>
-const db = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+const SUPA_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const db = supabase.createClient(SUPA_URL, SUPA_KEY);
 const restId = new URLSearchParams(location.search).get('rest');
+
 let currentDate = new Date();
 let staffList = [];
 let schedules = [];
-let pendingToggle = null; // {staff_id, date}
+let pendingToggle = null;
 
 function openAdd(){document.getElementById('addModal').classList.add('show')}
-function closeAdd(){document.getElementById('addModal').classList.remove('show')}
+function closeAdd(){document.getElementById('addModal').classList.remove('show');document.getElementById('qrBox').classList.add('hidden')}
 function closeTime(){document.getElementById('timeModal').classList.remove('show')}
 
 async function saveStaff(){
   const name = document.getElementById('name').value.trim();
+  const role = document.getElementById('role').value;
   const pay = document.getElementById('pay').value;
   const rate = parseFloat(document.getElementById('rate').value);
   if(!name ||!rate){alert('Введи имя и ставку'); return;}
 
-  const obj = {name, role:'cook', restaurant_id: restId, pay_type: pay};
+  const obj = {name, role, restaurant_id: restId, pay_type: pay};
   if(pay=='hourly') obj.hourly_rate = rate; else obj.daily_rate = rate;
 
   const {data, error} = await db.from('staff').insert(obj).select().single();
@@ -85,28 +91,29 @@ async function saveStaff(){
   document.getElementById('qrBox').classList.remove('hidden');
   loadStaff();
   document.getElementById('name').value='';
+  document.getElementById('rate').value='';
 }
 
 async function loadStaff(){
   const {data} = await db.from('staff').select('*').eq('restaurant_id', restId);
   staffList = data || [];
   await loadSchedules();
-  renderCalendars();
+  renderStaff();
 }
 
 async function loadSchedules(){
   const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
   const end = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).toISOString().split('T')[0];
   const {data} = await db.from('work_schedules')
-   .select('id,staff_id,date').eq('restaurant_id',restId)
-   .gte('date',start).lte('date',end);
+  .select('id,staff_id,date').eq('restaurant_id',restId)
+  .gte('date',start).lte('date',end);
   schedules = data || [];
 }
 
-function renderCalendars(){
+function renderStaff(){
   document.getElementById('monthLabel').textContent = currentDate.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  const container = document.getElementById('staffList');
 
-  const container = document.getElementById('staffCalendars');
   container.innerHTML = staffList.map(s => {
     const days = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
     const grid = days.map(d => {
@@ -115,15 +122,25 @@ function renderCalendars(){
       return `<div class="day ${hasShift?'active':''}" onclick="toggleShift('${s.id}','${dateStr}')">${d.getDate()}</div>`;
     }).join('');
 
+    const staffUrl = `https://hotpitmaster070.github.io/staff.html?staff=${s.id}`;
+    const isCook = s.role=='cook';
+
     return `
     <div class="card">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="avatar">${s.name[0].toUpperCase()}</div>
-        <div class="font-bold">${s.name}</div>
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="avatar">${s.name[0].toUpperCase()}</div>
+          <div>
+            <div class="font-bold">${s.name}</div>
+            <div class="text-xs text-zinc-400">${s.role=='cook'?'Повар':'Мойщик'} • ${s.pay_type=='hourly'?s.hourly_rate+'₽/ч':s.daily_rate+'₽/смена'}</div>
+          </div>
+        </div>
+        <button class="btn btn-red text-sm px-3" onclick="requestFire('${s.id}')">Уволить</button>
       </div>
-      <div class="grid grid-cols-7 gap-2">${grid}</div>
+      <div class="grid grid-cols-7 gap-1 mb-2">${grid}</div>
+      ${isCook?`<a href="${staffUrl}" target="_blank" class="text-xs text-orange-400">Кабинет повара →</a>`:''}
     </div>`;
-  }).join('') || '<p class="text-zinc-500 text-center">Добавь первого повара</p>';
+  }).join('') || '<p class="text-zinc-500 text-center">Добавь первого сотрудника</p>';
 }
 
 function getDaysInMonth(y,m){
@@ -136,10 +153,8 @@ function getDaysInMonth(y,m){
 function toggleShift(staff_id, date){
   const existing = schedules.find(x => x.staff_id==staff_id && x.date==date);
   if(existing){
-    // удалить
     db.from('work_schedules').delete().eq('id',existing.id).then(()=>loadStaff());
   }else{
-    // добавить - сначала спросить время
     pendingToggle = {staff_id, date};
     document.getElementById('timeModal').classList.add('show');
   }
@@ -149,7 +164,6 @@ async function confirmTime(){
   const start = document.getElementById('startTime').value;
   const end = document.getElementById('endTime').value;
   if(!pendingToggle) return;
-
   await db.from('work_schedules').insert({
     staff_id: pendingToggle.staff_id,
     restaurant_id: restId,
@@ -160,6 +174,12 @@ async function confirmTime(){
   pendingToggle = null;
   closeTime();
   loadStaff();
+}
+
+async function requestFire(staff_id){
+  if(!confirm('Отправить повару запрос на увольнение?')) return;
+  await db.from('termination_requests').insert({staff_id, restaurant_id: restId, status:'pending'});
+  alert('Запрос отправлен. Повар подтвердит в своём кабинете.');
 }
 
 function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1); loadStaff();}
