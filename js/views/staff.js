@@ -10,9 +10,9 @@ export function renderStaffView() {
             <div class="staff-meta">Повар • 1000₽/ч</div>
           </div>
           <div class="staff-actions">
-            <button class="fire-btn">Уволить</button>
             <button class="icon-btn calendar-btn">📅</button>
-            <button class="icon-btn">🗑</button>
+            <button class="icon-btn delete-btn">🗑</button>
+            <button class="icon-btn fire-btn">🚫</button>
           </div>
         </div>
         <div class="calendar-container" style="display:none;"></div>
