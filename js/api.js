@@ -4,7 +4,7 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Берём restaurant_id из URL?rest=UUID. Это твой onboading генерирует
+// Берём restaurant_id из URL?rest=UUID. Это твой онбординг генерирует
 const urlParams = new URLSearchParams(window.location.search)
 export const CURRENT_RESTAURANT_ID = urlParams.get('rest')
 
@@ -15,29 +15,29 @@ if(!CURRENT_RESTAURANT_ID) {
 export const api = {
   async getStaff() {
     const { data } = await supabase
-     .from('staff')
-     .select('id,name,role,hourly_rate,daily_rate,pay_type,active')
-     .eq('restaurant_id', CURRENT_RESTAURANT_ID)
-     .eq('active', true)
-     .order('created_at', { ascending: false })
+    .from('staff')
+    .select('id,name,role,hourly_rate,daily_rate,pay_type,active')
+    .eq('restaurant_id', CURRENT_RESTAURANT_ID)
+    .eq('active', true)
+    .order('created_at', { ascending: false })
     return data || []
   },
 
   async createStaffInvite(role='Повар') {
     const { data } = await supabase
-     .from('staff_invites')
-     .insert({ restaurant_id: CURRENT_RESTAURANT_ID, role })
-     .select('token').single()
+    .from('staff_invites')
+    .insert({ restaurant_id: CURRENT_RESTAURANT_ID, role })
+    .select('token').single()
     return data.token
   },
 
   async redeemInvite(token, name) {
     const { data: invite } = await supabase
-     .from('staff_invites').select('*').eq('token',token).is('used_by',null).single()
+    .from('staff_invites').select('*').eq('token',token).is('used_by',null).single()
     if(!invite || new Date(invite.expires_at) < new Date()) throw new Error('Инвайт истёк')
 
     const { data: staff } = await supabase.from('staff').insert({
-      restaurant_id: invite.restaurant_id, // берём из инвайта, а не из URL
+      restaurant_id: invite.restaurant_id, // берём из инвайта
       name: name,
       role: invite.role,
       hourly_rate: 1000, daily_rate: 8000, pay_type: 'hourly',
@@ -57,10 +57,35 @@ export const api = {
   async getShifts(staffId, month) {
     const start = `${month}-01`, end = `${month}-31`
     const { data } = await supabase.from('shifts')
-     .select('id,date,check_in,check_out,hours,status')
-     .eq('staff_id',staffId)
-     .eq('restaurant_id',CURRENT_RESTAURANT_ID)
-     .gte('date',start).lte('date',end)
+    .select('id,date,check_in,check_out,hours,status')
+    .eq('staff_id',staffId)
+    .eq('restaurant_id',CURRENT_RESTAURANT_ID)
+    .gte('date',start).lte('date',end)
+    return data || []
+  },
+
+  // НОВОЕ: смены за конкретный день для staff.html
+  async getShiftsForDay(staffId, date){
+    const {data} = await supabase
+    .from('shifts')
+    .select('hours')
+    .eq('staff_id', staffId)
+    .eq('restaurant_id', CURRENT_RESTAURANT_ID)
+    .eq('date', date)
+    return data || []
+  },
+
+  // НОВОЕ: смены за месяц для staff.html
+  async getShiftsForMonth(staffId, month){
+    const start = `${month}-01`
+    const end = `${month}-31`
+    const {data} = await supabase
+    .from('shifts')
+    .select('hours')
+    .eq('staff_id', staffId)
+    .eq('restaurant_id', CURRENT_RESTAURANT_ID)
+    .gte('date', start)
+    .lte('date', end)
     return data || []
   },
 
@@ -73,7 +98,7 @@ export const api = {
       })
     } else {
       const {data: shift} = await supabase.from('shifts')
-       .select('id').eq('staff_id',staffId).is('check_out',null).single()
+      .select('id').eq('staff_id',staffId).is('check_out',null).single()
       if(shift) await supabase.from('shifts').update({check_out:now,status:'completed'}).eq('id',shift.id)
     }
   },
@@ -101,4 +126,4 @@ export const api = {
   async deleteStaff(id) {
     await supabase.from('staff').delete().eq('id',id)
   }
-  }
+      }
