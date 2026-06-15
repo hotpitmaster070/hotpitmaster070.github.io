@@ -80,7 +80,7 @@ function showLaunchScreen(){
 }
 
 async function checkSession(){
-  const { data: { session } = await supabaseClient.auth.getSession();
+  const { data: { session } }= await supabaseClient.auth.getSession();
   session ? await redirectAfterLogin() : showAuthForm();
 }
 
