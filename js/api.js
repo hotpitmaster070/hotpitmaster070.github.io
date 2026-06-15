@@ -4,126 +4,94 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Берём restaurant_id из URL?rest=UUID. Это твой онбординг генерирует
-const urlParams = new URLSearchParams(window.location.search)
-export const CURRENT_RESTAURANT_ID = urlParams.get('rest')
-
-if(!CURRENT_RESTAURANT_ID) {
-  console.error('rest=UUID не найден в URL. Открой страницу через ссылку из онбординга')
+async function getRestaurantId(){
+  const {data:{user}} = await supabase.auth.getUser()
+  if(!user) throw new Error('Не авторизован')
+  const restId = user.user_metadata?.restaurant_id
+  if(!restId) throw new Error('У юзера нет restaurant_id. Проверь онбординг')
+  return restId
 }
 
 export const api = {
-  async getStaff() {
-    const { data } = await supabase
-    .from('staff')
-    .select('id,name,role,hourly_rate,daily_rate,pay_type,active')
-    .eq('restaurant_id', CURRENT_RESTAURANT_ID)
-    .eq('active', true)
-    .order('created_at', { ascending: false })
-    return data || []
+  async getStaff(){
+    const restId = await getRestaurantId()
+    const {data,error} = await supabase.from('staff')
+    .select('id,name,role,hourly_rate,daily_rate,pay_type,active,restaurant_id')
+    .eq('restaurant_id',restId).eq('active',true).order('created_at',{ascending:false})
+    if(error) throw error
+    return data||[]
   },
 
-  async createStaffInvite(role='Повар') {
-    const { data } = await supabase
-    .from('staff_invites')
-    .insert({ restaurant_id: CURRENT_RESTAURANT_ID, role })
-    .select('token').single()
+  async createStaffInvite(role='Повар'){
+    const restId = await getRestaurantId()
+    const {data} = await supabase.from('staff_invites')
+    .insert({restaurant_id:restId,role}).select('token').single()
     return data.token
   },
 
-  async redeemInvite(token, name) {
-    const { data: invite } = await supabase
-    .from('staff_invites').select('*').eq('token',token).is('used_by',null).single()
-    if(!invite || new Date(invite.expires_at) < new Date()) throw new Error('Инвайт истёк')
-
-    const { data: staff } = await supabase.from('staff').insert({
-      restaurant_id: invite.restaurant_id, // берём из инвайта
-      name: name,
-      role: invite.role,
-      hourly_rate: 1000, daily_rate: 8000, pay_type: 'hourly',
-      invite_token: token,
-      active: true
-    }).select().single()
-
-    await supabase.from('staff_invites').update({used_by: staff.id}).eq('token',token)
-    return staff
-  },
-
-  async getStaffById(id) {
-    const { data } = await supabase.from('staff').select('*').eq('id',id).single()
+  async getStaffById(id){
+    const {data} = await supabase.from('staff').select('*').eq('id',id).single()
     return data
   },
 
-  async getShifts(staffId, month) {
+  async getShifts(staffId, month){
+    const restId = await getRestaurantId()
     const start = `${month}-01`, end = `${month}-31`
-    const { data } = await supabase.from('shifts')
+    const {data} = await supabase.from('shifts')
     .select('id,date,check_in,check_out,hours,status')
-    .eq('staff_id',staffId)
-    .eq('restaurant_id',CURRENT_RESTAURANT_ID)
+    .eq('staff_id',staffId).eq('restaurant_id',restId)
     .gte('date',start).lte('date',end)
-    return data || []
+    return data||[]
   },
 
-  // НОВОЕ: смены за конкретный день для staff.html
-  async getShiftsForDay(staffId, date){
-    const {data} = await supabase
-    .from('shifts')
-    .select('hours')
-    .eq('staff_id', staffId)
-    .eq('restaurant_id', CURRENT_RESTAURANT_ID)
-    .eq('date', date)
-    return data || []
+  async getShiftsForDay(staffId,date){
+    const restId = await getRestaurantId()
+    const {data} = await supabase.from('shifts')
+    .select('hours').eq('staff_id',staffId).eq('restaurant_id',restId).eq('date',date)
+    return data||[]
   },
 
-  // НОВОЕ: смены за месяц для staff.html
-  async getShiftsForMonth(staffId, month){
-    const start = `${month}-01`
-    const end = `${month}-31`
-    const {data} = await supabase
-    .from('shifts')
-    .select('hours')
-    .eq('staff_id', staffId)
-    .eq('restaurant_id', CURRENT_RESTAURANT_ID)
-    .gte('date', start)
-    .lte('date', end)
-    return data || []
+  async getShiftsForMonth(staffId,month){
+    const restId = await getRestaurantId()
+    const start = `${month}-01`, end = `${month}-31`
+    const {data} = await supabase.from('shifts')
+    .select('hours').eq('staff_id',staffId).eq('restaurant_id',restId)
+    .gte('date',start).lte('date',end)
+    return data||[]
   },
 
-  async clockInOut(staffId, type) {
+  async clockInOut(staffId,type){
+    const restId = await getRestaurantId()
     const now = new Date().toISOString()
     if(type==='in'){
       await supabase.from('shifts').insert({
-        staff_id: staffId, restaurant_id: CURRENT_RESTAURANT_ID,
-        date: now.split('T')[0], check_in: now, status: 'in_progress'
+        staff_id:staffId,restaurant_id:restId,
+        date:now.split('T')[0],check_in:now,status:'in_progress'
       })
     } else {
-      const {data: shift} = await supabase.from('shifts')
+      const {data:shift} = await supabase.from('shifts')
       .select('id').eq('staff_id',staffId).is('check_out',null).single()
       if(shift) await supabase.from('shifts').update({check_out:now,status:'completed'}).eq('id',shift.id)
     }
   },
 
-  async addManualShift(staffId, date, checkIn, checkOut) {
+  async addManualShift(staffId,date,checkIn,checkOut){
+    const restId = await getRestaurantId()
     await supabase.from('shifts').insert({
-      staff_id: staffId, restaurant_id: CURRENT_RESTAURANT_ID,
-      date, check_in: checkIn, check_out: checkOut, status: 'manual'
+      staff_id:staffId,restaurant_id:restId,date,check_in:checkIn,check_out:checkOut,status:'manual'
     })
   },
 
-  async calcPay(staff, shifts) {
-    if(staff.pay_type === 'fixed') return staff.daily_rate || 0
-    if(staff.pay_type === 'daily') {
+  async calcPay(staff,shifts){
+    if(staff.pay_type==='fixed') return staff.monthly_rate||0
+    if(staff.pay_type==='daily'){
       const days = new Set(shifts.filter(s=>s.check_in).map(s=>s.date)).size
-      return days * (staff.daily_rate || 0)
+      return days*(staff.daily_rate||0)
     }
-    const hours = shifts.reduce((sum, s)=> sum + (s.hours || 0), 0)
-    return Math.round(hours * (staff.hourly_rate || 0))
+    const hours = shifts.reduce((sum,s)=>sum+(s.hours||0),0)
+    return Math.round(hours*(staff.hourly_rate||0))
   },
 
-  async fireStaff(id) {
-    await supabase.from('staff').update({active:false}).eq('id',id)
-  },
-  async deleteStaff(id) {
-    await supabase.from('staff').delete().eq('id',id)
-  }
-      }
+  async fireStaff(id){await supabase.from('staff').update({active:false}).eq('id',id)},
+  async deleteStaff(id){await supabase.from('staff').delete().eq('id',id)}
+                                                                          }
