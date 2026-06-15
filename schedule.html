@@ -1,24 +1,55 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kitchen Admin</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HotPit - Экран Шефа</title>
 <link rel="stylesheet" href="css/style.css">
-<script type="importmap">{"imports":{"@supabase/supabase-js":"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"}}</script>
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
 <div class="app">
-  <header><button id="openSidebar">☰</button><h1 id="pageTitle">Персонал</h1></header>
-  <aside id="sidebar">
-    <button id="closeSidebar">×</button>
-    <button class="menu-item active" data-view="staff">👥 Персонал</button>
-    <button class="menu-item" data-view="schedule">📅 График</button>
-    <button class="menu-item" data-view="orders">🔲 Заказы</button>
-    <button class="menu-item" data-view="analytics">📊 Аналитика</button>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div><h2>HotPit</h2><p>Экран Шефа</p><span class="sub">Панель управления</span></div>
+      <button class="close-btn" id="closeSidebar">×</button>
+    </div>
+    <nav class="menu">
+      <button class="menu-item active" data-view="staff">👥 Повара</button>
+      <button class="menu-item" data-view="schedule">📅 График</button>
+      <button class="menu-item" data-view="qr">🔲 QR Сканер</button>
+      <button class="menu-item" data-view="reports">📊 Отчёты</button>
+      <hr class="menu-sep">
+      <button class="menu-item disabled">📦 Приход товара</button>
+      <button class="menu-item disabled">🏪 Склад</button>
+    </nav>
   </aside>
-  <div id="overlay"></div>
-  <main id="app"></main>
+  <main class="content">
+    <header class="topbar">
+      <button class="burger" id="openSidebar">☰</button>
+      <h1 id="pageTitle">Повара</h1>
+      <button id="logoutBtn" class="logout">Выйти</button>
+    </header>
+    <div id="app"></div>
+  </main>
 </div>
+<div class="overlay" id="overlay"></div>
+
+<div id="inviteModal" class="modal"><div class="modal-box">
+  <h3>QR для повара</h3>
+  <input id="inviteLink" readonly>
+  <canvas id="qrCanvas"></canvas>
+  <div class="row"><button id="copyLink">Копировать</button><button id="closeModal" class="primary">Готово</button></div>
+</div></div>
+
+<div id="manualModal" class="modal"><div class="modal-box">
+  <h3>Ручная смена</h3>
+  <input id="manualDate" type="date">
+  <input id="manualIn" type="datetime-local">
+  <input id="manualOut" type="datetime-local">
+  <div class="row"><button id="closeManual">Отмена</button><button id="saveManual" class="primary">Сохранить</button></div>
+</div></div>
+
 <script type="module" src="js/app.js"></script>
 </body>
-</html>
+  </html>
