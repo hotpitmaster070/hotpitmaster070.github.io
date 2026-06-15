@@ -80,7 +80,7 @@ function showLaunchScreen(){
 }
 
 async function checkSession(){
-  const { data: { session } } = await supabaseClient.auth.getSession(); // <- скобку починил
+  const { data: { session } = await supabaseClient.auth.getSession();
   session ? await redirectAfterLogin() : showAuthForm();
 }
 
@@ -93,7 +93,7 @@ async function redirectAfterLogin(){
   
   if(restaurant){
     if(!user.user_metadata?.restaurant_id){
-      await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}}) // <- 1 раз привязали
+      await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
     }
     showLaunchScreen();
     showRestaurantForm();
@@ -123,14 +123,14 @@ async function createRestaurant(){
   const name = document.getElementById('restName').value.trim();
   if(!name){ showMsg('Введи название ресторана', 'error'); return; }
   
-  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data: { user } } = await supabaseClient.auth.getUser(); // <- ПОЧИНИЛ СКОБКУ
   const { data, error } = await supabaseClient.from('restaurants')
     .insert({ name, owner_id: user.id }).select().single();
   
   if(error){ showMsg('Ошибка: ' + error.message, 'error'); return; }
   
-  await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}}) // <- без getSession
-  showLaunchScreen();
+  await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}})
+  location.reload(); // <- перезагружаем, чтобы JWT обновился. Без костылей getSession
 }
 
 async function login(){
@@ -153,7 +153,7 @@ async function signup(){
   
   const { error } = await supabaseClient.auth.signUp({ email, password });
   if(error){ showMsg(error.message, 'error'); return; }
-  showMsg('Готово! Подтверди почту или отключи в Supabase', 'success');
+  showMsg('Готово! Проверь почту или отключи подтверждение в Supabase', 'success');
 }
 
 async function logout(){
