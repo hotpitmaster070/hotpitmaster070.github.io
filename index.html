@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HotPit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0a;color:#fff;}
+.box{background:#171717;padding:40px;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,0.5);width:100%;max-width:380px;transition:all 0.3s ease;}
+.topbar{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px;font-size:18px;}
+.logo-link{color:#f97316;font-weight:800;text-decoration:none;font-size:22px;}
+.logo h1{font-size:32px;font-weight:800;color:#f97316;margin-bottom:8px;text-align:center;}
+.logo p{color:#71717a;font-size:14px;text-align:center;}
+input{width:100%;padding:14px;margin:8px 0;background:#262626;border:1px solid #333;border-radius:10px;color:#fff;font-size:15px;outline:none;}
+input:focus{border-color:#f97316;background:#2a2a2a;}
+button{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:none;font-weight:600;font-size:15px;cursor:pointer;}
+.btn-primary{background:#f97316;color:white;}
+.btn-secondary{background:#262626;color:#fff;}
+.btn-logout{background:#444;color:#fff;margin-bottom:20px;}
+.msg{padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px;display:none;}
+.error{background:#7f1d1d;color:#fca5a5;}
+.success{background:#14532d;color:#86efac;}
+.hidden{display:none;}
+.link-box{background:#262626;padding:12px;border-radius:8px;word-break:break-all;margin-bottom:20px;}
+.link-box a{color:#f97316;text-decoration:none;font-size:14px;}
+.step-subtitle{font-size:12px;color:#f97316;text-align:center;margin-bottom:8px;font-weight:600;letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<div class="box" id="authBox">
+  <div class="logo">
+    <h1>HotPit</h1>
+    <p id="stepSubtitle">Управление кухней</p>
+  </div>
+  <div id="msg" class="msg"></div>
+  
+  <!-- ШАГ 1: Регистрация/Логин -->
+  <div id="step1">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <button type="button" class="btn-primary" id="signupBtn">Начать</button>
+    <button type="button" class="btn-secondary" id="loginBtn">Уже есть аккаунт? Войти</button>
+  </div>
+
+  <!-- ШАГ 2: Название ресторана -->
+  <div id="step2" class="hidden">
+    <div class="step-subtitle">ШАГ 2 ИЗ 2</div>
+    <h2 style="margin-bottom:8px;text-align:center">Как назовём ресторан?</h2>
+    <p style="color:#71717a;font-size:14px;text-align:center;margin-bottom:16px">Это увидят твои повара в кабинете</p>
+    <input id="restName" type="text" placeholder="Например: Мангал №1">
+    <button type="button" class="btn-primary" id="createRestBtn">Запустить кухню</button>
+    <button type="button" class="btn-secondary" id="backBtn">Назад</button>
+  </div>
+</div>
+
+<div class="box hidden" id="restaurantBox">
+  <header class="topbar">
+    <a href="#" onclick="location.reload();return false;" class="logo-link">HotPit</a>
+    <span style="color:#71717a">|</span>
+    <a href="#" onclick="scrollToManagement();return false;" style="color:#fff;text-decoration:none">Управление</a>
+  </header>
+  <button type="button" class="btn-logout" id="logoutBtn">Выйти</button>
+  <div id="restaurantContent"></div>
+</div>
+
+<script>
+const supabaseClient = supabase.createClient(
+  'https://xljogkyropyocvuuodfl.supabase.co', 
+  'ВСТАВЬ_СЮДА_СВОЙ_ANON_PUBLIC_КЛЮЧ'
+);
+
+function showMsg(msg, type){
+  const el = document.getElementById('msg');
+  el.innerText = msg;
+  el.className = 'msg ' + type;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+function hideMsg(){ document.getElementById('msg').style.display = 'none'; }
+function showAuthForm(){ document.getElementById('authBox').classList.remove('hidden'); document.getElementById('restaurantBox').classList.add('hidden'); showStep(1); }
+function showRestaurantForm(){ document.getElementById('authBox').classList.add('hidden'); document.getElementById('restaurantBox').classList.remove('hidden'); }
+function scrollToManagement(){ document.getElementById('management')?.scrollIntoView({behavior:'smooth'}); }
+function showStep(n){
+  document.getElementById('step1').classList.toggle('hidden', n!==1);
+  document.getElementById('step2').classList.toggle('hidden', n!==2);
+  document.getElementById('stepSubtitle').innerText = n===1 ? 'Управление кухней' : 'Почти готово';
+}
+
+function showLaunchScreen(restaurantName){
+  const kitchenUrl = `${window.location.origin}/kitchen.html`;
+  document.getElementById('restaurantContent').innerHTML = `
+    <div id="management" style="background:#14532d;padding:16px;border-radius:10px;margin-bottom:20px;">
+      <h3>Готово! Система запущена</h3>
+      <p style="color:#86efac;font-size:14px">Ресторан: <b>${restaurantName}</b></p>
+    </div>
+    <p style="margin-bottom:8px;font-weight:600">Твоя панель шефа</p>
+    <div class="link-box"><a href="${kitchenUrl}" target="_blank">${kitchenUrl}</a></div>
+    <button class="btn-primary" onclick="window.location.href='${kitchenUrl}'">Открыть кабинет</button>
+  `;
+}
+
+async function checkSession(){
+  const { data: { session } = await supabaseClient.auth.getSession();
+  session ? await redirectAfterLogin() : showAuthForm();
+}
+
+async function redirectAfterLogin(){
+  const { data: { user } = await supabaseClient.auth.getUser();
+  if(!user) return;
+  
+  const { data: restaurant } = await supabaseClient
+    .from('restaurants').select('id,name').eq('owner_id', user.id).limit(1).maybeSingle();
+  
+  if(restaurant){
+    if(!user.user_metadata?.restaurant_id){
+      await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
+    }
+    showLaunchScreen(restaurant.name);
+    showRestaurantForm();
+    return;
+  }
+  
+  const { data: staff } = await supabaseClient
+    .from('staff').select('id').eq('user_id', user.id).limit(1).maybeSingle();
+  
+  if(staff){
+    window.location.href = `/staff.html?staff=${staff.id}`;
+    return;
+  }
+  
+  // Если юзер залогинен но ресторана нет - кидаем на шаг 2
+  showStep(2);
+  showRestaurantForm();
+}
+
+async function createRestaurant(){
+  const name = document.getElementById('restName').value.trim();
+  if(!name){ showMsg('Введи название ресторана', 'error'); return; }
+  
+  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data, error } = await supabaseClient.from('restaurants')
+    .insert({ name, owner_id: user.id }).select().single();
+  
+  if(error){ showMsg('Ошибка: ' + error.message, 'error'); return; }
+  
+  await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}})
+  showLaunchScreen(name);
+  location.reload();
+}
+
+async function login(){
+  hideMsg();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  if(!email || !password){ showMsg('Заполни email и пароль', 'error'); return; }
+  
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ showMsg(error.message, 'error'); return; }
+  await redirectAfterLogin();
+}
+
+async function signup(){
+  hideMsg();
+  const email = document.getElementById('email").value.trim();
+  const password = document.getElementById('password').value;
+  if(!email || !password){ showMsg('Заполни email и пароль', 'error'); return; }
+  if(password.length < 6){ showMsg('Пароль минимум 6 символов', 'error'); return; }
+  
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if(error){ showMsg(error.message, 'error'); return; }
+  
+  showMsg('Аккаунт создан! Теперь назови ресторан', 'success');
+  showStep(2); // <- сразу на шаг 2, без перезагрузки
+}
+
+document.getElementById('loginBtn').addEventListener('click', login);
+document.getElementById('signupBtn').addEventListener('click', signup);
+document.getElementById('createRestBtn').addEventListener('click', createRestaurant);
+document.getElementById('backBtn').addEventListener('click', () => showStep(1));
+document.getElementById('logoutBtn').addEventListener('click', async () => { await supabaseClient.auth.signOut(); location.reload(); });
+supabaseClient.auth.onAuthStateChange((e,s) => { if(e==='SIGNED_IN') redirectAfterLogin(); });
+checkSession();
+</script>
+</body>
+</html>
