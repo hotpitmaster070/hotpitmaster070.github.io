@@ -18,7 +18,6 @@ body { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); }
 <body class="text-zinc-100 min-h-screen flex items-center justify-center p-4">
 <div class="max-w-md w-full">
 
-  <!-- ШАГ 1: РЕГИСТРАЦИЯ -->
   <div id="step1" class="glass rounded-2xl p-8">
     <h1 class="logo">HotPit</h1>
     <h2 class="text-2xl font-bold text-center mb-6">Запусти кухню за 2 минуты</h2>
@@ -31,7 +30,6 @@ body { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); }
     <button onclick="createAccount()" class="btn-primary w-full rounded-xl py-4 font-bold text-lg">Создать аккаунт</button>
   </div>
 
-  <!-- ШАГ 2: ГОТОВО + ССЫЛКА -->
   <div id="step2" class="hidden glass rounded-2xl p-8 text-center">
     <div class="text-6xl mb-4">🎉</div>
     <h2 class="text-3xl font-bold text-green-400 mb-4">Готово! Система запущена</h2>
@@ -74,7 +72,7 @@ async function createAccount() {
   const { data: restData, error: restError } = await _supabase
     .from('restaurants')
     .insert({ 
-      id: crypto.randomUUID(), // ГЕНЕРИРУЕМ UUID
+      id: crypto.randomUUID(),
       name: restName,
       owner_id: authData.user.id 
     })
@@ -88,15 +86,19 @@ async function createAccount() {
 
   restaurantId = restData.id;
 
-  // 3. ГЕНЕРАЦИЯ ССЫЛКИ ДЛЯ ШЕФА - ВОТ ЭТА СТРОКА!
-  chefLink = `https://hotpitmaster070.github.io/schedule.html?rest=${restaurantId}`;
+  // 3. <- НОВОЕ: Привязываем ресторан к шефу в JWT
+  // Без этой строки RLS не пустит шефа к своим поварам
+  await _supabase.auth.updateUser({data: {restaurant_id: restaurantId}})
 
-  // 4. Показываем ссылку на экране
+  // 4. <- ИЗМЕНЕНО: Убираем ?rest= из ссылки. JWT сам знает ресторан
+  chefLink = `https://hotpitmaster070.github.io/kitchen.html`;
+
+  // 5. Показываем ссылку на экране
   document.getElementById('chefLink').innerText = chefLink;
   document.getElementById('step1').classList.add('hidden');
   document.getElementById('step2').classList.remove('hidden');
 
-  // 5. Кнопка "Открыть кабинет" ведёт по ссылке
+  // 6. Кнопка "Открыть кабинет" ведёт по ссылке
   document.getElementById('btnDone').onclick = () => {
     window.location.href = chefLink;
   }
