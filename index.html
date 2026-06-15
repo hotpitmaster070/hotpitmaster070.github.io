@@ -103,12 +103,12 @@ function showLaunchScreen(restaurantName){
 }
 
 async function checkSession(){
-  const { data: { session } = await supabaseClient.auth.getSession();
+  const { data: { session }} = await supabaseClient.auth.getSession();
   session ? await redirectAfterLogin() : showAuthForm();
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data: { user } }= await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
@@ -139,7 +139,7 @@ async function createRestaurant(){
   const name = document.getElementById('restName').value.trim();
   if(!name){ showMsg('Введи название ресторана', 'error'); return; }
   
-  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data: { user } }= await supabaseClient.auth.getUser();
   const { data, error } = await supabaseClient.from('restaurants')
     .insert({ name, owner_id: user.id }).select().single();
   
