@@ -7,85 +7,33 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  display:flex;align-items:center;justify-content:center;
-  min-height:100vh;background:#0a0a0a;color:#fff;
-}
-.box{
-  background:#171717;padding:40px;border-radius:16px;
-  box-shadow:0 20px 50px rgba(0,0,0,0.5);width:100%;max-width:380px;
-}
-.topbar{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  margin-bottom:24px;
-  font-size:18px;
-}
-.logo-link{
-  color:#f97316;
-  font-weight:800;
-  text-decoration:none;
-  font-size:22px;
-}
-.logo-link:hover{opacity:0.8;}
-.divider{color:#71717a;}
-.nav-link{
-  color:#fff;
-  text-decoration:none;
-}
-.nav-link:hover{color:#f97316;}
-.logo{text-align:center;margin-bottom:32px;}
-.logo h1{font-size:32px;font-weight:800;color:#f97316;margin-bottom:8px;}
-.logo p{color:#71717a;font-size:14px;}
-input{
-  width:100%;padding:14px;margin:8px 0;
-  background:#262626;border:1px solid #333;
-  border-radius:10px;color:#fff;font-size:15px;
-  outline:none;transition:0.2s;
-}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0a;color:#fff;}
+.box{background:#171717;padding:40px;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,0.5);width:100%;max-width:380px;}
+.topbar{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px;font-size:18px;}
+.logo-link{color:#f97316;font-weight:800;text-decoration:none;font-size:22px;}
+.logo h1{font-size:32px;font-weight:800;color:#f97316;margin-bottom:8px;text-align:center;}
+.logo p{color:#71717a;font-size:14px;text-align:center;}
+input{width:100%;padding:14px;margin:8px 0;background:#262626;border:1px solid #333;border-radius:10px;color:#fff;font-size:15px;outline:none;}
 input:focus{border-color:#f97316;background:#2a2a2a;}
-button{
-  width:100%;padding:14px;margin:8px 0;
-  border-radius:10px;border:none;font-weight:600;
-  font-size:15px;cursor:pointer;transition:0.2s;
-}
+button{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:none;font-weight:600;font-size:15px;cursor:pointer;}
 .btn-primary{background:#f97316;color:white;}
-.btn-primary:hover{background:#ea580c;}
 .btn-secondary{background:#262626;color:#fff;}
-.btn-secondary:hover{background:#333;}
 .btn-logout{background:#444;color:#fff;margin-bottom:20px;}
-.btn-logout:hover{background:#555;}
-.msg{
-  padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px;
-  display:none;
-}
+.msg{padding:12px;border-radius:8px;margin-bottom:16px;font-size:14px;display:none;}
 .error{background:#7f1d1d;color:#fca5a5;}
 .success{background:#14532d;color:#86efac;}
 .hidden{display:none;}
-.restaurant-info{background:#262626;padding:16px;border-radius:10px;margin-bottom:20px;}
-.link-box{
-  background:#262626;padding:12px;border-radius:8px;word-break:break-all;
-  margin-bottom:20px;
-}
+.link-box{background:#262626;padding:12px;border-radius:8px;word-break:break-all;margin-bottom:20px;}
 .link-box a{color:#f97316;text-decoration:none;font-size:14px;}
 </style>
 </head>
 <body>
 
 <div class="box" id="authBox">
-  <div class="logo">
-    <h1>HotPit</h1>
-    <p>Управление кухней</p>
-  </div>
-  
+  <div class="logo"><h1>HotPit</h1><p>Управление кухней</p></div>
   <div id="msg" class="msg"></div>
-  
-  <input id="email" type="email" placeholder="Email" autocomplete="email">
-  <input id="password" type="password" placeholder="Пароль" autocomplete="current-password">
-  
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Пароль">
   <button type="button" class="btn-primary" id="loginBtn">Войти</button>
   <button type="button" class="btn-secondary" id="signupBtn">Создать аккаунт</button>
 </div>
@@ -93,31 +41,18 @@ button{
 <div class="box hidden" id="restaurantBox">
   <header class="topbar">
     <a href="#" onclick="location.reload();return false;" class="logo-link">HotPit</a>
-    <span class="divider">|</span>
-    <a href="#" onclick="scrollToManagement();return false;" class="nav-link">Управление</a>
+    <span style="color:#71717a">|</span>
+    <a href="#" onclick="scrollToManagement();return false;" style="color:#fff;text-decoration:none">Управление</a>
   </header>
-  
   <button type="button" class="btn-logout" id="logoutBtn">Выйти</button>
-  
   <div id="restaurantContent"></div>
 </div>
 
 <script>
 const supabaseClient = supabase.createClient(
   'https://xljogkyropyocvuuodfl.supabase.co', 
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m0owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
-
-function scrollToManagement(){
-  const el = document.getElementById('management');
-  if(el){
-    el.scrollIntoView({behavior:'smooth', block:'start'});
-  } else {
-    setTimeout(() => {
-      document.getElementById('management')?.scrollIntoView({behavior:'smooth', block:'start'});
-    }, 100);
-  }
-}
 
 function showMsg(msg, type){
   const el = document.getElementById('msg');
@@ -126,55 +61,27 @@ function showMsg(msg, type){
   el.style.display = 'block';
   setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
+function hideMsg(){ document.getElementById('msg').style.display = 'none'; }
+function showAuthForm(){ document.getElementById('authBox').classList.remove('hidden'); document.getElementById('restaurantBox').classList.add('hidden'); }
+function showRestaurantForm(){ document.getElementById('authBox').classList.add('hidden'); document.getElementById('restaurantBox').classList.remove('hidden'); }
+function scrollToManagement(){ document.getElementById('management')?.scrollIntoView({behavior:'smooth'}); }
 
-function hideMsg(){
-  document.getElementById('msg').style.display = 'none';
-}
-
-function showAuthForm(){
-  document.getElementById('authBox').classList.remove('hidden');
-  document.getElementById('restaurantBox').classList.add('hidden');
-}
-
-function showRestaurantForm(){
-  document.getElementById('authBox').classList.add('hidden');
-  document.getElementById('restaurantBox').classList.remove('hidden');
-}
-
-// <- ИЗМЕНИЛ: убрали UUID из ссылки, показываем kitchen.html
 function showLaunchScreen(){
-  const baseUrl = window.location.origin;
-  const kitchenUrl = `${baseUrl}/kitchen.html`;
-  
+  const kitchenUrl = `${window.location.origin}/kitchen.html`;
   document.getElementById('restaurantContent').innerHTML = `
     <div id="management" style="background:#14532d;padding:16px;border-radius:10px;margin-bottom:20px;">
-      <h3 style="margin-bottom:8px;">Готово! Система запущена</h3>
-      <p style="color:#86efac;font-size:14px;">Ресторан привязан к аккаунту. UUID в ссылке больше не нужен.</p>
+      <h3>Готово! Система запущена</h3>
+      <p style="color:#86efac;font-size:14px">Ресторан привязан к аккаунту</p>
     </div>
-    
-    <div>
-      <p style="margin-bottom:8px;font-weight:600;">1. Твоя панель шефа</p>
-      <div class="link-box">
-        <a href="${kitchenUrl}" target="_blank">${kitchenUrl}</a>
-      </div>
-    </div>
-    
-    <div>
-      <p style="margin-bottom:8px;font-weight:600;">2. QR-коды для поваров</p>
-      <p style="color:#71717a;font-size:14px;">Сделаешь их в панели "Повара"</p>
-    </div>
-    
-    <button class="btn-primary" onclick="window.location.href='${kitchenUrl}'" style="margin-top:20px;">Открыть кабинет</button>
+    <p style="margin-bottom:8px;font-weight:600">Твоя панель шефа</p>
+    <div class="link-box"><a href="${kitchenUrl}" target="_blank">${kitchenUrl}</a></div>
+    <button class="btn-primary" onclick="window.location.href='${kitchenUrl}'">Открыть кабинет</button>
   `;
 }
 
 async function checkSession(){
-  const { data: { session }= await supabaseClient.auth.getSession();
-  if(session){
-    await redirectAfterLogin();
-  } else {
-    showAuthForm();
-  }
+  const { data: { session } = await supabaseClient.auth.getSession(); // <- скобку починил
+  session ? await redirectAfterLogin() : showAuthForm();
 }
 
 async function redirectAfterLogin(){
@@ -182,16 +89,11 @@ async function redirectAfterLogin(){
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
-    .from('restaurants')
-    .select('id, name')
-    .eq('owner_id', user.id)
-    .limit(1)
-    .maybeSingle();
+    .from('restaurants').select('id,name').eq('owner_id', user.id).limit(1).maybeSingle();
   
   if(restaurant){
-    // <- ИЗМЕНИЛ: привязываем ресторан к JWT если ещё не привязан
     if(!user.user_metadata?.restaurant_id){
-      await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
+      await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}}) // <- 1 раз привязали
     }
     showLaunchScreen();
     showRestaurantForm();
@@ -199,51 +101,35 @@ async function redirectAfterLogin(){
   }
   
   const { data: staff } = await supabaseClient
-    .from('staff')
-    .select('id, restaurant_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .maybeSingle();
+    .from('staff').select('id').eq('user_id', user.id).limit(1).maybeSingle();
   
   if(staff){
-    // <- ИЗМЕНИЛ: повар идёт в staff.html без rest=
     window.location.href = `/staff.html?staff=${staff.id}`;
     return;
   }
   
   document.getElementById('restaurantContent').innerHTML = `
     <div id="management">
-      <h2 style="margin-bottom:20px;">Создать ресторан</h2>
+      <h2 style="margin-bottom:20px">Создать ресторан</h2>
       <input id="restName" type="text" placeholder="Название ресторана">
       <button class="btn-primary" id="createRestBtn">Создать</button>
     </div>
   `;
-  
   document.getElementById('createRestBtn').addEventListener('click', createRestaurant);
   showRestaurantForm();
 }
 
 async function createRestaurant(){
   const name = document.getElementById('restName').value.trim();
-  if(!name){
-    showMsg('Введи название ресторана', 'error');
-    return;
-  }
+  if(!name){ showMsg('Введи название ресторана', 'error'); return; }
   
   const { data: { user } = await supabaseClient.auth.getUser();
   const { data, error } = await supabaseClient.from('restaurants')
-    .insert({ name: name, owner_id: user.id })
-    .select()
-    .single();
+    .insert({ name, owner_id: user.id }).select().single();
   
-  if(error){
-    showMsg('Ошибка: ' + error.message, 'error');
-    return;
-  }
+  if(error){ showMsg('Ошибка: ' + error.message, 'error'); return; }
   
-  // <- НОВОЕ: записываем restaurant_id в профиль шефа
-  await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}})
-  
+  await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}}) // <- без getSession
   showLaunchScreen();
 }
 
@@ -251,19 +137,10 @@ async function login(){
   hideMsg();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
-  
-  if(!email || !password){
-    showMsg('Заполни email и пароль', 'error');
-    return;
-  }
+  if(!email || !password){ showMsg('Заполни email и пароль', 'error'); return; }
   
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  
-  if(error){
-    showMsg('Неверный email или пароль', 'error');
-    return;
-  }
-  
+  if(error){ showMsg(error.message, 'error'); return; }
   await redirectAfterLogin();
 }
 
@@ -271,28 +148,12 @@ async function signup(){
   hideMsg();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
+  if(!email || !password){ showMsg('Заполни email и пароль', 'error'); return; }
+  if(password.length < 6){ showMsg('Пароль минимум 6 символов', 'error'); return; }
   
-  if(!email || !password){
-    showMsg('Заполни email и пароль', 'error');
-    return;
-  }
-  if(password.length < 6){
-    showMsg('Пароль должен быть минимум 6 символов', 'error');
-    return;
-  }
-  
-  const { error } = await supabaseClient.auth.signUp({ 
-    email, 
-    password,
-    options: { emailRedirectTo: window.location.origin }
-  });
-  
-  if(error){
-    showMsg('Этот email уже зарегистрирован', 'error');
-    return;
-  }
-  
-  showMsg('Готово! Проверь почту, подтверди регистрацию и вернись сюда', 'success');
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if(error){ showMsg(error.message, 'error'); return; }
+  showMsg('Готово! Подтверди почту или отключи в Supabase', 'success');
 }
 
 async function logout(){
@@ -303,13 +164,7 @@ async function logout(){
 document.getElementById('loginBtn').addEventListener('click', login);
 document.getElementById('signupBtn').addEventListener('click', signup);
 document.getElementById('logoutBtn').addEventListener('click', logout);
-
-supabaseClient.auth.onAuthStateChange((event, session) => {
-  if(event === 'SIGNED_IN' && session){
-    redirectAfterLogin();
-  }
-});
-
+supabaseClient.auth.onAuthStateChange((e,s) => { if(e==='SIGNED_IN') redirectAfterLogin(); });
 checkSession();
 </script>
 </body>
