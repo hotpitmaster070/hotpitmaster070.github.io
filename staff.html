@@ -1,59 +1,147 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Повар</title>
-<link rel="stylesheet" href="css/style.css">
-<script type="importmap">{"imports":{"@supabase/supabase-js":"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"}}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit - Повар</title>
+<script type="importmap">
+{
+  "imports": {
+    "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+  }
+}
+</script>
+<style>
+body{margin:0;background:#0a0a0a;color:#e5e5e5;font-family:-apple-system,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.worker-box{max-width:420px;width:90%;text-align:center}
+.worker-box h2{font-size:28px;margin-bottom:8px}
+.worker-box p{color:#71717a;margin-bottom:24px}
+.worker-box input{width:100%;padding:14px;margin:8px 0;background:#1a1a1a;border:1px solid #333;border-radius:12px;color:#fff;font-size:16px;outline:none}
+.worker-box input:focus{border-color:#f97316}
+.big-btn{width:100%;height:140px;font-size:28px;font-weight:700;border-radius:20px;border:0;margin-top:16px;cursor:pointer;transition:0.2s}
+.big-btn.in{background:linear-gradient(135deg,#16a34a,#15803d);color:white}
+.big-btn.out{background:linear-gradient(135deg,#dc2626,#b91c1c);color:white}
+.big-btn:active{transform:scale(0.97)}
+.stats{margin-top:24px;padding:16px;background:#111;border:1px solid #222;border-radius:16px;text-align:left}
+.stat-row{display:flex;justify-content:space-between;margin:8px 0;font-size:15px}
+.stat-label{color:#a1a1aa}
+.stat-value{color:#fff;font-weight:600}
+.empty{color:#71717a;text-align:center;padding:60px 20px}
+</style>
 </head>
 <body>
 <div id="app"></div>
+
 <script type="module">
-import {api,supabase} from './js/api.js'
+import {api, supabase} from './js/api.js'
 
 const app = document.getElementById('app')
-const urlParams = new URLSearchParams(location.search)
-const invite = urlParams.get('invite')
+const params = new URLSearchParams(location.search)
+const invite = params.get('invite')
 let staffId = localStorage.getItem('staffId')
 
 async function init(){
   if(invite &&!staffId){
-    app.innerHTML = `<div class="worker-box"><h2>Добро пожаловать!</h2><input id="name" placeholder="Ваше имя"><button id="join" class="big-btn">Войти</button></div>`
+    app.innerHTML = `
+      <div class="worker-box">
+        <h2>Добро пожаловать!</h2>
+        <p>Введи имя для регистрации</p>
+        <input id="name" placeholder="Ваше имя" autocomplete="name">
+        <button id="join" class="big-btn in">Войти</button>
+      </div>
+    `
     document.getElementById('join').onclick = async ()=>{
       const name = document.getElementById('name').value.trim()
-      if(!name) return alert('Введите имя')
+      if(!name) return alert('Введи имя')
       try{
         const staff = await api.redeemInvite(invite, name)
         localStorage.setItem('staffId', staff.id)
         staffId = staff.id
         renderWorker()
-      }catch(e){alert(e.message)}
+      }catch(e){
+        alert(e.message)
+      }
     }
     return
   }
-  if(!staffId) return app.innerHTML = '<div class="empty">Отсканируйте QR от шефа</div>'
+
+  if(!staffId){
+    app.innerHTML = `<div class="empty">Отсканируй QR-код от шефа</div>`
+    return
+  }
+
   renderWorker()
 }
 
 async function renderWorker(){
   const staff = await api.getStaffById(staffId)
-  const {data: openShift} = await supabase.from('shifts')
-  .select('id').eq('staff_id',staffId).is('check_out',null).single()
+  if(!staff){
+    localStorage.removeItem('staffId')
+    return init()
+  }
+
+  const {data: openShift} = await supabase
+   .from('shifts')
+   .select('id')
+   .eq('staff_id', staffId)
+   .is('check_out', null)
+   .single()
+
+  // считаем стату
+  const today = new Date().toISOString().split('T')[0]
+  const month = today.slice(0,7)
+  const todayShifts = await api.getShiftsForDay(staffId, today)
+  const monthShifts = await api.getShiftsForMonth(staffId, month)
+
+  const todayHours = todayShifts.reduce((s,sh)=>s+(sh.hours||0),0)
+  const monthHours = monthShifts.reduce((s,sh)=>s+(sh.hours||0),0)
+
+  let todayPay = 0, monthPay = 0
+  if(staff.pay_type === 'hourly'){
+    todayPay = todayHours * (staff.hourly_rate || 0)
+    monthPay = monthHours * (staff.hourly_rate || 0)
+  } else if(staff.pay_type === 'daily'){
+    todayPay = todayShifts.length * (staff.daily_rate || 0)
+    monthPay = monthShifts.length * (staff.daily_rate || 0)
+  } else {
+    monthPay = staff.monthly_rate || 0
+  }
 
   app.innerHTML = `
     <div class="worker-box">
       <h2>${staff.name}</h2>
       <p>${staff.role}</p>
-      <button id="clockBtn" class="big-btn ${openShift?'out':'in'}">
+      <button id="clockBtn" class="big-btn ${openShift? 'out' : 'in'}">
         ${openShift? 'Завершить смену' : 'Начать смену'}
       </button>
+
+      <div class="stats">
+        <div class="stat-row">
+          <span class="stat-label">Сегодня часов:</span>
+          <span class="stat-value">${todayHours.toFixed(2)} ч</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Сегодня ЗП:</span>
+          <span class="stat-value">${Math.round(todayPay).toLocaleString()}₽</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">За месяц часов:</span>
+          <span class="stat-value">${monthHours.toFixed(2)} ч</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">За месяц ЗП:</span>
+          <span class="stat-value">${Math.round(monthPay).toLocaleString()}₽</span>
+        </div>
+      </div>
     </div>
   `
+
   document.getElementById('clockBtn').onclick = async ()=>{
     await api.clockInOut(staffId, openShift? 'out' : 'in')
     renderWorker()
   }
 }
+
 init()
 </script>
 </body>
