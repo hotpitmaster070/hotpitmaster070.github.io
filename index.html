@@ -148,7 +148,7 @@ async function createRestaurant(){
   
   await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}})
   showLaunchScreen(name);
-  location.reload();
+  window.location.href = '/restaurant-setup.html';
 }
 
 async function login(){
