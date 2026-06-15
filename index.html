@@ -80,12 +80,12 @@ function showLaunchScreen(){
 }
 
 async function checkSession(){
-  const { data: { session } = await supabaseClient.auth.getSession(); // <- скобку починил
+  const { data: { session } } = await supabaseClient.auth.getSession(); // <- скобку починил
   session ? await redirectAfterLogin() : showAuthForm();
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } = await supabaseClient.auth.getUser();
+  const { data: { user } }= await supabaseClient.auth.getUser();
   if(!user) return;
   
   const { data: restaurant } = await supabaseClient
