@@ -168,7 +168,7 @@ async function saveSettings(){
     const fileName = `${restaurantId}/logo.${logoFile.name.split('.').pop()}`;
     const { error: uploadError } = await _supabase.storage.from('logos').upload(fileName, logoFile, {upsert: true});
     if(!uploadError){
-      const { data: { publicUrl } = _supabase.storage.from('logos').getPublicUrl(fileName);
+      const { data: { publicUrl } }= _supabase.storage.from('logos').getPublicUrl(fileName);
       updates.logo_url = publicUrl;
     }
   }
