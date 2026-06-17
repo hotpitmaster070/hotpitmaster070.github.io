@@ -4,7 +4,7 @@ import {renderStaffView} from './views/staff.js'
 const app = document.getElementById('app')
 const sidebar = document.getElementById('sidebar')
 const overlay = document.getElementById('overlay')
-const pageTitle = document.getElementById('pageTitle')
+const pageSection = document.getElementById('pageSection') // теперь меняем только подзаголовок
 
 const {data:{user}} = await supabase.auth.getUser()
 if(!user){location.href='/index.html'}
@@ -18,7 +18,11 @@ document.querySelectorAll('.menu-item:not(.disabled)').forEach(btn=>{
   btn.onclick = () => {
     document.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'))
     btn.classList.add('active')
-    pageTitle.textContent = btn.textContent.replace(/👥|📅|🔲|📊 /,'')
+    
+    // Меняем только подзаголовок, "Баку" остается
+    const section = btn.textContent.replace(/👥|📅|🔲|📊 /,'')
+    if(pageSection) pageSection.textContent = section
+    
     renderView(btn.dataset.view)
     if(window.innerWidth<900) closeSidebar()
   }
