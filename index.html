@@ -130,10 +130,11 @@ async function redirectAfterLogin(){
     window.location.href = `/staff.html?staff=${staff.id}`;
     return;
   }
-  
-  showStep(2);
-  showRestaurantForm();
-}
+
+showAuthForm();
+showStep(2);
+return;
+  }
 
 async function createRestaurant(){
   const name = document.getElementById('restName').value.trim();
