@@ -11,6 +11,7 @@
 body { background: linear-gradient(135deg, #09090b 0%, #18181b 100%); }
 .glass { backdrop-filter: blur(12px); background: rgba(39, 39, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); }
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white; transition: all 0.2s; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-primary:active { transform: scale(0.95); }
 .logo { color:#f97316; font-weight:800; font-size:28px; text-align:center; margin-bottom:20px; }
 input, select { background: rgba(63,63,70,0.5); border: 1px solid rgba(255,255,255,0.1); }
@@ -96,7 +97,7 @@ label { font-size: 12px; color: #a1a1aa; margin-bottom: 4px; display: block; }
       </div>
     </div>
 
-    <button onclick="saveSettings()" class="btn-primary w-full rounded-xl py-4 font-bold text-lg">Сохранить настройки</button>
+    <button id="saveBtn" onclick="saveSettings()" class="btn-primary w-full rounded-xl py-4 font-bold text-lg">Сохранить настройки</button>
     <button onclick="window.location.href='/kitchen.html'" class="w-full bg-zinc-700 hover:bg-zinc-600 rounded-xl py-3 mt-3">Перейти в кабинет</button>
   </div>
 </div>
@@ -120,20 +121,34 @@ function showMsg(text, type='success'){
 
 document.getElementById('logoInput').onchange = (e) => {
   logoFile = e.target.files[0];
-  if(logoFile) document.getElementById('logoPreview').src = URL.createObjectURL(logoFile);
+  if(!logoFile) return;
+  if(logoFile.size > 2 * 1024 * 1024){
+    showMsg('Логотип > 2MB. Сожми картинку', 'error');
+    e.target.value = '';
+    logoFile = null;
+    return;
+  }
+  document.getElementById('logoPreview').src = URL.createObjectURL(logoFile);
 }
 
 async function loadSettings(){
-  const { data: { user } = await _supabase.auth.getUser();
-  if(!user) return window.location.href = '/';
+  const { data: { user }, error: authError } = await _supabase.auth.getUser();
+  if(authError || !user) return window.location.href = '/';
   
   restaurantId = user.user_metadata?.restaurant_id;
-  if(!restaurantId) return window.location.href = '/';
+  if(!restaurantId) {
+    showMsg('restaurant_id не найден. Вернись на регистрацию', 'error');
+    setTimeout(() => window.location.href = '/', 2000);
+    return;
+  }
 
-  const { data: rest } = await _supabase.from('restaurants')
+  const { data: rest, error } = await _supabase.from('restaurants')
     .select('*').eq('id', restaurantId).single();
   
-  if(!rest) return;
+  if(error || !rest) {
+    showMsg('Ресторан не найден в БД', 'error');
+    return;
+  }
   
   document.getElementById('restName').innerText = rest.name;
   document.getElementById('name').value = rest.name || '';
@@ -143,40 +158,51 @@ async function loadSettings(){
   document.getElementById('currency').value = rest.currency || 'BYN';
   document.getElementById('open_time').value = rest.open_time || '09:00';
   document.getElementById('close_time').value = rest.close_time || '23:00';
-  document.getElementById('receipt_width').value = rest.receipt_width || '58';
+  document.getElementById('receipt_width').value = rest.receipt_width || 58;
   document.getElementById('brand_color').value = rest.brand_color || '#f97316';
   document.getElementById('receipt_footer').value = rest.receipt_footer || 'Спасибо за заказ!';
   if(rest.logo_url) document.getElementById('logoPreview').src = rest.logo_url;
 }
 
 async function saveSettings(){
-  const updates = {
-    name: document.getElementById('name').value.trim(),
-    phone: document.getElementById('phone').value.trim(),
-    address: document.getElementById('address').value.trim(),
-    tax_id: document.getElementById('tax_id').value.trim(),
-    currency: document.getElementById('currency').value,
-    open_time: document.getElementById('open_time').value,
-    close_time: document.getElementById('close_time').value,
-    receipt_width: parseInt(document.getElementById('receipt_width').value),
-    brand_color: document.getElementById('brand_color').value,
-    receipt_footer: document.getElementById('receipt_footer').value.trim()
-  };
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.innerText = 'Сохраняю...';
 
-  // Загружаем логотип в Supabase Storage
-  if(logoFile){
-    const fileName = `${restaurantId}/logo.${logoFile.name.split('.').pop()}`;
-    const { error: uploadError } = await _supabase.storage.from('logos').upload(fileName, logoFile, {upsert: true});
-    if(!uploadError){
-      const { data: { publicUrl } }= _supabase.storage.from('logos').getPublicUrl(fileName);
-      updates.logo_url = publicUrl;
+  try {
+    const updates = {
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      address: document.getElementById('address').value.trim(),
+      tax_id: document.getElementById('tax_id').value.trim(),
+      currency: document.getElementById('currency').value,
+      open_time: document.getElementById('open_time').value,
+      close_time: document.getElementById('close_time').value,
+      receipt_width: parseInt(document.getElementById('receipt_width').value),
+      brand_color: document.getElementById('brand_color').value,
+      receipt_footer: document.getElementById('receipt_footer').value.trim()
+    };
+
+    if(logoFile){
+      const ext = logoFile.name.split('.').pop().toLowerCase();
+      const fileName = `${restaurantId}/logo.${ext}`;
+      const { error: uploadError } = await _supabase.storage.from('logos').upload(fileName, logoFile, {upsert: true});
+      if(uploadError) throw uploadError;
+      const { data } = _supabase.storage.from('logos').getPublicUrl(fileName);
+      updates.logo_url = data.publicUrl;
     }
-  }
 
-  const { error } = await _supabase.from('restaurants').update(updates).eq('id', restaurantId);
-  if(error) return showMsg('Ошибка: ' + error.message, 'error');
-  
-  showMsg('Настройки сохранены!');
+    const { error } = await _supabase.from('restaurants').update(updates).eq('id', restaurantId);
+    if(error) throw error;
+    
+    showMsg('Настройки сохранены!');
+    document.getElementById('restName').innerText = updates.name;
+  } catch(e){
+    showMsg('Ошибка: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = 'Сохранить настройки';
+  }
 }
 
 loadSettings();
