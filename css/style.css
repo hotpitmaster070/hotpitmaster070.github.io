@@ -2,12 +2,12 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif}
 .app{display:flex;min-height:100vh}
-.sidebar{width:280px;background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);border-right:1px solid #1f1f1f;position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform.3s;z-index:100;padding:20px;display:flex;flex-direction:column}
+.sidebar{width:280px;background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);border-right:1px solid #1f1f1f;position:fixed;inset:0 auto 0 0;transform:translateX(-100%);transition:transform .3s;z-index:100;padding:20px;display:flex;flex-direction:column}
 .sidebar.open{transform:translateX(0)}
 .sidebar-head{display:flex;justify-content:space-between;margin-bottom:32px}
 .sidebar-head h2{font-size:24px;font-weight:800;color:var(--accent)}
 .sidebar-head p{font-size:18px;font-weight:700;margin-top:8px}
-.sidebar-head.sub{font-size:13px;color:var(--muted)}
+.sidebar-head .sub{font-size:13px;color:var(--muted)}
 .close-btn{background:transparent;border:none;color:var(--muted);font-size:28px;cursor:pointer}
 .menu{display:flex;flex-direction:column;gap:6px}
 .menu-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;border:none;background:transparent;color:var(--text);font-size:16px;font-weight:600;cursor:pointer;text-align:left}
@@ -17,15 +17,18 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),t
 .content{flex:1;padding:20px;max-width:900px;margin:0 auto;width:100%}
 .topbar{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .burger{width:44px;height:44px;border-radius:12px;border:none;background:var(--card);color:var(--text);font-size:20px;cursor:pointer}
-#pageTitle{font-size:28px;font-weight:800;flex:1}
+#pageTitle{font-size:28px;font-weight:800;flex:1;color:var(--accent)}
 .logout{background:var(--card-2);border:0;color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity.3s;z-index:90}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90}
 .overlay.show{opacity:1;pointer-events:all}
 
-.add-btn{width:100%;height:56px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--accent),#ea580c);color:#000;font-weight:700;font-size:17px;margin-bottom:20px;cursor:pointer}
+/* Кнопка без градиента - ровный brand_color */
+.add-btn{width:100%;height:56px;border-radius:16px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:17px;margin-bottom:20px;cursor:pointer;transition:opacity .2s}
+.add-btn:active{opacity:0.8}
+
 .staff-card{background:var(--card);border:1px solid #262626;border-radius:var(--radius);padding:16px;margin-bottom:12px}
 .staff-row{display:flex;align-items:center;gap:12px}
-.avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#fb923c);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#000;flex-shrink:0}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#000;flex-shrink:0}
 .staff-info{flex:1}
 .staff-name{font-weight:700;font-size:18px}
 .staff-meta{font-size:14px;color:var(--muted);margin-top:2px}
@@ -41,7 +44,7 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),t
 .modal.show{display:flex}
 .modal-box{background:var(--card);border:1px solid #262626;border-radius:var(--radius);padding:20px;width:100%;max-width:380px}
 .modal-box input{width:100%;padding:12px;margin:8px 0;background:var(--card-2);border:1px solid #333;border-radius:8px;color:var(--text)}
-.modal-box.row{display:flex;gap:8px;margin-top:12px}
+.modal-box .row{display:flex;gap:8px;margin-top:12px}
 .modal-box button{flex:1;padding:12px;border-radius:8px;border:0;background:var(--card-2);color:var(--text);cursor:pointer}
 .modal-box button.primary{background:var(--accent);color:#000;font-weight:700}
 #qrCanvas{display:block;margin:16px auto;border-radius:12px;background:#fff;padding:8px}
