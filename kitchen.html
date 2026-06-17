@@ -14,11 +14,12 @@
 .topbar-logo { height:36px; width:36px; border-radius:8px; object-fit:cover; display:none; border:1px solid rgba(255,255,255,0.1); }
 .topbar h1 { font-size:20px; font-weight:700; }
 
-/* Пример как brand_color применяется к кнопкам. У тебя в css/style.css так же сделай */
+/* Кнопки/акценты через brand_color */
 .btn-primary, .menu-item.active, .primary {
   background: var(--accent);
-  color: white;
+  color: #000;
 }
+#pageTitle { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -76,6 +77,9 @@ const supabaseClient = supabase.createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 );
 
+// Глобально храним название ресторана для app.js
+window.restName = 'Ресторан';
+
 // Подтягиваем бренд ресторана ДО загрузки app.js
 async function loadBrand() {
   const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
@@ -88,7 +92,7 @@ async function loadBrand() {
     .select('name, logo_url, brand_color').eq('id', restaurantId).single();
   
   if (r) {
-    // 1. Красим акценты через CSS переменную, а не всю шапку
+    // 1. Красим акценты через CSS переменную
     if (r.brand_color) {
       document.documentElement.style.setProperty('--accent', r.brand_color);
     }
@@ -98,10 +102,11 @@ async function loadBrand() {
       logo.src = r.logo_url;
       logo.style.display = 'block';
     }
-    // 3. Меняем "Повара" на "Название / Повара"
+    // 3. Ставим "Название / Повара" и сохраняем название глобально
     const title = document.getElementById('pageTitle');
     if (title && r.name) {
-      title.textContent = r.name + ' / Повара';
+      window.restName = r.name;
+      title.innerHTML = `${r.name} / <span id="pageSection">Повара</span>`;
     }
   }
 }
@@ -118,4 +123,4 @@ loadBrand().then(() => {
 });
 </script>
 </body>
-    </html>
+</html>
