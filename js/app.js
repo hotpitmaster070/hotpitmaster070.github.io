@@ -1,10 +1,11 @@
 import {api, supabase} from './api.js'
 import {renderStaffView} from './views/staff.js'
+import {renderPassportView, initPassportActions} from './passport.js' // <- добавили модуль
 
 const app = document.getElementById('app')
 const sidebar = document.getElementById('sidebar')
 const overlay = document.getElementById('overlay')
-const pageSection = document.getElementById('pageSection') // теперь меняем только подзаголовок
+const pageSection = document.getElementById('pageSection')
 
 const {data:{user}} = await supabase.auth.getUser()
 if(!user){location.href='/index.html'}
@@ -18,11 +19,10 @@ document.querySelectorAll('.menu-item:not(.disabled)').forEach(btn=>{
   btn.onclick = () => {
     document.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'))
     btn.classList.add('active')
-    
-    // Меняем только подзаголовок, "Баку" остается
-    const section = btn.textContent.replace(/👥|📅|🔲|📊 /,'')
+
+    const section = btn.textContent.replace(/0\. \[HOT PIT PASSPORT\]|👥|📅|🔲|📊 /,'').trim()
     if(pageSection) pageSection.textContent = section
-    
+
     renderView(btn.dataset.view)
     if(window.innerWidth<900) closeSidebar()
   }
@@ -35,6 +35,9 @@ async function renderView(view){
     const staff = await api.getStaff()
     app.innerHTML = renderStaffView(staff)
     initStaffActions()
+  } else if(view==='passport'){ // <- добавили case
+    app.innerHTML = renderPassportView()
+    initPassportActions() // модуль сам инициализируется
   } else {
     app.innerHTML = `<div style="color:#71717a;text-align:center;padding:60px;">Раздел "${view}" в разработке</div>`
   }
