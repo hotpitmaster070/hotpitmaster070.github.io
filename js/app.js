@@ -20,7 +20,7 @@ document.querySelectorAll('.menu-item:not(.disabled)').forEach(btn=>{
     document.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'))
     btn.classList.add('active')
 
-    const section = btn.textContent.replace(/0\. \[HOT PIT PASSPORT\]|👥|📅|🔲|📊 /,'').trim()
+    const section = btn.textContent.replace(/0\. Prep-лист|👥|📅|🔲|📊 /,'').trim() || 'Prep-лист'
     if(pageSection) pageSection.textContent = section
 
     renderView(btn.dataset.view)
