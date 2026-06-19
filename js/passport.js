@@ -14,11 +14,10 @@ async function getContext(){
 export function renderPassportView(){
   const today = new Date().toLocaleDateString('ru-RU')
   return `
-  <div class="card" style="max-width:900px;margin:20px auto;padding:20px">
-    <h2 style="color:var(--accent);margin-bottom:16px">HotPit Prep-лист - ${today}</h2>
-    ...
+    <div class="card" style="max-width:900px;margin:20px auto;padding:20px">
+      <h2 style="color:var(--accent);margin-bottom:16px">HotPit Prep-лист - ${today}</h2>
       <div id="passportList"><p class="sub">Загрузка...</p></div>
-      <button id="createPassportBtn" class="primary" style="width:100%;margin-top:12px;padding:14px">Создать паспорт на сегодня</button>
+      <button id="createPassportBtn" class="primary" style="width:100%;margin-top:12px;padding:14px">Создать Prep-лист на сегодня</button>
     </div>
   `
 }
@@ -32,10 +31,10 @@ export async function initPassportActions(){
 async function loadPassport(){
   const today = new Date().toISOString().split('T')[0]
   const {data,error} = await supabase.from('tasks')
-.select('*')
-.eq('restaurant_id', restaurantId)
-.eq('shift_date', today)
-.order('deadline', {ascending:true})
+   .select('*')
+   .eq('restaurant_id', restaurantId)
+   .eq('shift_date', today)
+   .order('deadline', {ascending:true})
 
   if(error){
     document.getElementById('passportList').innerHTML = `<p style="color:#fca5a5">Ошибка: ${error.message}</p>`;
@@ -44,7 +43,7 @@ async function loadPassport(){
 
   const list = document.getElementById('passportList')
   if(!data || data.length===0){
-    list.innerHTML = '<p class="sub">Паспорт пуст. Нажми "Создать паспорт" - добавлю шаблон заготовок.</p>'
+    list.innerHTML = '<p class="sub">Prep-лист пуст. Нажми "Создать Prep-лист" - добавлю шаблон заготовок.</p>'
     return
   }
 
@@ -56,7 +55,7 @@ async function loadPassport(){
         ${t.deadline? `<span class="sub" style="margin-left:8px">до ${t.deadline.slice(0,5)}</span>` : ''}
       </div>
       ${t.status==='done'
-    ? `<span style="color:#86efac;font-weight:600">✓ ${t.actual_qty||0}${t.unit||''}</span>`
+       ? `<span style="color:#86efac;font-weight:600">✓ ${t.actual_qty||0}${t.unit||''}</span>`
         : `<button class="primary weigh-btn" data-id="${t.id}" data-unit="${t.unit||''}">Взвесить</button>`
       }
     </div>
@@ -88,4 +87,4 @@ async function createTodayPassport(){
   const {error} = await supabase.from('tasks').insert(template)
   if(error){ alert('Ошибка: '+error.message); return }
   loadPassport()
-}
+                                       }
