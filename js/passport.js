@@ -23,7 +23,6 @@ export function renderPassportView(){
       <div id="prepList"><p class="sub">Загрузка...</p></div>
     </div>
 
-    <!-- Модал шаблонов -->
     <div id="templatesModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:50;align-items:center;justify-content:center">
       <div style="background:#18181b;border:1px solid #2a2a2a;border-radius:20px;padding:24px;width:95%;max-width:640px;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -34,7 +33,6 @@ export function renderPassportView(){
         <div id="templatesList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px"></div>
         
         <h4 style="margin:0 0 12px;color:#d4d4d8;font-size:15px;font-weight:600">Добавить позицию</h4>
-        <!-- Адаптивная форма: на десктопе 4 колонки, на мобиле стопкой -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
           <input id="tplTitle" placeholder="Название заготовки" style="padding:12px;border-radius:10px;border:1px solid #333;background:#0f0f0f;color:#fff;font-size:16px">
           <input id="tplQty" type="number" step="0.1" placeholder="Кол-во" style="padding:12px;border-radius:10px;border:1px solid #333;background:#0f0f0f;color:#fff;font-size:16px">
@@ -51,15 +49,9 @@ export async function initPassportActions(){
   await getContext()
   await loadPrepList()
   
-  document.getElementById('createPrepBtn').onclick = createTodayPrep
-  document.getElementById('editTemplatesBtn').onclick = openTemplatesModal
-  document.getElementById('closeTemplatesBtn').onclick = closeTemplatesModal
-  document.getElementById('addTemplateBtn').onclick = addTemplate
-  
-  // закрытие модала по клику на фон
-  document.getElementById('templatesModal').onclick = (e)=>{
-    if(e.target.id === 'templatesModal') closeTemplatesModal()
-  }
+  // только кнопки которые всегда в DOM
+  document.getElementById('createPrepBtn').addEventListener('click', createTodayPrep)
+  document.getElementById('editTemplatesBtn').addEventListener('click', openTemplatesModal)
 }
 
 async function loadPrepList(){
@@ -77,12 +69,12 @@ async function loadPrepList(){
 
   const list = document.getElementById('prepList')
   if(!data || data.length===0){
-    list.innerHTML = '<p class="sub">Prep-лист пуст. Нажми "Создать Prep-лист" - добавлю позиции из "Моих заготовок".</p>'
+    list.innerHTML = '<p class="sub">Prep-лист пуст. Нажми "Создать Prep-лист".</p>'
     return
   }
 
   list.innerHTML = data.map(t => `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;padding:16px;background:${t.status==='done'?'#14532d':'#27272a'};border-radius:14px;border:1px solid rgba(255,255,255,0.06);transition:.2s">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;padding:16px;background:${t.status==='done'?'#14532d':'#27272a'};border-radius:14px;border:1px solid rgba(255,255,255,0.06)">
       <div>
         <b style="font-size:15px">${t.title}</b>
         ${t.target_qty? `<span class="sub" style="margin-left:8px">${t.target_qty}${t.unit||''}</span>` : ''}
@@ -95,25 +87,22 @@ async function loadPrepList(){
     </div>
   `).join('')
 
-  document.querySelectorAll('.weigh-btn').forEach(btn=>{
-    btn.onclick = async (e)=>{
-      const id = e.target.dataset.id
-      const unit = e.target.dataset.unit
-      const qty = prompt(`Введи фактический вес в ${unit}:`)
-      if(!qty || isNaN(qty)) return
-      await supabase.from('tasks').update({
-        status: 'done',
-        actual_qty: parseFloat(qty),
-        staff_id: userId
-      }).eq('id', id)
-      loadPrepList()
-    }
+  list.querySelectorAll('.weigh-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>weighTask(btn.dataset.id, btn.dataset.unit))
   })
+}
+
+async function weighTask(id, unit){
+  const qty = prompt(`Введи фактический вес в ${unit}:`)
+  if(!qty || isNaN(qty)) return
+  await supabase.from('tasks').update({
+    status: 'done', actual_qty: parseFloat(qty), staff_id: userId
+  }).eq('id', id)
+  loadPrepList()
 }
 
 async function createTodayPrep(){
   const today = new Date().toISOString().split('T')[0]
-
   const {data:templates, error:tplErr} = await supabase
     .from('prep_templates')
     .select('*')
@@ -121,7 +110,6 @@ async function createTodayPrep(){
     .order('created_at', {ascending:true})
 
   if(tplErr){ alert('Ошибка шаблонов: '+tplErr.message); return }
-
   if(!templates || templates.length===0){
     alert('Мои заготовки пусты. Сначала добавь позиции через "Мои заготовки"')
     return
@@ -144,12 +132,23 @@ async function createTodayPrep(){
 
 // ===== CRUD для шаблонов =====
 async function openTemplatesModal(){
-  document.getElementById('templatesModal').style.display = 'flex'
+  const modal = document.getElementById('templatesModal')
+  modal.style.display = 'flex'
+  
+  // ВЕШАЕМ СЛУШАТЕЛИ ТОЛЬКО ПОСЛЕ ОТРИСОВКИ МОДАЛА
+  document.getElementById('closeTemplatesBtn').addEventListener('click', closeTemplatesModal)
+  document.getElementById('addTemplateBtn').addEventListener('click', addTemplate)
+  modal.addEventListener('click', (e)=>{ if(e.target.id === 'templatesModal') closeTemplatesModal() })
+  
   await loadTemplatesList()
 }
 
 function closeTemplatesModal(){
-  document.getElementById('templatesModal').style.display = 'none'
+  const modal = document.getElementById('templatesModal')
+  modal.style.display = 'none'
+  // чистим старые слушатели чтобы не дублировались
+  document.getElementById('closeTemplatesBtn').replaceWith(document.getElementById('closeTemplatesBtn').cloneNode(true))
+  document.getElementById('addTemplateBtn').replaceWith(document.getElementById('addTemplateBtn').cloneNode(true))
 }
 
 async function loadTemplatesList(){
@@ -167,25 +166,25 @@ async function loadTemplatesList(){
     return
   }
 
-  // Карточки вместо строки
+  // УБРАЛИ onclick="", добавили data-id
   list.innerHTML = data.map(t => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#27272a;border-radius:14px;border:1px solid #3f3f46;transition:.15s;cursor:default" 
-         onmouseover="this.style.background='#3f3f46'" 
-         onmouseout="this.style.background='#27272a'">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#27272a;border-radius:14px;border:1px solid #3f3f46">
       <div style="flex:1">
         <div style="font-weight:600;font-size:15px;margin-bottom:4px">${t.title}</div>
         <div style="font-size:13px;color:#a1a1aa">${t.target_qty}${t.unit||''} • дедлайн ${t.deadline||'--:--'}</div>
       </div>
-      <button onclick="deleteTemplate('${t.id}')" 
-              title="Удалить"
-              style="background:transparent;border:0;padding:8px;border-radius:8px;color:#f87171;cursor:pointer;font-size:18px;transition:.2s"
-              onmouseover="this.style.background='#7f1d1d'" 
-              onmouseout="this.style.background='transparent'">🗑️</button>
+      <button class="del-btn" data-id="${t.id}" 
+              style="background:transparent;border:0;padding:8px;border-radius:8px;color:#f87171;cursor:pointer;font-size:18px">🗑️</button>
     </div>
   `).join('')
+  
+  // вешаем удаление после рендера
+  list.querySelectorAll('.del-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>deleteTemplate(btn.dataset.id))
+  })
 }
 
-window.deleteTemplate = async function(id){
+async function deleteTemplate(id){
   if(!confirm('Удалить заготовку?')) return
   await supabase.from('prep_templates').delete().eq('id', id)
   loadTemplatesList()
@@ -210,4 +209,4 @@ async function addTemplate(){
   document.getElementById('tplDeadline').value = ''
 
   loadTemplatesList()
-                                      }
+}
