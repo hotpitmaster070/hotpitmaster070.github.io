@@ -14,8 +14,9 @@ async function getContext(){
 export function renderPassportView(){
   const today = new Date().toLocaleDateString('ru-RU')
   return `
-    <div class="card" style="max-width:900px;margin:20px auto;padding:20px">
-      <h2 style="color:var(--accent);margin-bottom:16px">HotPit Паспорт - ${today}</h2>
+  <div class="card" style="max-width:900px;margin:20px auto;padding:20px">
+    <h2 style="color:var(--accent);margin-bottom:16px">HotPit Prep-лист - ${today}</h2>
+    ...
       <div id="passportList"><p class="sub">Загрузка...</p></div>
       <button id="createPassportBtn" class="primary" style="width:100%;margin-top:12px;padding:14px">Создать паспорт на сегодня</button>
     </div>
