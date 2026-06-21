@@ -1,41 +1,46 @@
 import {supabase} from '../api.js'
+import {MENU} from '../config/menu.js'
+
+let CURRENT_RESTAURANT_ID = null
+
+export async function getActiveRestaurantId() {
+  if(CURRENT_RESTAURANT_ID) return CURRENT_RESTAURANT_ID
+  const {data:{user}} = await supabase.auth.getUser()
+  if(!user) return null
+
+  const {data:memberships} = await supabase
+  .from('user_restaurants')
+  .select('restaurant_id')
+  .eq('user_id', user.id)
+  .limit(1)
+
+  if(memberships?.[0]) {
+    CURRENT_RESTAURANT_ID = memberships[0].restaurant_id
+    return CURRENT_RESTAURANT_ID
+  }
+  CURRENT_RESTAURANT_ID = user.user_metadata?.restaurant_id
+  return CURRENT_RESTAURANT_ID
+}
 
 export async function renderSidebar() {
+  const restaurantId = await getActiveRestaurantId()
   const {data:{user}} = await supabase.auth.getUser()
-  if(!user) return ''
-  
-  const {data: rest} = await supabase.from('restaurants').select('owner_id,name').eq('id', user.user_metadata?.restaurant_id).single()
-  const role = rest?.owner_id === user.id ? 'owner' : 'chef'
-  
-  // Общие для всех: шеф работает, хозяин видит
-  const common = [
-    {view:'incoming', label:'📦 Приход товара'},
-    {view:'warehouse', label:'🏪 Склад'},
-    {view:'writeoff', label:'6. [СПИСАНИЕ]'},
-    {view:'inventory', label:'9. [ИНВЕНТАРИЗАЦИЯ]'},
-    {view:'reports', label:'📊 Отчёты'},
-    {sep:true}
-  ]
-  
-  // Только хозяин
-  const ownerOnly = [
-    {view:'staff', label:'👥 Повара'},
-    {view:'schedule', label:'📅 График'},
-    {view:'settings', label:'⚙️ Настройки'},
-    {view:'add-chef', label:'➕ Добавить шефа', accent:true}
-  ]
-  
-  // Только шеф
-  const chefOnly = [
-    {view:'passport', label:'0. Prep-лист', active:true},
-    {view:'create-task', label:'2. [СОЗДАТЬ ЗАДАНИЕ]', accent:true}
-  ]
-  
-  const menu = role==='owner' ? [...common, ...ownerOnly] : [...chefOnly, ...common]
-  
+  if(!user ||!restaurantId) return ''
+
+  const {data: membership} = await supabase
+ .from('user_restaurants')
+ .select('role,restaurants(name)')
+ .eq('user_id', user.id)
+ .eq('restaurant_id', restaurantId)
+ .single()
+
+  const role = membership?.role || 'chef'
+  const restName = membership?.restaurants?.name || 'Кухня'
+  const menu = MENU[role] || MENU.chef
+
   return `
     <div class="sidebar-head">
-      <div><h2>HotPit</h2><p>${role==='owner'?'Владелец':'Экран Шефа'}</p><span class="sub">${rest?.name||'Кухня'}</span></div>
+      <div><h2>HotPit</h2><p>${role}</p><span class="sub">${restName}</span></div>
       <button class="close-btn" id="closeSidebar">×</button>
     </div>
     <nav class="menu">
@@ -47,15 +52,15 @@ export async function renderSidebar() {
 }
 
 export function initSidebar(onSelect) {
-  document.querySelectorAll('.menu-item:not(.disabled)').forEach(btn=>{
+  document.querySelectorAll('.menu-item').forEach(btn=>{
     btn.onclick = () => {
       document.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'))
       btn.classList.add('active')
-      const section = btn.textContent.replace(/0\. Prep-лист|👥|📅|🔲|📊 |📦 |🏪 |6\. \[СПИСАНИЕ\]|9\. \[ИНВЕНТАРИЗАЦИЯ\]|2\. \[СОЗДАТЬ ЗАДАНИЕ\]|➕ /,'').trim() || 'Раздел'
+      const section = btn.textContent.replace(/[0-9\. \[\]📊👥0📦🏪✂️📋📈⚙️➕]/g,'').trim() || 'Раздел'
       const pageSection = document.getElementById('pageSection')
       if(pageSection) pageSection.textContent = section
       onSelect(btn.dataset.view)
       if(window.innerWidth<900) document.getElementById('sidebar').classList.remove('open')
     }
   })
-                                                                                     }
+   }
