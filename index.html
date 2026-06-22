@@ -37,7 +37,6 @@ button{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:none;font-
   </div>
   <div id="msg" class="msg"></div>
   
-  <!-- ШАГ 1: Регистрация/Логин -->
   <div id="step1">
     <input id="email" type="email" placeholder="Email">
     <input id="password" type="password" placeholder="Пароль">
@@ -45,7 +44,6 @@ button{width:100%;padding:14px;margin:8px 0;border-radius:10px;border:none;font-
     <button type="button" class="btn-secondary" id="loginBtn">Уже есть аккаунт? Войти</button>
   </div>
 
-  <!-- ШАГ 2: Название ресторана -->
   <div id="step2" class="hidden">
     <div class="step-subtitle">ШАГ 2 ИЗ 2</div>
     <h2 style="margin-bottom:8px;text-align:center">Как назовём ресторан?</h2>
@@ -108,10 +106,9 @@ async function checkSession(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user }= await supabaseClient.auth.getUser();
+  const { data: { user }} = await supabaseClient.auth.getUser(); // <- починил скобку
   if(!user) return;
   
-  // 1. Ищем ресторан через user_restaurants - это источник правды
   const { data: membership } = await supabaseClient
     .from('user_restaurants')
     .select('restaurant_id,restaurants(id,name)')
@@ -120,7 +117,6 @@ async function redirectAfterLogin(){
     .maybeSingle();
   
   if(membership?.restaurants){
-    // кешируем restaurant_id в metadata для скорости
     if(!user.user_metadata?.restaurant_id){
       await supabaseClient.auth.updateUser({data: {restaurant_id: membership.restaurant_id}})
     }
@@ -129,7 +125,6 @@ async function redirectAfterLogin(){
     return;
   }
   
-  // 2. fallback для старых аккаунтов - вдруг ресторан есть, а записи в user_restaurants нет
   const { data: restaurant } = await supabaseClient
     .from('restaurants').select('id,name').eq('owner_id', user.id).limit(1).maybeSingle();
   
@@ -153,15 +148,13 @@ async function createRestaurant(){
   const name = document.getElementById('restName').value.trim();
   if(!name){ showMsg('Введи название ресторана', 'error'); return; }
   
-  const { data: { user }= await supabaseClient.auth.getUser();
+  const { data: { user }} = await supabaseClient.auth.getUser(); // <- починил скобку
   
-  // 1. создаём ресторан
   const { data: restaurant, error } = await supabaseClient.from('restaurants')
     .insert({ name, owner_id: user.id }).select().single();
   
   if(error){ showMsg('Ошибка: ' + error.message, 'error'); return; }
   
-  // 2. сразу добавляем owner в user_restaurants - это критично для сайдбара
   const {error: err2} = await supabaseClient.from('user_restaurants').insert({
     user_id: user.id,
     restaurant_id: restaurant.id,
@@ -169,10 +162,7 @@ async function createRestaurant(){
   })
   if(err2){ showMsg('Ошибка связи: ' + err2.message, 'error'); return; }
   
-  // 3. кеш в metadata
   await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
-  
-  // 4. идём в kitchen
   window.location.href = '/kitchen.html';
 }
 
