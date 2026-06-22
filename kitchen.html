@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit Кухня</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div><h2>HotPit</h2><p id="restName">...</p><span class="sub" id="userRole">...</span></div>
+      <button class="close-btn" id="closeSidebar">×</button>
+    </div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <main class="content">
+    <header class="topbar">
+      <button class="burger" id="openSidebar">☰</button>
+      <h1 id="pageTitle">Загрузка</h1>
+      <button id="logoutBtn" class="logout">Выйти</button>
+    </header>
+    <div id="app"></div>
+  </main>
+</div>
+<div class="overlay" id="overlay"></div>
+<div id="inviteModal" class="modal-overlay">
+  <div class="modal">
+    <h3>Пригласить</h3>
+    <p id="inviteRole" style="color:#a1a1aa;margin-bottom:8px"></p>
+    <input id="inviteLink" readonly>
+    <canvas id="qrCanvas"></canvas>
+    <div class="row"><button id="copyLink" class="primary">Копировать</button><button id="closeModal">Закрыть</button></div>
+  </div>
+</div>
+<script type="module" src="js/kitchen.js"></script>
+</body>
+</html>
