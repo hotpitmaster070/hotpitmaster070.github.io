@@ -42,7 +42,8 @@ async function init(){
 
 function inviteButton(label, role){
   return `<button class="add-btn" onclick="window.invite('${role}')">${label}</button>`
-}
+  }
+
 window.invite = async (role)=>{
   const inv = await createInvite(restaurantId, role)
   const link = `${location.origin}/join.html?t=${inv.token}`
@@ -50,7 +51,7 @@ window.invite = async (role)=>{
   document.getElementById('inviteRole').textContent = role==='chef'?'Роль: Шеф':'Роль: Повар'
   QRCode.toCanvas(document.getElementById('qrCanvas'), link, {width:220})
   document.getElementById('inviteModal').classList.add('show')
-}
+  }
 
 async function renderView(view, role, restaurantId){
   if(view==='chefs' && role==='owner'){
