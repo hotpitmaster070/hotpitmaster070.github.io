@@ -19,41 +19,52 @@ let currentView = 'orders'
 let currentRestaurantId = null
 
 async function init(){
-  const { data: { user } = await supabase.auth.getUser()
-  if(!user){
-    location.href = '/index.html'
-    return
-  }
-
-  // Ищем ресторан юзера
-  let { data: rest, error } = await supabase
-   .from('restaurants')
-   .select('id,name')
-   .eq('owner_id', user.id)
-   .limit(1)
-   .single()
-
-  // Если нет - создаём автоматом
-  if(!rest){
-    const defaultName = user.email.split('@')[0] + ' Kitchen'
-    const { data: newRest, error: createErr } = await supabase
-     .from('restaurants')
-     .insert({ owner_id: user.id, name: defaultName })
-     .select('id,name')
-     .single()
-
-    if(createErr){
-      content.innerHTML = `<p style="color:#ef4444">Не могу создать ресторан: ${createErr.message}<br>Проверь RLS в Supabase</p>`
+  try{
+    // ВОТ ТУТ БЫЛА ОШИБКА - добавил вторую }
+    const { data: { user }, error: authErr } = await supabase.auth.getUser()
+    if(authErr) throw authErr
+    if(!user){
+      location.href = '/index.html'
       return
     }
-    rest = newRest
+
+    // Ищем ресторан юзера
+    let { data: rest, error } = await supabase
+     .from('restaurants')
+     .select('id,name')
+     .eq('owner_id', user.id)
+     .limit(1)
+     .single()
+
+    // PGRST116 = "0 rows" - это нормально, значит надо создать
+    if(error && error.code!== 'PGRST116'){
+      throw error
+    }
+
+    // Если нет - создаём автоматом
+    if(!rest){
+      const defaultName = user.email.split('@')[0] + ' Kitchen'
+      const { data: newRest, error: createErr } = await supabase
+       .from('restaurants')
+       .insert({ owner_id: user.id, name: defaultName })
+       .select('id,name')
+       .single()
+
+      if(createErr){
+        content.innerHTML = `<p style="color:#ef4444">Не могу создать ресторан: ${createErr.message}<br>1. Включи RLS<br>2. Добавь policy: auth.uid() = owner_id для select+insert</p>`
+        return
+      }
+      rest = newRest
+    }
+
+    currentRestaurantId = rest.id
+    title.textContent = rest.name || 'Заказы'
+
+    bindEvents()
+    render()
+  }catch(e){
+    content.innerHTML = `<pre style="color:#ef4444;white-space:pre-wrap">JS УПАЛ:\n${e.message}\n\n${e.stack}</pre>`
   }
-
-  currentRestaurantId = rest.id
-  title.textContent = rest.name || 'Заказы'
-
-  bindEvents()
-  render()
 }
 
 function bindEvents(){
@@ -66,7 +77,7 @@ function bindEvents(){
       menuBtns.forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       currentView = btn.dataset.view
-      title.textContent = btn.textContent === 'Заказы'? 'Заказы' : btn.textContent === 'Меню'? 'Меню' : 'QR'
+      title.textContent = btn.textContent
       sidebar.classList.remove('open')
       overlay.classList.remove('show')
       render()
@@ -81,7 +92,7 @@ function bindEvents(){
   closeQr.onclick = () => qrModal.style.display = 'none'
   qrModal.onclick = e => { if(e.target === qrModal) qrModal.style.display = 'none' }
   copyLink.onclick = () => {
-    navigator.clipboard.writeText(qrText.textContent)
+    navigator.clipboard.writeText(qrText.value)
     copyLink.textContent = 'Скопировано!'
     setTimeout(() => copyLink.textContent = 'Копировать ссылку', 1500)
   }
@@ -103,7 +114,7 @@ async function renderOrders(){
    .limit(50)
 
   if(error){
-    content.innerHTML = `<p style="color:#ef4444">Ошибка: ${error.message}</p>`
+    content.innerHTML = `<p style="color:#ef4444">Ошибка заказов: ${error.message}</p>`
     return
   }
   if(!orders ||!orders.length){
