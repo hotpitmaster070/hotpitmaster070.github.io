@@ -32,13 +32,14 @@
 import { createRestaurant } from './js/api.js'
 import { supabase } from './js/supabase.js'
 
-function showMsg(msg,type){
+function showMsg(msg,type='ok'){
   const el=document.getElementById('msg');
   el.innerText=msg;
   el.className='msg '+type;
   el.style.display='block';
   setTimeout(()=>el.style.display='none',4000)
 }
+
 function showStep(n){
   document.getElementById('step1').classList.toggle('hidden',n!==1);
   document.getElementById('step2').classList.toggle('hidden',n!==2)
@@ -53,14 +54,19 @@ async function redirect(){
   const {data:{user}} = await supabase.auth.getUser();
   if(!user) return showStep(1);
   
-  const {data:m} = await supabase.from('user_restaurants')
+  const {data:m, error} = await supabase.from('user_restaurants')
     .select('restaurant_id')
     .eq('user_id',user.id)
     .limit(1)
     .single();
     
-  if(m && m.restaurant_id){
-    location = `kitchen.html?id=${m.restaurant_id}` // сразу в кабинет, без кнопки
+  if(error && error.code !== 'PGRST116'){ // PGRST116 = просто нет строк, это ок
+    showMsg('Ошибка БД: '+error.message,'error')
+    return
+  }
+  
+  if(m?.restaurant_id){
+    location = `kitchen.html?id=${m.restaurant_id}` // сразу в кабинет
   } else {
     showStep(2) // нет ресторана - создаём
   }
@@ -89,12 +95,14 @@ document.getElementById('createRestBtn').onclick=async()=>{
     const rest=await createRestaurant(name,user.id);
     location=`kitchen.html?id=${rest.id}`;
   }catch(err){
-    showMsg('Ошибка: '+err.message,'error'); // вот это главное
+    showMsg('Ошибка: '+err.message,'error');
     console.error(err)
   }
+} // <- вот тут закрываем функцию createRestBtn
 
 document.getElementById('backBtn').onclick=()=>showStep(1);
+
 check();
-</script>
+  </script>
 </body>
   </html>
