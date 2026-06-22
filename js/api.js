@@ -1,66 +1,61 @@
 import { supabase } from './supabase.js'
 
-function assertAuth(){
+async function getUser(){
   const { data: { user } = await supabase.auth.getUser()
   if(!user) throw new Error('Нет сессии')
   return user
 }
 
 export async function createRestaurant(name){
-  const user = await assertAuth()
-  
-  // 1. Создаём ресторан. owner_id берём из auth, не из аргумента
+  const user = await getUser()
   const { data: rest, error: e1 } = await supabase
-    .from('restaurants')
-    .insert({ name, owner_id: user.id })
-    .select('id')
-    .single()
+   .from('restaurants')
+   .insert({ name, owner_id: user.id })
+   .select('id').single()
   if(e1) throw e1
 
-  // 2. Сразу записываем тебя как owner
   const { error: e2 } = await supabase
-    .from('user_restaurants')
-    .insert({ user_id: user.id, restaurant_id: rest.id, role: 'owner' })
+   .from('user_restaurants')
+   .insert({ user_id: user.id, restaurant_id: rest.id, role: 'owner' })
   if(e2) throw e2
-
   return rest
 }
 
 export async function getMyRestaurants(){
-  const user = await assertAuth()
+  const user = await getUser()
   const { data, error } = await supabase
-    .from('user_restaurants')
-    .select('role,restaurants(id,name,brand_color)')
-    .eq('user_id', user.id)
+   .from('user_restaurants')
+   .select('role,restaurants(id,name,brand_color)')
+   .eq('user_id', user.id)
   if(error) throw error
-  return data?.map(r=>r.restaurants) || []
+  return data?.map(r=>({...r.restaurants, role:r.role})) || []
 }
 
 export async function createInvite(restaurantId, role){
-  await assertAuth()
+  await getUser()
+  const token = crypto.randomUUID()
   const { data, error } = await supabase
-    .from('invitations')
-    .insert({ restaurant_id: restaurantId, role })
-    .select('token,role')
-    .single()
+   .from('invitations')
+   .insert({ restaurant_id: restaurantId, role, token })
+   .select('token,role').single()
   if(error) throw error
   return data
 }
 
-export async function acceptInvite(token, userId){
-  const user = await assertAuth()
+export async function acceptInvite(token){
+  const user = await getUser()
   const { data: inv, error: e1 } = await supabase
-    .from('invitations')
-    .select('*')
-    .eq('token',token)
-    .single()
-  if(e1 || !inv) throw new Error('Инвайт не найден')
+   .from('invitations')
+   .select('*').eq('token',token).single()
+  if(e1 ||!inv) throw new Error('Инвайт не найден')
 
-  await supabase.from('user_restaurants').insert({ 
-    user_id: user.id, 
-    restaurant_id: inv.restaurant_id, 
-    role: inv.role 
+  const { error: e2 } = await supabase.from('user_restaurants').insert({
+    user_id: user.id,
+    restaurant_id: inv.restaurant_id,
+    role: inv.role
   })
+  if(e2 && e2.code!== '23505') throw e2 // 23505 = уже есть, норм
+
   await supabase.from('invitations').delete().eq('id', inv.id)
   return inv.restaurant_id
-}
+    }
