@@ -108,46 +108,72 @@ async function checkSession(){
 }
 
 async function redirectAfterLogin(){
-  const { data: { user } }= await supabaseClient.auth.getUser();
+  const { data: { user }= await supabaseClient.auth.getUser();
   if(!user) return;
   
-  const { data: restaurant } = await supabaseClient
-    .from('restaurants').select('id,name').eq('owner_id', user.id).limit(1).maybeSingle();
+  // 1. Ищем ресторан через user_restaurants - это источник правды
+  const { data: membership } = await supabaseClient
+    .from('user_restaurants')
+    .select('restaurant_id,restaurants(id,name)')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle();
   
-  if(restaurant){
+  if(membership?.restaurants){
+    // кешируем restaurant_id в metadata для скорости
     if(!user.user_metadata?.restaurant_id){
-      await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
+      await supabaseClient.auth.updateUser({data: {restaurant_id: membership.restaurant_id}})
     }
-    showLaunchScreen(restaurant.name);
+    showLaunchScreen(membership.restaurants.name);
     showRestaurantForm();
     return;
   }
   
-  const { data: staff } = await supabaseClient
-    .from('staff').select('id').eq('user_id', user.id).limit(1).maybeSingle();
+  // 2. fallback для старых аккаунтов - вдруг ресторан есть, а записи в user_restaurants нет
+  const { data: restaurant } = await supabaseClient
+    .from('restaurants').select('id,name').eq('owner_id', user.id).limit(1).maybeSingle();
   
-  if(staff){
-    window.location.href = `/staff.html?staff=${staff.id}`;
+  if(restaurant){
+    await supabaseClient.from('user_restaurants').insert({
+      user_id: user.id,
+      restaurant_id: restaurant.id,
+      role: 'owner'
+    })
+    await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
+    showLaunchScreen(restaurant.name);
+    showRestaurantForm();
     return;
   }
 
-showAuthForm();
-showStep(2);
-return;
-  }
+  showAuthForm();
+  showStep(2);
+}
 
 async function createRestaurant(){
   const name = document.getElementById('restName').value.trim();
   if(!name){ showMsg('Введи название ресторана', 'error'); return; }
   
-  const { data: { user } }= await supabaseClient.auth.getUser();
-  const { data, error } = await supabaseClient.from('restaurants')
+  const { data: { user }= await supabaseClient.auth.getUser();
+  
+  // 1. создаём ресторан
+  const { data: restaurant, error } = await supabaseClient.from('restaurants')
     .insert({ name, owner_id: user.id }).select().single();
   
   if(error){ showMsg('Ошибка: ' + error.message, 'error'); return; }
   
-  await supabaseClient.auth.updateUser({data: {restaurant_id: data.id}})
-  window.location.href = '/restaurant-setup.html';
+  // 2. сразу добавляем owner в user_restaurants - это критично для сайдбара
+  const {error: err2} = await supabaseClient.from('user_restaurants').insert({
+    user_id: user.id,
+    restaurant_id: restaurant.id,
+    role: 'owner'
+  })
+  if(err2){ showMsg('Ошибка связи: ' + err2.message, 'error'); return; }
+  
+  // 3. кеш в metadata
+  await supabaseClient.auth.updateUser({data: {restaurant_id: restaurant.id}})
+  
+  // 4. идём в kitchen
+  window.location.href = '/kitchen.html';
 }
 
 async function login(){
@@ -163,7 +189,7 @@ async function login(){
 
 async function signup(){
   hideMsg();
-  const email = document.getElementById('email').value.trim(); // <- починил кавычки
+  const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   if(!email || !password){ showMsg('Заполни email и пароль', 'error'); return; }
   if(password.length < 6){ showMsg('Пароль минимум 6 символов', 'error'); return; }
