@@ -1,70 +1,51 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit - Приглашение</title>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0a;color:#fff}
-.box{background:#171717;padding:40px;border-radius:16px;width:100%;max-width:380px;text-align:center;border:1px solid #262626}
-h1{color:#f97316;margin-bottom:8px;font-size:24px}
-p{color:#a1a1aa;font-size:14px;margin-bottom:24px}
-button{width:100%;padding:16px;border-radius:12px;border:none;font-weight:600;font-size:16px;cursor:pointer;background:#f97316;color:#000}
-button:disabled{background:#444;cursor:not-allowed}
-.error{color:#fca5a5;margin-top:12px}
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Приглашение HotPit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="box">
-  <h1>HotPit</h1>
-  <p id="status">Проверка приглашения...</p>
-  <button id="joinBtn" style="display:none">Присоединиться к кухне</button>
-  <p class="error" id="error"></p>
+  <div class="logo"><h1>HotPit</h1><p id="subtitle">Вас пригласили в ресторан</p></div>
+  <div id="msg" class="msg"></div>
+  <div id="formBox">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Придумай пароль 6+">
+    <button class="btn-primary" id="acceptBtn">Принять приглашение</button>
+    <button class="btn-secondary" id="loginBtn">Уже есть аккаунт? Войти</button>
+  </div>
 </div>
-<script>
-const supabase = supabase.createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
+<script type="module">
+import { supabase } from './js/supabase.js'
+import { acceptInvite } from './js/api.js'
+
 const token = new URLSearchParams(location.search).get('t')
+if(!token){document.getElementById('msg').innerText='Неверная ссылка';document.getElementById('msg').className='msg error';document.getElementById('msg').style.display='block'}
 
-async function init(){
-  if(!token){
-    document.getElementById('status').innerText='Ссылка пустая'
-    document.getElementById('error').innerText='Попроси владельца прислать новую ссылку'
-    return
-  }
-
-  const {data:{user}} = await supabase.auth.getUser()
-  if(!user){
-    document.getElementById('status').innerText='Сначала зарегистрируйся'
-    document.getElementById('error').innerText='Перейди на главную и создай аккаунт'
-    setTimeout(()=>location.href='/index.html',2000)
-    return
-  }
-
-  const {data:inv} = await supabase.from('invitations')
-   .select('id,restaurant_id,role,expires_at')
-   .eq('token',token)
-   .is('used_by',null)
-   .gt('expires_at',new Date())
-   .single()
-
-  if(!inv){
-    document.getElementById('status').innerText='Ссылка недействительна'
-    document.getElementById('error').innerText='Она уже использована или истекла'
-    return
-  }
-
-  document.getElementById('status').innerText=`Тебя пригласили как ${inv.role==='chef'?'Шефа':'Сотрудника'}`
-  const btn = document.getElementById('joinBtn')
-  btn.style.display='block'
-  btn.onclick = async ()=>{
-    btn.disabled = true
-    btn.innerText = 'Подключаю...'
-    await supabase.from('user_restaurants').insert({user_id:user.id,restaurant_id:inv.restaurant_id,role:inv.role})
-    await supabase.from('invitations').update({used_by:user.id,used_at:new Date()}).eq('id',inv.id)
-    await supabase.auth.updateUser({data:{restaurant_id:inv.restaurant_id}})
-    location.href='/kitchen.html'
-  }
+document.getElementById('acceptBtn').onclick = async ()=>{
+  const email=document.getElementById('email').value.trim()
+  const password=document.getElementById('password').value
+  if(!email||password.length<6){showMsg('Email + пароль 6+','error');return}
+  const {data,error}=await supabase.auth.signUp({email,password})
+  if(error){showMsg(error.message,'error');return}
+  const user = data.user
+  await acceptInvite(token,user.id)
+  location='index.html' // index сам кинет в kitchen
 }
-init()
-</script></body></html>
+
+document.getElementById('loginBtn').onclick = async ()=>{
+  const email=document.getElementById('email').value.trim()
+  const password=document.getElementById('password').value
+  const {data:{user},error}=await supabase.auth.signInWithPassword({email,password})
+  if(error){showMsg(error.message,'error');return}
+  await acceptInvite(token,user.id)
+  location='index.html'
+}
+
+function showMsg(msg,type){const el=document.getElementById('msg');el.innerText=msg;el.className='msg '+type;el.style.display='block';setTimeout(()=>el.style.display='none',4000)}
+</script>
+</body>
+</html>
