@@ -1,47 +1,25 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>HotPit</title>
 <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
+</head><body>
 <div class="auth-wrap">
   <h1>HotPit</h1>
   <p>Управление кухней</p>
+  <input id="name" placeholder="ФИО хозяина">
+  <input id="rest" placeholder="Название ресторана">
   <input id="email" type="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Пароль">
-  <button id="startBtn">Начать</button>
-  <p id="msg" style="color:#ef4444;min-height:20px;margin-top:8px;text-align:center;"></p>
+  <input id="pass" type="password" placeholder="Пароль">
+  <button class="btn-primary" onclick="reg()">Начать</button>
 </div>
-<script>window.onerror = function(m){document.getElementById('msg').textContent = 'JS: ' + m}</script>
 <script type="module">
-import { supabase } from '/js/supabase.js'
-const btn = document.getElementById('startBtn')
-const msg = document.getElementById('msg')
-btn.onclick = async () => {
-  btn.disabled = true
-  msg.textContent = 'Загрузка...'
-  const email = document.getElementById('email').value.trim()
-  const password = document.getElementById('password').value
-  if(!email || !password){
-    msg.textContent = 'Введи email и пароль'
-    btn.disabled = false
-    return
-  }
-  try{
-    let { error } = await supabase.auth.signUp({ email, password })
-    if(error && error.message.includes('already registered')){
-      const { error: e2 } = await supabase.auth.signInWithPassword({ email, password })
-      if(e2) throw e2
-    }else if(error) throw error
-    location.href = '/kitchen.html'
-  }catch(err){
-    msg.textContent = 'Ошибка: ' + err.message
-    btn.disabled = false
-  }
+import { supabase } from './js/supabase.js'
+window.reg = async ()=>{
+  const {error} = await supabase.auth.signUp({
+    email:email.value,password:pass.value,
+    options:{data:{role:'owner',rest_name:rest.value,full_name:name.value}}
+  })
+  if(error) return alert(error.message)
+  location.href='/owner.html'
 }
-</script>
-</body>
-</html>
+</script></body></html>
