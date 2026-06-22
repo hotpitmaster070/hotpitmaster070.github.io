@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HotPit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="box" id="authBox">
+  <div class="logo"><h1>HotPit</h1><p id="stepSubtitle">Управление кухней</p></div>
+  <div id="msg" class="msg"></div>
+  <div id="step1">
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <button class="btn-primary" id="signupBtn">Начать</button>
+    <button class="btn-secondary" id="loginBtn">Войти</button>
+  </div>
+  <div id="step2" class="hidden">
+    <div class="step-subtitle">ШАГ 2 ИЗ 2</div>
+    <h2>Название ресторана</h2>
+    <input id="restName" type="text" placeholder="Мангал №1">
+    <button class="btn-primary" id="createRestBtn">Запустить кухню</button>
+    <button class="btn-secondary" id="backBtn">Назад</button>
+  </div>
+</div>
+<div class="box hidden" id="restaurantBox">
+  <button id="logoutBtn" class="btn-logout">Выйти</button>
+  <div id="restaurantContent"></div>
+</div>
+<script type="module">
+import { createRestaurant } from './js/api.js'
+import { supabase } from './js/supabase.js'
+
+function showMsg(msg,type){const el=document.getElementById('msg');el.innerText=msg;el.className='msg '+type;el.style.display='block';setTimeout(()=>el.style.display='none',4000)}
+function showStep(n){document.getElementById('step1').classList.toggle('hidden',n!==1);document.getElementById('step2').classList.toggle('hidden',n!==2)}
+
+async function check(){
+  const {data:{session}}=await supabase.auth.getSession();
+  if(session) redirect(); else showStep(1);
+}
+async function redirect(){
+  const {data:{user}}=await supabase.auth.getUser();
+  const {data:m}=await supabase.from('user_restaurants').select('restaurant_id,restaurants(name)').eq('user_id',user.id).limit(1).single();
+  if(m){document.getElementById('authBox').classList.add('hidden');document.getElementById('restaurantBox').classList.remove('hidden');document.getElementById('restaurantContent').innerHTML=`<h3 style="color:#86efac">Готово!</h3><p style="color:#a1a1aa">Ресторан: <b>${m.restaurants.name}</b></p><button class="btn-primary" onclick="location='kitchen.html?id=${m.restaurant_id}'">В кабинет</button>`} else showStep(2);
+}
+document.getElementById('loginBtn').onclick=async()=>{const e=document.getElementById('email').value,p=document.getElementById('password').value;const {error}=await supabase.auth.signInWithPassword({email:e,password:p});if(error)showMsg(error.message,'error');else redirect();}
+document.getElementById('signupBtn').onclick=async()=>{const e=document.getElementById('email').value,p=document.getElementById('password').value;if(p.length<6){showMsg('Пароль 6+ символов','error');return}const {error}=await supabase.auth.signUp({email:e,password:p});if(error)showMsg(error.message,'error');else{showMsg('Аккаунт создан','success');showStep(2)}}
+document.getElementById('createRestBtn').onclick=async()=>{const name=document.getElementById('restName').value.trim();if(!name){showMsg('Введи название','error');return}const {data:{user}}=await supabase.auth.getUser();const rest=await createRestaurant(name,user.id);location=`kitchen.html?id=${rest.id}`;}
+document.getElementById('backBtn').onclick=()=>showStep(1);
+document.getElementById('logoutBtn').onclick=async()=>{await supabase.auth.signOut();location.reload();}
+check();
+</script>
+</body>
+  </html>
