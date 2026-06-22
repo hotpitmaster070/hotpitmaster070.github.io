@@ -7,41 +7,28 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<style>
-:root { --accent: #f97316; } /* дефолт, потом переопределим из БД */
-
-.topbar-brand { display:flex; align-items:center; gap:10px; }
-.topbar-logo { height:36px; width:36px; border-radius:8px; object-fit:cover; display:none; border:1px solid rgba(255,255,255,0.1); }
-.topbar h1 { font-size:20px; font-weight:700; }
-
-/* Кнопки/акценты через brand_color */
-.btn-primary, .menu-item.active, .primary {
-  background: var(--accent);
-  color: #000;
-}
-#pageTitle { color: var(--accent); }
-
-/* Модалка инвайта */
-.modal-overlay.show { display:flex !important; }
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000; }
-.modal { background:#171717; padding:24px; border-radius:16px; width:100%; max-width:420px; border:1px solid #262626; }
-</style>
 </head>
 <body>
 <div class="app">
-  <!-- ТУТ ТОЛЬКО ПУСТОЙ КОНТЕЙНЕР. app.js сам вставит меню -->
-  <aside class="sidebar" id="sidebar"></aside>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div>
+        <h2>HotPit</h2>
+        <p id="restName">Загрузка...</p>
+        <span class="sub" id="userRole">роль...</span>
+      </div>
+      <button class="close-btn" id="closeSidebar">×</button>
+    </div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
   
   <main class="content">
     <header class="topbar">
       <button class="burger" id="openSidebar">☰</button>
-      
-      <!-- БРЕНД РЕСТОРАНА -->
       <div class="topbar-brand">
         <img id="restLogo" class="topbar-logo" alt="logo">
-        <h1 id="pageTitle"><span id="restName">Ресторан</span> / <span id="pageSection">Загрузка</span></h1>
+        <h1 id="pageTitle">Загрузка</h1>
       </div>
-      
       <button id="logoutBtn" class="logout">Выйти</button>
     </header>
     <div id="app"></div>
@@ -49,67 +36,115 @@
 </div>
 <div class="overlay" id="overlay"></div>
 
-<!-- Модалка для инвайта шефа/складчика -->
 <div id="inviteModal" class="modal-overlay">
   <div class="modal">
     <h3 style="color:var(--accent);margin-bottom:12px">QR для сотрудника</h3>
-    <p style="color:#a1a1aa;font-size:14px;margin-bottom:12px">Отправь ссылку шефу</p>
-    <input id="inviteLink" readonly style="width:100%;padding:12px;margin:12px 0;background:#262626;border:1px solid #333;border-radius:8px;color:#fff">
-    <canvas id="qrCanvas" style="margin:0 auto;display:block"></canvas>
-    <div class="row" style="display:flex;gap:8px;margin-top:16px">
-      <button id="copyLink" style="flex:1;padding:12px;background:var(--accent);color:#000;border:none;border-radius:8px;font-weight:600">Копировать</button>
-      <button id="closeModal" style="padding:12px;background:#3f3f46;border:1px solid #52525b;border-radius:8px;color:#fff">Готово</button>
+    <input id="inviteLink" readonly>
+    <canvas id="qrCanvas"></canvas>
+    <div class="row">
+      <button id="copyLink" class="primary">Копировать</button>
+      <button id="closeModal">Готово</button>
     </div>
   </div>
 </div>
 
 <script type="module">
-import {supabase} from './js/api.js'
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0bAe28v6MX-MyVs'
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Глобально храним название ресторана для app.js
-window.restName = 'Ресторан';
+const sidebar = document.getElementById('sidebar')
+const overlay = document.getElementById('overlay')
+const app = document.getElementById('app')
+const restNameEl = document.getElementById('restName')
+const pageTitle = document.getElementById('pageTitle')
+const userRoleEl = document.getElementById('userRole')
+const restLogo = document.getElementById('restLogo')
 
-// Подтягиваем бренд ресторана ДО загрузки app.js
-async function loadBrand() {
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return window.location.href = '/index.html';
-  
-  // главный источник правды = user_restaurants
-  const { data: membership } = await supabase
-    .from('user_restaurants')
-    .select('restaurant_id,restaurants(name,logo_url,brand_color)')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single();
-  
-  if (!membership?.restaurants) return window.location.href = '/index.html';
-  
-  const r = membership.restaurants;
-  
-  // 1. Красим акценты через CSS переменную
-  if (r.brand_color) {
-    document.documentElement.style.setProperty('--accent', r.brand_color);
-  }
-  // 2. Вставляем логотип
-  const logo = document.getElementById('restLogo');
-  if (logo && r.logo_url) {
-    logo.src = r.logo_url;
-    logo.style.display = 'block';
-  }
-  // 3. Ставим название ресторана
-  window.restName = r.name;
-  document.getElementById('restName').innerText = r.name;
+const params = new URLSearchParams(location.search)
+const restaurantId = params.get('id')
+
+if(!restaurantId) {
+  pageTitle.textContent = 'Ошибка'
+  app.innerHTML = '<p style="padding:40px">Нет ID ресторана. Вернись и создай ресторан заново.</p>'
+  throw new Error('No restaurant id')
 }
 
-// Выход
-document.getElementById('logoutBtn').onclick = async () => {
-  await supabase.auth.signOut();
-  window.location.href = '/index.html';
-};
+document.getElementById('openSidebar').onclick = ()=>{sidebar.classList.add('open');overlay.classList.add('show')}
+document.getElementById('closeSidebar').onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
+overlay.onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
+document.getElementById('logoutBtn').onclick = async ()=>{await supabase.auth.signOut();location.href='index.html'}
 
-// Грузим бренд, потом app.js который отрисует сайдбар + контент
-await loadBrand();
-import('./js/app.js');
+async function init(){
+  const {data:{user}} = await supabase.auth.getUser()
+  if(!user) return location.href='index.html'
+  
+  const {data:membership, error} = await supabase
+    .from('user_restaurants')
+    .select('role,restaurants(name,logo_url,brand_color)')
+    .eq('user_id', user.id)
+    .eq('restaurant_id', restaurantId)
+    .single()
+  
+  if(error || !membership){
+    pageTitle.textContent = 'Нет доступа'
+    app.innerHTML = '<p style="padding:40px">Ты не состоишь в этом ресторане</p>'
+    return
+  }
+  
+  const r = membership.restaurants
+  const role = membership.role
+  restNameEl.textContent = r.name
+  userRoleEl.textContent = role==='owner' ? 'Владелец' : 'Сотрудник'
+  pageTitle.textContent = r.name
+  
+  if(r.brand_color) document.documentElement.style.setProperty('--accent', r.brand_color)
+  if(r.logo_url){ restLogo.src = r.logo_url; restLogo.style.display='block' }
+  
+  const menuItems = role==='owner'
+    ? [['Сотрудники','staff'],['Инвайт шефа','invite'],['Склад','warehouse'],['Настройки','settings']]
+    : [['Паспорт','passport']]
+  
+  document.getElementById('menu').innerHTML = menuItems
+    .map(([label,view])=>`<button class="menu-item" data-view="${view}">${label}</button>`)
+    .join('')
+  
+  document.querySelectorAll('.menu-item').forEach(btn=>{
+    btn.onclick = ()=>{ 
+      document.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'))
+      btn.classList.add('active')
+      renderView(btn.dataset.view, role, restaurantId)
+      if(window.innerWidth<900) {sidebar.classList.remove('open');overlay.classList.remove('show')}
+    }
+  })
+  
+  renderView(role==='owner'?'staff':'passport', role, restaurantId)
+  document.querySelector('.menu-item').classList.add('active')
+}
+
+function renderView(view, role, restaurantId){
+  if(view==='staff'){
+    app.innerHTML = `<button class="add-btn" id="addStaffBtn">+ Добавить сотрудника</button><div id="staffList">Загрузка...</div>`
+    document.getElementById('addStaffBtn').onclick = async ()=>{
+      const {data:inv} = await supabase.from('invitations').insert({restaurant_id:restaurantId, role:'stocker'}).select().single()
+      const link = `${location.origin}/join.html?t=${inv.token}`
+      document.getElementById('inviteLink').value = link
+      QRCode.toCanvas(document.getElementById('qrCanvas'), link, {width:220})
+      document.getElementById('inviteModal').classList.add('show')
+    }
+  } else if(view==='passport'){
+    app.innerHTML = `<div style="padding:40px;text-align:center;color:#71717a">Паспорт ресторана</div>`
+  } else if(view==='invite'){
+    app.innerHTML = `<div style="padding:40px;text-align:center;color:#71717a">Инвайт шефа</div>`
+  } else {
+    app.innerHTML = `<div style="padding:40px;text-align:center;color:#71717a">${view} - в разработке</div>`
+  }
+}
+
+document.getElementById('closeModal').onclick = ()=>document.getElementById('inviteModal').classList.remove('show')
+document.getElementById('copyLink').onclick = ()=>navigator.clipboard.writeText(document.getElementById('inviteLink').value)
+
+init()
 </script>
 </body>
 </html>
