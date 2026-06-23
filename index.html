@@ -33,7 +33,7 @@
 </div>
 
 <script type="module">
-import { supabase } from './js/supabase.js' // <-- убрал слэш, теперь ./js/
+import { supabase } from './js/supabase.js'
 
 const regForm = document.getElementById('regForm')
 const loginForm = document.getElementById('loginForm')
@@ -63,18 +63,14 @@ regForm.addEventListener('submit', async e => {
   const fd = new FormData(regForm)
   
   try {
-    const res = await supabase.auth.signUp({
+    const {error} = await supabase.auth.signUp({
       email: fd.get('email'),
       password: fd.get('password'),
       options:{data:{role:'owner', rest_name:fd.get('restName'), full_name:fd.get('fullName')}}
     })
     
-    console.log('FULL SUPABASE RESPONSE:', res)
-    const {error, data} = res
-    
     if(error){
       regError.textContent = `code:${error.code || '-'} | ${error.message}`
-      console.error('Supabase error object:', error)
       return
     }
     regError.textContent = 'OK. Теперь войди'
@@ -83,7 +79,6 @@ regForm.addEventListener('submit', async e => {
     
   } catch(e) {
     regError.textContent = 'NETWORK/JS ERROR: ' + e.message
-    console.error('Catch error:', e)
   }
 })
 
@@ -98,7 +93,14 @@ loginForm.addEventListener('submit', async e => {
     return
   }
   
-  const {data:profile} = await supabase.from('profiles').select('role').eq('id',data.user.id).single()
+  // ИСПРАВЛЕННЫЙ КУСОК - теперь покажет реальную ошибку от Supabase
+  const {data:profile, error:profError} = await supabase.from('profiles').select('role').eq('id',data.user.id).single()
+
+  if(profError){
+    loginError.textContent = 'Ошибка чтения профиля: ' + profError.message
+    return
+  }
+
   if(profile?.role==='owner') location.href = '/owner.html'
   else if(profile?.role==='chef') location.href = '/chef.html'
   else loginError.textContent = 'Роль не назначена'
