@@ -4,11 +4,18 @@ import { addChef, addCook, showCookQR, copyCookLink, deleteCook } from './kitche
 let myRole, myRestaurantId
 
 async function init(){
-  const { data:{user} } = await supabase.auth.getUser()
-  if(!user){ location.href='/index.html'; return }
+  // БЫЛО: const { data:{user} } = await supabase.auth.getUser()
+  // СТАЛО: ждём сессию
+  const { data:{session} } = await supabase.auth.getSession()
+  if(!session){ location.href='/index.html'; return }
+  const user = session.user
 
-  const {data:profile} = await supabase.from('profiles').select('role,restaurant_id').eq('id',user.id).single()
-  if(!profile){ location.href='/index.html'; return }
+  const {data:profile, error} = await supabase.from('profiles').select('role,restaurant_id').eq('id',user.id).single()
+  if(error || !profile){ 
+    console.log('Профиль ошибка:', error)
+    location.href='/index.html'; 
+    return 
+  }
   
   myRole=profile.role
   myRestaurantId=profile.restaurant_id
