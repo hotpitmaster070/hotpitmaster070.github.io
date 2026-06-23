@@ -1,175 +1,95 @@
-import { supabase } from '/js/supabase.js'
+import { supabase } from './supabase.js'
+import { addChef, addCook, showCookQR, copyCookLink, deleteCook } from './kitchen.actions.js'
 
-const $ = s => document.querySelector(s)
-const content = $('#content')
-const title = $('#title')
-const menuBtns = document.querySelectorAll('.menu button')
-const sidebar = $('#sidebar')
-const overlay = $('#overlay')
-const burger = $('#burger')
-const closeBtn = $('#closeBtn')
-const logoutBtn = $('#logoutBtn')
-const qrModal = $('#qrModal')
-const qrCanvas = $('#qrCanvas')
-const qrText = $('#qrText')
-const closeQr = $('#closeQr')
-const copyLink = $('#copyLink')
-
-let currentView = 'orders'
-let currentRestaurantId = null
+let myRole, myRestaurantId
 
 async function init(){
-  try{
-    // ВОТ ТУТ БЫЛА ОШИБКА - добавил вторую }
-    const { data: { user }, error: authErr } = await supabase.auth.getUser()
-    if(authErr) throw authErr
-    if(!user){
-      location.href = '/index.html'
-      return
-    }
+  const { data:{user} } = await supabase.auth.getUser()
+  if(!user){ location.href='/index.html'; return }
 
-    // Ищем ресторан юзера
-    let { data: rest, error } = await supabase
-     .from('restaurants')
-     .select('id,name')
-     .eq('owner_id', user.id)
-     .limit(1)
-     .single()
+  const {data:profile} = await supabase.from('profiles').select('role,restaurant_id').eq('id',user.id).single()
+  if(!profile){ location.href='/index.html'; return }
+  
+  myRole=profile.role
+  myRestaurantId=profile.restaurant_id
 
-    // PGRST116 = "0 rows" - это нормально, значит надо создать
-    if(error && error.code!== 'PGRST116'){
-      throw error
-    }
-
-    // Если нет - создаём автоматом
-    if(!rest){
-      const defaultName = user.email.split('@')[0] + ' Kitchen'
-      const { data: newRest, error: createErr } = await supabase
-       .from('restaurants')
-       .insert({ owner_id: user.id, name: defaultName })
-       .select('id,name')
-       .single()
-
-      if(createErr){
-        content.innerHTML = `<p style="color:#ef4444">Не могу создать ресторан: ${createErr.message}<br>1. Включи RLS<br>2. Добавь policy: auth.uid() = owner_id для select+insert</p>`
-        return
-      }
-      rest = newRest
-    }
-
-    currentRestaurantId = rest.id
-    title.textContent = rest.name || 'Заказы'
-
-    bindEvents()
-    render()
-  }catch(e){
-    content.innerHTML = `<pre style="color:#ef4444;white-space:pre-wrap">JS УПАЛ:\n${e.message}\n\n${e.stack}</pre>`
-  }
+  if(myRole==='owner') renderOwner()
+  else if(myRole==='chef') renderChef()
+  else location.href='/index.html'
 }
-
-function bindEvents(){
-  burger.onclick = () => { sidebar.classList.add('open'); overlay.classList.add('show') }
-  closeBtn.onclick = () => { sidebar.classList.remove('open'); overlay.classList.remove('show') }
-  overlay.onclick = () => { sidebar.classList.remove('open'); overlay.classList.remove('show') }
-
-  menuBtns.forEach(btn => {
-    btn.onclick = () => {
-      menuBtns.forEach(b => b.classList.remove('active'))
-      btn.classList.add('active')
-      currentView = btn.dataset.view
-      title.textContent = btn.textContent
-      sidebar.classList.remove('open')
-      overlay.classList.remove('show')
-      render()
-    }
-  })
-
-  logoutBtn.onclick = async () => {
-    await supabase.auth.signOut()
-    location.href = '/index.html'
-  }
-
-  closeQr.onclick = () => qrModal.style.display = 'none'
-  qrModal.onclick = e => { if(e.target === qrModal) qrModal.style.display = 'none' }
-  copyLink.onclick = () => {
-    navigator.clipboard.writeText(qrText.value)
-    copyLink.textContent = 'Скопировано!'
-    setTimeout(() => copyLink.textContent = 'Копировать ссылку', 1500)
-  }
-}
-
-async function render(){
-  if(currentView === 'orders') return renderOrders()
-  if(currentView === 'menu') return renderMenu()
-  if(currentView === 'qr') return renderQR()
-}
-
-async function renderOrders(){
-  content.innerHTML = '<p style="color:#a3a3a3">Загрузка заказов...</p>'
-  const { data: orders, error } = await supabase
-   .from('orders')
-   .select('*')
-   .eq('restaurant_id', currentRestaurantId)
-   .order('created_at', { ascending: false })
-   .limit(50)
-
-  if(error){
-    content.innerHTML = `<p style="color:#ef4444">Ошибка заказов: ${error.message}</p>`
-    return
-  }
-  if(!orders ||!orders.length){
-    content.innerHTML = '<p style="color:#a3a3a3">Заказов пока нет. Отсканируй QR из вкладки QR</p>'
-    return
-  }
-
-  content.innerHTML = orders.map(o => `
-    <div style="background:var(--card-2);padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid #333">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <b>Заказ #${o.id.slice(0,8)}</b>
-        <span style="color:var(--accent)">${o.status}</span>
-      </div>
-      <div style="color:#a3a3a3;font-size:14px">${new Date(o.created_at).toLocaleString('ru')}</div>
-      <pre style="margin-top:8px;white-space:pre-wrap;font-size:13px">${JSON.stringify(o.items, null, 2)}</pre>
-    </div>
-  `).join('')
-}
-
-async function renderMenu(){
-  content.innerHTML = '<p style="color:#a3a3a3">Загрузка меню...</p>'
-  const { data: items } = await supabase
-   .from('menu_items')
-   .select('*')
-   .eq('restaurant_id', currentRestaurantId)
-   .order('created_at', { ascending: false })
-
-  content.innerHTML = `
-    <button onclick="alert('Добавляй блюда в Supabase → menu_items')" style="margin-bottom:16px;width:auto;padding:10px 16px;background:var(--accent);color:#000;border:0;border-radius:8px">+ Добавить блюдо в Supabase</button>
-    <div>${(items||[]).map(i => `
-      <div style="background:var(--card-2);padding:12px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between">
-        <span>${i.name} - ${i.price}₽</span>
-        <span style="color:#a3a3a3">${i.is_active? 'Активно' : 'Скрыто'}</span>
-      </div>
-    `).join('') || '<p style="color:#a3a3a3">Меню пустое. Добавь блюда в таблице menu_items</p>'}</div>
-  `
-}
-
-async function renderQR(){
-  const url = `https://hotpit-menu.vercel.app/r/${currentRestaurantId}`
-  qrText.value = url
-  qrCanvas.innerHTML = ''
-
-  const img = new Image()
-  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`
-  img.onload = () => qrCanvas.appendChild(img)
-
-  content.innerHTML = `
-    <div style="background:var(--card-2);padding:24px;border-radius:16px;text-align:center">
-      <h3 style="margin-bottom:16px">QR для клиентов</h3>
-      <div id="qrCanvas" style="display:flex;justify-content:center"></div>
-      <p style="color:#a3a3a3;font-size:14px;margin:12px 0">Сканируй с телефона</p>
-      <button onclick="document.getElementById('qrModal').style.display='flex'" style="width:auto;padding:10px 16px;background:var(--accent);color:#000;border:0;border-radius:8px">Показать крупно</button>
-    </div>
-  `
-}
-
 init()
+
+async function renderOwner(){
+  document.getElementById('content').innerHTML = `
+    <button class="btn-primary" onclick="openChefModal()">+ Добавить шефа</button>
+    <div id="chefInfo" style="margin-top:20px;color:var(--muted)"></div>
+    
+    <div class="modal-overlay" id="chefModal">
+      <div class="modal">
+        <h3>Новый шеф</h3>
+        <input id="chefName" placeholder="ФИО шефа">
+        <input id="chefEmail" type="email" placeholder="email">
+        <input id="chefPass" type="password" placeholder="пароль">
+        <div class="row">
+          <button onclick="closeChefModal()">Отмена</button>
+          <button class="btn-primary" onclick="saveChef()">Создать</button>
+        </div>
+      </div>
+    </div>
+  `
+  const {data:chef} = await supabase.from('profiles').select('full_name').eq('restaurant_id',myRestaurantId).eq('role','chef').single()
+  document.getElementById('chefInfo').textContent = chef ? `Текущий шеф: ${chef.full_name}` : 'Шеф не назначен'
+  
+  window.openChefModal=()=>chefModal.style.display='flex'
+  window.closeChefModal=()=>chefModal.style.display='none'
+  window.saveChef=async()=>{
+    await addChef(chefEmail.value,chefPass.value,chefName.value,myRestaurantId)
+    location.reload()
+  }
+}
+
+async function renderChef(){
+  document.getElementById('content').innerHTML = `
+    <input id="cookName" placeholder="Имя повара: Ваня">
+    <button class="btn-primary" onclick="addCook(cookName.value,myRestaurantId).then(loadCooks)">+ Добавить повара</button>
+    <div id="cookList" style="margin-top:20px"></div>
+    
+    <div class="modal-overlay" id="qrModal">
+      <div class="modal">
+        <h3 id="qrName"></h3>
+        <canvas id="qrCanvas"></canvas>
+        <p id="qrLink" style="word-break:break-all;font-size:12px;margin-top:12px"></p>
+        <button onclick="qrModal.style.display='none'">Закрыть</button>
+      </div>
+    </div>
+  `
+  loadCooks()
+  
+  window.showCookQR=(token,name)=>{
+    qrName.textContent=name
+    qrLink.textContent=location.origin+'/r/'+token
+    QRCode.toCanvas(qrCanvas,location.origin+'/r/'+token,{width:240})
+    qrModal.style.display='flex'
+  }
+  window.copyCookLink=async token=>{
+    await navigator.clipboard.writeText(location.origin+'/r/'+token)
+    alert('Скопировано')
+  }
+  window.del=async id=>{
+    if(confirm('Удалить?')){await deleteCook(id);loadCooks()}
+  }
+}
+
+async function loadCooks(){
+  const {data:cooks} = await supabase.from('cooks').select('*').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false})
+  cookList.innerHTML = cooks.map(c=>`
+    <div class="auth-wrap" style="margin:8px 0;padding:16px">
+      <b>${c.full_name}</b>
+      <div class="row">
+        <button onclick="showCookQR('${c.cook_token}','${c.full_name}')">QR</button>
+        <button onclick="copyCookLink('${c.cook_token}')">Копировать</button>
+        <button onclick="del('${c.id}')">Удалить</button>
+      </div>
+    </div>
+  `).join('') || 'Поваров нет'
+}
