@@ -33,7 +33,7 @@
 </div>
 
 <script type="module">
-import { supabase } from '/js/supabase.js'
+import { supabase } from './js/supabase.js' // <-- убрал слэш, теперь ./js/
 
 const regForm = document.getElementById('regForm')
 const loginForm = document.getElementById('loginForm')
@@ -57,7 +57,6 @@ init()
 document.getElementById('toLogin').onclick = e => {e.preventDefault(); regError.textContent=''; show('login')}
 document.getElementById('toReg').onclick = e => {e.preventDefault(); loginError.textContent=''; show('reg')}
 
-// ВОТ ТВОЙ БЛОК С РЕНТГЕНОМ SUPABASE
 regForm.addEventListener('submit', async e => {
   e.preventDefault()
   regError.textContent = 'Отправляю в Supabase...'
