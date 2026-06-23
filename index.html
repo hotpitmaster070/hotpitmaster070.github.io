@@ -28,6 +28,7 @@
     <p>Вы вошли как <b id="who"></b></p>
     <button id="logoutBtn">Выйти</button>
   </div>
+  <pre id="debug" style="color:#ff6b6b;margin-top:12px;white-space:pre-wrap"></pre>
 </div>
 
 <script type="module">
@@ -37,6 +38,7 @@ const regForm = document.getElementById('regForm')
 const loginForm = document.getElementById('loginForm')
 const logoutBox = document.getElementById('logoutBox')
 const who = document.getElementById('who')
+const debug = document.getElementById('debug')
 
 const showReg = () => { regForm.style.display='block'; loginForm.style.display='none'; logoutBox.style.display='none' }
 const showLogin = () => { regForm.style.display='none'; loginForm.style.display='block'; logoutBox.style.display='none' }
@@ -54,12 +56,11 @@ document.getElementById('toReg').onclick = (e)=>{e.preventDefault(); showReg()}
 
 regForm.addEventListener('submit', async (e)=>{
   e.preventDefault()
+  debug.textContent = ''
   const fullName = regForm.name.value.trim()
   const restName = regForm.rest.value.trim()
   const email = regForm.email.value.trim()
   const password = regForm.pass.value
-  
-  if(!fullName||!restName||!email||!password) return alert('Заполни все поля')
   
   const {error} = await supabase.auth.signUp({
     email, password,
@@ -67,29 +68,32 @@ regForm.addEventListener('submit', async (e)=>{
   })
   
   if(error) {
-    console.error('Supabase error:', error) // смотри в консоль
-    return alert('Ошибка: ' + (error.message || JSON.stringify(error)))
+    console.error(error)
+    debug.textContent = 'Ошибка Supabase:\n' + (error.message || JSON.stringify(error))
+    return
   }
   
-  alert('Регистрация успешна. Проверь почту и войди')
+  debug.textContent = 'Регистрация ок. Проверь почту. Теперь войди.'
   regForm.reset()
   showLogin()
 })
 
 loginForm.addEventListener('submit', async (e)=>{
   e.preventDefault()
+  debug.textContent = ''
   const email = loginForm.lemail.value.trim()
   const password = loginForm.lpass.value
   
-  const {error} = await supabase.auth.signInWithPassword({email, password})
-  if(error) return alert(error.message)
+  const {error, data} = await supabase.auth.signInWithPassword({email, password})
+  if(error) {
+    debug.textContent = 'Ошибка входа:\n' + error.message
+    return
+  }
   
-  const {data:{user}} = await supabase.auth.getUser()
-  const {data:profile} = await supabase.from('profiles').select('role').eq('id',user.id).single()
-  
+  const {data:profile} = await supabase.from('profiles').select('role').eq('id',data.user.id).single()
   if(profile?.role==='owner') location.href='/owner.html'
   else if(profile?.role==='chef') location.href='/chef.html'
-  else alert('Роль не назначена. Зайди в Supabase → Table Editor → profiles')
+  else debug.textContent = 'Роль не назначена в таблице profiles'
 })
 
 document.getElementById('logoutBtn').onclick = async ()=>{
