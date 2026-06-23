@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset="utf-8">
+<!doctype html>
+<html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Хозяин</title>
 <link rel="stylesheet" href="/css/style.css">
@@ -27,15 +28,27 @@
     <div id="content">Загрузка...</div>
   </div>
 </div>
-<script type="module" src="/js/kitchen.js"></script>
-<script>
-function toggleMenu(){
+
+<script type="module">
+// 1. СНАЧАЛА ждём сессию, а не грузим kitchen.js
+import { supabase } from './js/supabase.js'
+
+const {data:{session}} = await supabase.auth.getSession()
+if(!session){
+  // если реально не залогинен - назад
+  location.href = '/index.html'
+} else {
+  // если залогинен - только тогда грузим логику кабинета
+  await import('/js/kitchen.js')
+}
+
+window.toggleMenu = function(){
   document.getElementById('sidebar').classList.toggle('open')
   document.getElementById('overlay').classList.toggle('show')
 }
-async function logout(){
-  const {supabase} = await import('./js/supabase.js')
+window.logout = async function(){
   await supabase.auth.signOut()
   location.href='/index.html'
 }
-</script></body></html>
+</script>
+</body></html>
