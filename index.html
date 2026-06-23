@@ -59,13 +59,19 @@ regForm.addEventListener('submit', async (e)=>{
   const email = regForm.email.value.trim()
   const password = regForm.pass.value
   
+  if(!fullName||!restName||!email||!password) return alert('Заполни все поля')
+  
   const {error} = await supabase.auth.signUp({
     email, password,
     options:{data:{role:'owner', rest_name:restName, full_name:fullName}}
   })
-  if(error) return alert(error.message)
   
-  alert('Регистрация успешна. Войдите в аккаунт')
+  if(error) {
+    console.error('Supabase error:', error) // смотри в консоль
+    return alert('Ошибка: ' + (error.message || JSON.stringify(error)))
+  }
+  
+  alert('Регистрация успешна. Проверь почту и войди')
   regForm.reset()
   showLogin()
 })
