@@ -57,33 +57,42 @@ init()
 document.getElementById('toLogin').onclick = e => {e.preventDefault(); regError.textContent=''; show('login')}
 document.getElementById('toReg').onclick = e => {e.preventDefault(); loginError.textContent=''; show('reg')}
 
+// ВОТ ТВОЙ БЛОК С РЕНТГЕНОМ SUPABASE
 regForm.addEventListener('submit', async e => {
   e.preventDefault()
-  regError.textContent = ''
+  regError.textContent = 'Отправляю в Supabase...'
   const fd = new FormData(regForm)
-  const email = fd.get('email')
-  const password = fd.get('password')
-  const fullName = fd.get('fullName')
-  const restName = fd.get('restName')
   
-  const {error} = await supabase.auth.signUp({
-    email, password,
-    options:{data:{role:'owner', rest_name:restName, full_name:fullName}}
-  })
-  
-  console.error('Supabase signUp error:', error) // смотри в консоль что прилетает
-  if(error){
-    regError.textContent = error.message
-    return
+  try {
+    const res = await supabase.auth.signUp({
+      email: fd.get('email'),
+      password: fd.get('password'),
+      options:{data:{role:'owner', rest_name:fd.get('restName'), full_name:fd.get('fullName')}}
+    })
+    
+    console.log('FULL SUPABASE RESPONSE:', res)
+    const {error, data} = res
+    
+    if(error){
+      regError.textContent = `code:${error.code || '-'} | ${error.message}`
+      console.error('Supabase error object:', error)
+      return
+    }
+    regError.textContent = 'OK. Теперь войди'
+    regForm.reset()
+    show('login')
+    
+  } catch(e) {
+    regError.textContent = 'NETWORK/JS ERROR: ' + e.message
+    console.error('Catch error:', e)
   }
-  regForm.reset()
-  show('login')
 })
 
 loginForm.addEventListener('submit', async e => {
   e.preventDefault()
   loginError.textContent = ''
   const fd = new FormData(loginForm)
+  
   const {error, data} = await supabase.auth.signInWithPassword({email:fd.get('email'), password:fd.get('password')})
   if(error){
     loginError.textContent = error.message
