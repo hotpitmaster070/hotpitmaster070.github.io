@@ -1,37 +1,80 @@
 <!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HotPit</title>
 <link rel="stylesheet" href="/css/style.css">
 </head><body>
 <div class="auth-wrap">
   <h1>HotPit</h1>
-  <p>Управление кухней</p>
-  <input id="name" placeholder="ФИО хозяина">
-  <input id="rest" placeholder="Название ресторана">
-  <input id="email" type="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Пароль">
-  <button class="btn-primary" onclick="reg()">Начать</button>
+  <p class="sub">Управление кухней</p>
+  
+  <div id="regBox">
+    <input id="name" placeholder="ФИО">
+    <input id="rest" placeholder="Название ресторана">
+    <input id="email" type="email" placeholder="email">
+    <input id="pass" type="password" placeholder="пароль">
+    <button class="btn-primary" onclick="reg()">Начать</button>
+    <p style="margin-top:12px;font-size:14px;color:var(--muted)">Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+  </div>
+
+  <div id="loginBox" style="display:none">
+    <input id="lemail" type="email" placeholder="email">
+    <input id="lpass" type="password" placeholder="пароль">
+    <button class="btn-primary" onclick="login()">Войти</button>
+    <p style="margin-top:12px;font-size:14px;color:var(--muted)">Нет аккаунта? <a href="#" onclick="showReg()">Регистрация</a></p>
+  </div>
+
+  <div id="logoutBox" style="display:none">
+    <p>Вы вошли как <b id="who"></b></p>
+    <button onclick="logout()">Выйти</button>
+  </div>
 </div>
+
 <script type="module">
-import { supabase } from './js/supabase.js'
-window.reg = async ()=>{
-  const name = document.getElementById('name').value
-  const rest = document.getElementById('rest').value
-  const email = document.getElementById('email').value
-  const pass = document.getElementById('pass').value
-  
-  if(!name || !rest || !email || !pass) {
-    alert('Заполни все поля'); return
+import { supabase } from '/js/supabase.js'
+
+async function checkUser(){
+  const {data:{user}} = await supabase.auth.getUser()
+  if(user){
+    regBox.style.display='none'
+    loginBox.style.display='none'
+    logoutBox.style.display='block'
+    who.textContent=user.email
+  } else {
+    logoutBox.style.display='none'
+    showReg()
   }
-  
-  const {data, error} = await supabase.auth.signUp({
-    email:email,password:pass,
+}
+checkUser()
+
+window.showLogin=()=>{regBox.style.display='none';loginBox.style.display='block'}
+window.showReg=()=>{loginBox.style.display='none';regBox.style.display='block'}
+
+window.reg = async ()=>{
+  const name=name.value, rest=rest.value, email=email.value, pass=pass.value
+  if(!name||!rest||!email||!pass) return alert('Заполни все поля')
+  const {error} = await supabase.auth.signUp({
+    email,password:pass,
     options:{data:{role:'owner',rest_name:rest,full_name:name}}
   })
-  if(error) {
-    console.log(error) // смотри в консоль
-    return alert('Ошибка: ' + error.message) // покажет реальную причину
-  }
-  location.href='/owner.html'
+  if(error) return alert('Ошибка: '+error.message)
+  alert('Регистрация ок. Теперь войди')
+  showLogin()
+}
+
+window.login = async ()=>{
+  const {error} = await supabase.auth.signInWithPassword({
+    email:lemail.value, password:lpass.value
+  })
+  if(error) return alert('Ошибка: '+error.message)
+  const {data:{user}} = await supabase.auth.getUser()
+  const {data:profile} = await supabase.from('profiles').select('role').eq('id',user.id).single()
+  if(profile.role==='owner') location.href='/owner.html'
+  else if(profile.role==='chef') location.href='/chef.html'
+  else alert('Роль не назначена')
+}
+
+window.logout = async ()=>{
+  await supabase.auth.signOut()
+  location.reload()
 }
 </script></body></html>
