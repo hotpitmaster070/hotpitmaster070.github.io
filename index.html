@@ -1,4 +1,5 @@
-<!doctype html><html><head><meta charset="utf-8">
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HotPit</title>
 <link rel="stylesheet" href="/css/style.css">
@@ -7,73 +8,85 @@
   <h1>HotPit</h1>
   <p class="sub">Управление кухней</p>
   
-  <div id="regBox">
-    <input id="name" placeholder="ФИО">
-    <input id="rest" placeholder="Название ресторана">
-    <input id="email" type="email" placeholder="email">
-    <input id="pass" type="password" placeholder="пароль">
-    <button class="btn-primary" onclick="reg()">Начать</button>
-    <p style="margin-top:12px;font-size:14px;color:var(--muted)">Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
-  </div>
+  <form id="regForm">
+    <input id="name" placeholder="ФИО" required>
+    <input id="rest" placeholder="Название ресторана" required>
+    <input id="email" type="email" placeholder="email" required>
+    <input id="pass" type="password" placeholder="пароль" required>
+    <button type="submit" class="btn-primary">Начать</button>
+    <p class="switch">Уже есть аккаунт? <a href="#" id="toLogin">Войти</a></p>
+  </form>
 
-  <div id="loginBox" style="display:none">
-    <input id="lemail" type="email" placeholder="email">
-    <input id="lpass" type="password" placeholder="пароль">
-    <button class="btn-primary" onclick="login()">Войти</button>
-    <p style="margin-top:12px;font-size:14px;color:var(--muted)">Нет аккаунта? <a href="#" onclick="showReg()">Регистрация</a></p>
-  </div>
+  <form id="loginForm" style="display:none">
+    <input id="lemail" type="email" placeholder="email" required>
+    <input id="lpass" type="password" placeholder="пароль" required>
+    <button type="submit" class="btn-primary">Войти</button>
+    <p class="switch">Нет аккаунта? <a href="#" id="toReg">Регистрация</a></p>
+  </form>
 
   <div id="logoutBox" style="display:none">
     <p>Вы вошли как <b id="who"></b></p>
-    <button onclick="logout()">Выйти</button>
+    <button id="logoutBtn">Выйти</button>
   </div>
 </div>
 
 <script type="module">
 import { supabase } from '/js/supabase.js'
 
-async function checkUser(){
+const regForm = document.getElementById('regForm')
+const loginForm = document.getElementById('loginForm')
+const logoutBox = document.getElementById('logoutBox')
+const who = document.getElementById('who')
+
+const showReg = () => { regForm.style.display='block'; loginForm.style.display='none'; logoutBox.style.display='none' }
+const showLogin = () => { regForm.style.display='none'; loginForm.style.display='block'; logoutBox.style.display='none' }
+const showLogout = (email) => { regForm.style.display='none'; loginForm.style.display='none'; logoutBox.style.display='block'; who.textContent=email }
+
+async function init(){
   const {data:{user}} = await supabase.auth.getUser()
-  if(user){
-    regBox.style.display='none'
-    loginBox.style.display='none'
-    logoutBox.style.display='block'
-    who.textContent=user.email
-  } else {
-    logoutBox.style.display='none'
-    showReg()
-  }
+  if(user) showLogout(user.email)
+  else showReg()
 }
-checkUser()
+init()
 
-window.showLogin=()=>{regBox.style.display='none';loginBox.style.display='block'}
-window.showReg=()=>{loginBox.style.display='none';regBox.style.display='block'}
+document.getElementById('toLogin').onclick = (e)=>{e.preventDefault(); showLogin()}
+document.getElementById('toReg').onclick = (e)=>{e.preventDefault(); showReg()}
 
-window.reg = async ()=>{
-  const name=name.value, rest=rest.value, email=email.value, pass=pass.value
-  if(!name||!rest||!email||!pass) return alert('Заполни все поля')
+regForm.addEventListener('submit', async (e)=>{
+  e.preventDefault()
+  const fullName = regForm.name.value.trim()
+  const restName = regForm.rest.value.trim()
+  const email = regForm.email.value.trim()
+  const password = regForm.pass.value
+  
   const {error} = await supabase.auth.signUp({
-    email,password:pass,
-    options:{data:{role:'owner',rest_name:rest,full_name:name}}
+    email, password,
+    options:{data:{role:'owner', rest_name:restName, full_name:fullName}}
   })
-  if(error) return alert('Ошибка: '+error.message)
-  alert('Регистрация ок. Теперь войди')
+  if(error) return alert(error.message)
+  
+  alert('Регистрация успешна. Войдите в аккаунт')
+  regForm.reset()
   showLogin()
-}
+})
 
-window.login = async ()=>{
-  const {error} = await supabase.auth.signInWithPassword({
-    email:lemail.value, password:lpass.value
-  })
-  if(error) return alert('Ошибка: '+error.message)
+loginForm.addEventListener('submit', async (e)=>{
+  e.preventDefault()
+  const email = loginForm.lemail.value.trim()
+  const password = loginForm.lpass.value
+  
+  const {error} = await supabase.auth.signInWithPassword({email, password})
+  if(error) return alert(error.message)
+  
   const {data:{user}} = await supabase.auth.getUser()
   const {data:profile} = await supabase.from('profiles').select('role').eq('id',user.id).single()
-  if(profile.role==='owner') location.href='/owner.html'
-  else if(profile.role==='chef') location.href='/chef.html'
-  else alert('Роль не назначена')
-}
+  
+  if(profile?.role==='owner') location.href='/owner.html'
+  else if(profile?.role==='chef') location.href='/chef.html'
+  else alert('Роль не назначена. Зайди в Supabase → Table Editor → profiles')
+})
 
-window.logout = async ()=>{
+document.getElementById('logoutBtn').onclick = async ()=>{
   await supabase.auth.signOut()
   location.reload()
 }
