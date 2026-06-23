@@ -15,11 +15,23 @@
 <script type="module">
 import { supabase } from './js/supabase.js'
 window.reg = async ()=>{
-  const {error} = await supabase.auth.signUp({
-    email:email.value,password:pass.value,
-    options:{data:{role:'owner',rest_name:rest.value,full_name:name.value}}
+  const name = document.getElementById('name').value
+  const rest = document.getElementById('rest').value
+  const email = document.getElementById('email').value
+  const pass = document.getElementById('pass').value
+  
+  if(!name || !rest || !email || !pass) {
+    alert('Заполни все поля'); return
+  }
+  
+  const {data, error} = await supabase.auth.signUp({
+    email:email,password:pass,
+    options:{data:{role:'owner',rest_name:rest,full_name:name}}
   })
-  if(error) return alert(error.message)
+  if(error) {
+    console.log(error) // смотри в консоль
+    return alert('Ошибка: ' + error.message) // покажет реальную причину
+  }
   location.href='/owner.html'
 }
 </script></body></html>
