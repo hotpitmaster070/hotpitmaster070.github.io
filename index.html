@@ -28,12 +28,12 @@
 
   <div id="logoutBox" style="display:none">
     <p>Вы вошли как <b id="who"></b></p>
-    <button id="logoutBtn">Выйти</button>
+    <button id="logoutBtn" class="btn-primary">Выйти</button>
   </div>
 </div>
 
 <script type="module">
-import { supabase } from './js/supabase.js'
+import { supabase } from './js/api.js'
 
 const regForm = document.getElementById('regForm')
 const loginForm = document.getElementById('loginForm')
@@ -59,26 +59,38 @@ document.getElementById('toReg').onclick = e => {e.preventDefault(); loginError.
 
 regForm.addEventListener('submit', async e => {
   e.preventDefault()
-  regError.textContent = 'Отправляю в Supabase...'
+  regError.textContent = 'Создаю ресторан...'
   const fd = new FormData(regForm)
+  const email = fd.get('email')
+  const password = fd.get('password')
+  const fullName = fd.get('fullName')
+  const restName = fd.get('restName')
   
   try {
-    const {error} = await supabase.auth.signUp({
-      email: fd.get('email'),
-      password: fd.get('password'),
-      options:{data:{role:'owner', rest_name:fd.get('restName'), full_name:fd.get('fullName')}}
+    // 1. Создаём owner
+    const {data:authData, error:signUpError} = await supabase.auth.signUp({
+      email, password,
+      options:{data:{role:'owner', full_name:fullName}}
     })
+    if(signUpError) throw signUpError
     
-    if(error){
-      regError.textContent = `code:${error.code || '-'} | ${error.message}`
-      return
-    }
-    regError.textContent = 'OK. Теперь войди'
+    // 2. Создаём ресторан + дефолтного шефа через Edge Function
+    const {data, error:fnError} = await supabase.functions.invoke('create-restaurant',{
+      body:{
+        restaurant_name: restName,
+        chef_name: fullName + ' Шеф',
+        chef_email: 'chef-' + email,
+        chef_password: password + 'Chef'
+      }
+    })
+    if(fnError) throw fnError
+    
+    regError.textContent = 'Готово! Логин шефа: ' + data.chef_email
     regForm.reset()
     show('login')
     
   } catch(e) {
-    regError.textContent = 'NETWORK/JS ERROR: ' + e.message
+    regError.textContent = 'Ошибка: ' + e.message
   }
 })
 
@@ -93,16 +105,15 @@ loginForm.addEventListener('submit', async e => {
     return
   }
   
-  // ИСПРАВЛЕННЫЙ КУСОК - теперь покажет реальную ошибку от Supabase
   const {data:profile, error:profError} = await supabase.from('profiles').select('role').eq('id',data.user.id).single()
 
   if(profError){
-    loginError.textContent = 'Ошибка чтения профиля: ' + profError.message
+    loginError.textContent = 'Ошибка профиля: ' + profError.message
     return
   }
 
   if(profile?.role==='owner') location.href = '/owner.html'
-  else if(profile?.role==='chef') location.href = '/chef.html'
+  else if(profile?.role==='chef') location.href = '/kitchen.html'
   else loginError.textContent = 'Роль не назначена'
 })
 
