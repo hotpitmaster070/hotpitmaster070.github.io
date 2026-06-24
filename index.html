@@ -67,25 +67,18 @@ regForm.addEventListener('submit', async e => {
   const restName = fd.get('restName')
   
   try {
-    // 1. Создаём owner
-    const {data:authData, error:signUpError} = await supabase.auth.signUp({
-      email, password,
-      options:{data:{role:'owner', full_name:fullName}}
-    })
-    if(signUpError) throw signUpError
-    
-    // 2. Создаём ресторан + дефолтного шефа через Edge Function
+    // Всё делаем через Edge Function одним запросом
     const {data, error:fnError} = await supabase.functions.invoke('create-restaurant',{
       body:{
         restaurant_name: restName,
-        chef_name: fullName + ' Шеф',
-        chef_email: 'chef-' + email,
-        chef_password: password + 'Chef'
+        owner_name: fullName,
+        owner_email: email,
+        owner_password: password
       }
     })
     if(fnError) throw fnError
     
-    regError.textContent = 'Готово! Логин шефа: ' + data.chef_email
+    regError.textContent = 'Готово! Owner создан. Логин шефа: ' + data.chef_email + ' Пароль: ' + data.chef_password
     regForm.reset()
     show('login')
     
