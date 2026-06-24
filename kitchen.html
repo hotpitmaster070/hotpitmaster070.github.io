@@ -1,112 +1,55 @@
 <!doctype html><html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit | Шеф</title><link rel="stylesheet" href="css/style.css"></head><body>
-
-<div id="loginWrap" class="auth-wrap">
-  <h1>HotPit</h1><p>Кабинет шефа</p>
-  <input id="email" type="email" placeholder="Email от хозяина" autocomplete="email">
-  <input id="pass" type="password" placeholder="Пароль" autocomplete="current-password">
-  <button class="btn-primary" onclick="onLogin()">Войти</button>
-  <p id="err" class="error"></p>
-</div>
-
-<div id="app" class="app" style="display:none">
-  <div id="overlay" class="overlay" onclick="closeSidebar()"></div>
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-head">
-      <div>
-        <h2>HotPit</h2>
-        <div class="sub" id="restName">Кухня</div>
-      </div>
-      <button class="close-btn" onclick="closeSidebar()">×</button>
-    </div>
+<title>Кухня</title>
+<link rel="stylesheet" href="/css/style.css">
+</head><body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head"><h2>Кухня</h2></div>
     <nav class="menu">
-      <button class="active" onclick="showTab('shift',this)">Смены</button>
-      <button onclick="showTab('cooks',this)">Повара</button>
-      <button class="logout" onclick="onLogout()">Выйти</button>
+      <button class="active">Лента</button>
+      <button onclick="logout()">Выйти</button>
     </nav>
   </aside>
-
+  <div class="overlay" id="overlay" onclick="sidebar.classList.remove('open');overlay.classList.remove('show')"></div>
+  
   <main class="content">
     <div class="topbar">
-      <button class="burger" onclick="openSidebar()">☰</button>
-      <h1 id="title">Кто на смене</h1>
+      <button class="burger" onclick="sidebar.classList.add('open');overlay.classList.add('show')">☰</button>
+      <h1>Движения склада</h1>
     </div>
     
-    <div id="shiftTab">
-      <div id="onShift">Загрузка...</div>
-      <button class="btn-primary" onclick="refreshShifts()">Обновить</button>
+    <div class="row">
+      <button onclick="addMove('in')">+ Приход</button>
+      <button onclick="addMove('out')">- Расход</button>
+      <button onclick="addMove('inventory')">Инвентаризация</button>
     </div>
     
-    <div id="cooksTab" style="display:none">
-      <div class="card">
-        <input id="cookName" placeholder="Имя нового повара">
-        <button class="btn-primary" onclick="onAddCook()">+ Создать QR</button>
-        <p style="font-size:12px;color:var(--muted);margin-top:8px">QR распечатай и выдай повару. Он сканирует и заходит без пароля.</p>
-      </div>
-      <div id="qrList" style="margin-top:20px"></div>
+    <div class="modal" style="max-width:100%;margin-top:24px">
+      <div id="feed">Загрузка...</div>
     </div>
   </main>
 </div>
-
 <script type="module">
-import { supabase } from './js/api.js'
-let restaurantId = null
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase=createClient('ТВОЙ_URL','ТВОЙ_ANON_KEY');
+const {data:{user}}=await supabase.auth.getUser();
+const {data:prof}=await supabase.from('profiles').select('restaurant_id').eq('id',user.id).single();
 
-window.openSidebar=()=>{sidebar.classList.add('open');overlay.classList.add('show')}
-window.closeSidebar=()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
-window.showTab=(t,el)=>{
-  shiftTab.style.display=t=='shift'?'block':'none'
-  cooksTab.style.display=t=='cooks'?'block':'none'
-  title.textContent=t=='shift'?'Кто на смене':'Повара & QR'
-  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'))
-  el.classList.add('active')
-  closeSidebar()
+async function loadFeed(){
+  const {data}=await supabase.from('stock_moves').select('*,items(name,unit)').eq('restaurant_id',prof.restaurant_id).order('created_at',{ascending:false}).limit(50);
+  feed.innerHTML=data.map(m=>`<div style="padding:12px;border-bottom:1px solid #262626">${m.items.name} ${m.qty}${m.items.unit} • ${m.type} ${m.note||''}</div>`).join('');
 }
+loadFeed();
 
-window.onLogin=async()=>{
-  err.textContent='Вход...'
-  const {data,error}=await supabase.auth.signInWithPassword({email:email.value,password:pass.value})
-  if(error){err.textContent=error.message;return}
-  
-  const {data:profile,error:pErr}=await supabase.from('profiles')
-    .select('id,role,restaurant_id,restaurants(name)')
-    .eq('id',data.user.id).single()
-  
-  if(pErr||!profile){err.textContent='Профиль не найден';await supabase.auth.signOut();return}
-  if(profile.role!=='chef'){err.textContent='Это не аккаунт шефа';await supabase.auth.signOut();return}
-  
-  restaurantId=profile.restaurant_id
-  restName.textContent=profile.restaurants?.name||'Кухня'
-  loginWrap.style.display='none';app.style.display='flex'
-  refreshShifts()
+window.addMove=async(type)=>{
+  const name=prompt('Товар:'); if(!name)return;
+  const qty=prompt('Кол-во:'); if(!qty)return;
+  const unit=prompt('Ед.изм: кг/шт/л')||'шт';
+  let {data:item}=await supabase.from('items').select('id').eq('name',name).eq('restaurant_id',prof.restaurant_id).single();
+  if(!item){const {data:newItem}=await supabase.from('items').insert({name,unit,restaurant_id:prof.restaurant_id}).select().single(); item=newItem;}
+  await supabase.from('stock_moves').insert({restaurant_id:prof.restaurant_id,item_id:item.id,type,qty,created_by:user.id});
+  loadFeed();
 }
-
-window.refreshShifts=async()=>{
-  if(!restaurantId)return
-  const {data}=await supabase.from('shifts')
-    .select('clock_in,cooks(full_name)')
-    .eq('restaurant_id',restaurantId)
-    .is('clock_out',null)
-    .order('clock_in',{ascending:false})
-  onShift.innerHTML=data.length
-    ?data.map(s=>`<div class="card"><b>${s.cooks.full_name}</b><br>с ${new Date(s.clock_in).toLocaleTimeString()}</div>`).join('')
-    :'Никого нет'
-}
-
-window.onAddCook=async()=>{
-  if(!cookName.value.trim())return
-  const {data:cook,error}=await supabase.from('cooks')
-    .insert({full_name:cookName.value.trim(),restaurant_id:restaurantId})
-    .select().single()
-  if(error){alert('Ошибка: '+error.message);return}
-  const link=`https://hotpitmaster070.github.io/cook.html?qr=${cook.qr_token}`
-  qrList.innerHTML+=`<div class="card"><b>${cookName.value}</b><br><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}"><small style="word-break:break-all">${link}</small></div>`
-  cookName.value=''
-}
-
-window.onLogout=async()=>{await supabase.auth.signOut();location.reload()}
-
-// автологин если сессия есть
-supabase.auth.getSession().then(({data:{session}})=>{if(session)onLogin()})
+window.logout=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
 </script></body></html>
