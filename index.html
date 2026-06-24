@@ -2,62 +2,69 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit - Создать ресторан</title>
 <link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body>
 <div class="auth-wrap">
   <h1>HotPit</h1>
   <p>Создайте ресторан и добавьте шефа по QR</p>
   <form id="reg">
-    <input name="fullName" placeholder="Ваше ФИО" required>
-    <input name="restName" placeholder="Название ресторана" required>
-    <input name="email" type="email" placeholder="Email" required>
-    <input name="password" type="password" placeholder="Пароль 6+ символов" required minlength="6">
-    <button type="submit">Начать</button>
+    <input id="full_name" placeholder="Ваше ФИО" required>
+    <input id="rest_name" placeholder="Название ресторана" required>
+    <input id="email" type="email" placeholder="Email" required>
+    <input id="password" type="password" placeholder="Пароль 6+ символов" minlength="6" required>
+    <button id="btn" type="submit">Начать</button>
   </form>
-  <div id="err" style="color:#f87171;font-size:14px;margin-top:12px;white-space:pre-wrap"></div>
+  <div id="msg" style="margin-top:12px;color:#f87171;white-space:pre-wrap"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ВСТАВЬ СВОИ КЛЮЧИ ЗДЕСЬ 1 РАЗ:
-const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+const SUPABASE_URL = 'https://твой-проект.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6...твой-anon-key'
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-const err = document.getElementById('err')
-const reg = document.getElementById('reg')
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) // <- не supabase, а sb
 
-reg.addEventListener('submit', async e=>{
-  e.preventDefault(); 
-  err.textContent='Создаю...';
-  const fd=new FormData(reg);
-  
+const form = document.getElementById('reg')
+const msg = document.getElementById('msg')
+const btn = document.getElementById('btn')
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault()
+  msg.textContent = 'Создаю...'
+  btn.disabled = true
+
+  const full_name = document.getElementById('full_name').value.trim()
+  const rest_name = document.getElementById('rest_name').value.trim()
+  const email = document.getElementById('email').value.trim()
+  const password = document.getElementById('password').value
+
   try{
-    const {data:auth,error:ae}=await supabase.auth.signUp({
-      email:fd.get('email'),
-      password:fd.get('password')
-    });
-    if(ae){
-      // выводим всю ошибку целиком, не только message
-      err.textContent='Auth ошибка: ' + JSON.stringify(ae, null, 2); 
-      return
-    }
-    if(!auth.user){
-      err.textContent='Проверь почту. Supabase требует подтверждение email.\nВыключи его в Supabase → Auth → Settings';
-      return
-    }
-    
-    const {data:rest,error:re}=await supabase.from('restaurants')
-      .insert({name:fd.get('restName'),owner_id:auth.user.id})
-      .select().single();
-    if(re){err.textContent='Ошибка ресторана: ' + JSON.stringify(re); return}
-    
-    const {error:pe}=await supabase.from('profiles')
-      .insert({id:auth.user.id,role:'owner',full_name:fd.get('fullName')});
-    if(pe){err.textContent='Ошибка профиля: ' + JSON.stringify(pe); return}
-    
-    location.href='/owner.html'
-  }catch(e2){
-    err.textContent='Критическая ошибка: ' + e2.message
+    // 1. Регистрация
+    const {data:authData, error:authErr} = await sb.auth.signUp({email, password})
+    if(authErr) throw authErr
+    const user = authData.user
+    if(!user) throw new Error('Supabase не вернул user. Проверь "Enable email confirmations" в Auth->Settings')
+
+    // 2. Создаём ресторан
+    const {data:rest, error:restErr} = await sb.from('restaurants')
+      .insert({owner_id:user.id, name:rest_name})
+      .select().single()
+    if(restErr) throw restErr
+
+    // 3. Профиль owner
+    const {error:profErr} = await sb.from('profiles').insert({
+      id:user.id, full_name, restaurant_id:rest.id, role:'owner'
+    })
+    if(profErr) throw profErr
+
+    msg.style.color = '#4ade80'
+    msg.textContent = 'Готово! Перехожу в кабинет...'
+    setTimeout(()=>location.href='/dashboard.html', 800)
+
+  }catch(err){
+    msg.style.color = '#f87171'
+    msg.textContent = 'Ошибка: ' + (err.message || JSON.stringify(err))
+    btn.disabled = false
   }
 })
-</script></body></html>
+</script>
+</body></html>
