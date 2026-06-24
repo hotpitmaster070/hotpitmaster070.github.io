@@ -1,92 +1,71 @@
-<!doctype html>
-<html lang="ru"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Хозяин | HotPit</title>
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit Owner</title>
 <link rel="stylesheet" href="/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head><body>
 <div class="app">
-  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-  <div class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
-      <div>
-        <h2>HotPit</h2>
-        <div class="sub" id="restName">Загрузка...</div>
-      </div>
-      <button class="close-btn" onclick="toggleMenu()">✕</button>
+      <div><h2>HotPit</h2><div class="sub" id="restName">Загрузка...</div></div>
+      <button class="close-btn" onclick="sidebar.classList.remove('open');overlay.classList.remove('show')">×</button>
     </div>
-    <div class="menu">
-      <button class="active" onclick="showTab('cooks',this)">Повара</button>
-      <button onclick="showTab('shift',this)">Смены</button>
-      <button class="logout" onclick="logout()">Выйти</button>
-    </div>
-  </div>
+    <nav class="menu">
+      <button class="active">Дашборд</button>
+      <button onclick="showInvite()">+ Добавить шефа</button>
+      <button onclick="logout()">Выйти</button>
+    </nav>
+  </aside>
+  <div class="overlay" id="overlay" onclick="sidebar.classList.remove('open');overlay.classList.remove('show')"></div>
   
-  <div class="content">
+  <main class="content">
     <div class="topbar">
-      <button class="burger" onclick="toggleMenu()">☰</button>
-      <h1 id="title">Повара & QR</h1>
+      <button class="burger" onclick="sidebar.classList.add('open');overlay.classList.add('show')">☰</button>
+      <h1>Дашборд</h1>
+      <button class="logout" onclick="logout()">Выход</button>
     </div>
     
-    <div id="cooksTab">
-      <div class="auth-wrap" style="margin:0;max-width:100%">
-        <input id="cookName" placeholder="Имя повара">
-        <button class="btn-primary" onclick="addCook()">+ Создать QR</button>
-        <div id="qrList" style="margin-top:20px"></div>
-      </div>
+    <div class="row">
+      <div class="modal" style="flex:1;max-width:none">Поваров: <b id="chefs">0</b></div>
+      <div class="modal" style="flex:1;max-width:none">Персонала: <b id="staff">0</b></div>
     </div>
     
-    <div id="shiftTab" style="display:none">
-      <div id="onShift">Загрузка...</div>
-      <button class="btn-primary" onclick="refreshShifts()">Обновить</button>
+    <div class="modal" style="max-width:100%;margin-top:24px">
+      <h3>Остатки склада</h3>
+      <div id="stockList">Загрузка...</div>
+    </div>
+  </main>
+</div>
+
+<!-- Модалка инвайта -->
+<div class="modal-overlay" id="inviteModal">
+  <div class="modal">
+    <h3>Пригласить шефа</h3>
+    <p style="color:var(--muted);font-size:14px">Покажи QR шефу или скопируй ссылку</p>
+    <canvas id="qrCanvas"></canvas>
+    <input id="link" readonly>
+    <div class="row">
+      <button onclick="navigator.clipboard.writeText(link.value)">Копировать</button>
+      <button onclick="inviteModal.style.display='none'">Закрыть</button>
     </div>
   </div>
 </div>
 
 <script type="module">
-import { supabase } from './js/api.js'
-let restaurantId = null
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase=createClient('ТВОЙ_URL','ТВОЙ_ANON_KEY');
+const {data:{user}}=await supabase.auth.getUser(); if(!user) location.href='/index.html';
+const {data:rest}=await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).single();
+restName.textContent=rest.name;
+const {count:chefs}=await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).eq('role','chef');
+const {count:staff}=await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id);
+chefs.textContent=chefs; staff.textContent=staff;
 
-const {data:{session}} = await supabase.auth.getSession()
-if(!session){ location.href = '/index.html' }
-
-async function init(){
-  const {data:profile} = await supabase.from('profiles').select('restaurant_id,restaurants(name)').eq('id',session.user.id).single()
-  restaurantId = profile.restaurant_id
-  restName.textContent = profile.restaurants?.name || 'Ресторан'
-  refreshShifts()
+window.showInvite=async()=>{
+  const {data:inv}=await supabase.from('invites').insert({restaurant_id:rest.id,created_by:user.id}).select('token').single();
+  const url=location.origin+'/join.html?token='+inv.token;
+  link.value=url; QRCode.toCanvas(qrCanvas,url);
+  inviteModal.style.display='flex';
 }
-init()
-
-window.toggleMenu = function(){
-  document.getElementById('sidebar').classList.toggle('open')
-  document.getElementById('overlay').classList.toggle('show')
-}
-
-window.showTab = (t,el)=>{
-  cooksTab.style.display=t=='cooks'?'block':'none'
-  shiftTab.style.display=t=='shift'?'block':'none'
-  title.textContent=t=='cooks'?'Повара & QR':'Кто на смене'
-  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'))
-  el.classList.add('active')
-  toggleMenu()
-}
-
-window.addCook = async ()=>{
-  if(!cookName.value)return
-  const {data:cook} = await supabase.from('cooks').insert({full_name:cookName.value,restaurant_id:restaurantId}).select().single()
-  const link = `https://hotpitmaster070.github.io/cook.html?qr=${cook.qr_token}`
-  qrList.innerHTML += `<div class="card"><b>${cookName.value}</b><br><img id="qrCanvas" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}"><small style="word-break:break-all">${link}</small></div>`
-  cookName.value=''
-}
-
-window.refreshShifts = async ()=>{
-  const {data} = await supabase.from('shifts').select('clock_in,cooks(full_name)').eq('restaurant_id',restaurantId).is('clock_out',null).order('clock_in',{ascending:false})
-  onShift.innerHTML = data.length ? data.map(s=>`<div class="card">${s.cooks.full_name} с ${new Date(s.clock_in).toLocaleTimeString()}</div>`).join('') : 'Никого нет'
-}
-
-window.logout = async function(){
-  await supabase.auth.signOut()
-  location.href='/index.html'
-}
-</script>
-</body></html>
+window.logout=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
+</script></body></html>
