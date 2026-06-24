@@ -1,0 +1,40 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit | Повар</title><link rel="stylesheet" href="css/style.css"></head><body>
+<div class="auth-wrap">
+  <h1 id="name">Загрузка...</h1>
+  <p id="status">Проверка QR...</p>
+  <button id="btn" class="btn-primary" style="display:none" onclick="toggleShift()">...</button>
+</div>
+<script type="module">
+import { supabase } from './js/api.js'
+const qr=new URLSearchParams(location.search).get('qr');
+let cookId=null,restaurantId=null,onShift=false
+
+async function init(){
+  if(!qr){name.textContent='Ошибка: QR не найден';return}
+  const {data:cook}=await supabase.from('cooks').select('id,full_name,restaurant_id').eq('qr_token',qr).single()
+  if(!cook){name.textContent='QR недействителен';return}
+  cookId=cook.id;restaurantId=cook.restaurant_id;name.textContent=cook.full_name
+  const {data:shift}=await supabase.from('shifts').select('id').eq('user_id',cookId).is('clock_out',null).single()
+  onShift=!!shift;updateBtn()
+}
+function updateBtn(){
+  btn.style.display='block';
+  btn.textContent=onShift?'Уйти со смены':'Прийти на смену';
+  status.textContent=onShift?'На смене':'Не на смене';
+  btn.className=onShift?'btn-danger':'btn-primary'
+}
+window.toggleShift=async()=>{
+  btn.disabled=true;
+  if(!onShift){
+    await supabase.from('shifts').insert({user_id:cookId,restaurant_id:restaurantId})
+    onShift=true
+  }else{
+    await supabase.from('shifts').update({clock_out:new Date()}).eq('user_id',cookId).is('clock_out',null)
+    onShift=false
+  }
+  updateBtn();btn.disabled=false
+}
+init()
+</script></body></html>
