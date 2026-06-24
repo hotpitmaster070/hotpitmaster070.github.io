@@ -17,7 +17,9 @@
 </div>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-const supabase = createClient('ТВОЙ_URL','ТВОЙ_ANON_KEY')
+import {SUPABASE_URL, SUPABASE_ANON_KEY} from '/js/config.js'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
 reg.addEventListener('submit', async e=>{
   e.preventDefault(); err.textContent='Создаю...';
   const fd=new FormData(reg);
