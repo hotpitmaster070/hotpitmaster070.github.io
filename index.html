@@ -68,7 +68,7 @@ regForm.addEventListener('submit', async e => {
   
   try {
     // Всё делаем через Edge Function одним запросом
-    const {data, error:fnError} = await supabase.functions.invoke('create-restaurant',{
+    const {data, error:fnError} = await supabase.functions.invoke('hyper-task',{
       body:{
         restaurant_name: restName,
         owner_name: fullName,
