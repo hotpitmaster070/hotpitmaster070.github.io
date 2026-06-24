@@ -10,24 +10,51 @@
     <input name="fullName" placeholder="Ваше ФИО" required>
     <input name="restName" placeholder="Название ресторана" required>
     <input name="email" type="email" placeholder="Email" required>
-    <input name="password" type="password" placeholder="Пароль" required>
+    <input name="password" type="password" placeholder="Пароль 6+ символов" required minlength="6">
     <button type="submit">Начать</button>
   </form>
-  <div id="err" style="color:#f87171;font-size:14px;margin-top:12px"></div>
+  <div id="err" style="color:#f87171;font-size:14px;margin-top:12px;white-space:pre-wrap"></div>
 </div>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 import {SUPABASE_URL, SUPABASE_ANON_KEY} from '/js/config.js'
+
+const err = document.getElementById('err')
+const reg = document.getElementById('reg')
+
+// проверка что config подгрузился
+if(!SUPABASE_URL.includes('supabase.co')){
+  err.textContent = 'Ошибка: в config.js не вставлен SUPABASE_URL'
+}
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 reg.addEventListener('submit', async e=>{
-  e.preventDefault(); err.textContent='Создаю...';
+  e.preventDefault(); 
+  err.textContent='Создаю...';
   const fd=new FormData(reg);
-  const {data:auth,error:ae}=await supabase.auth.signUp({email:fd.get('email'),password:fd.get('password')});
-  if(ae){err.textContent=ae.message;return}
-  const {data:rest,error:re}=await supabase.from('restaurants').insert({name:fd.get('restName'),owner_id:auth.user.id}).select().single();
-  if(re){err.textContent=re.message;return}
-  await supabase.from('profiles').insert({id:auth.user.id,role:'owner',full_name:fd.get('fullName')});
-  location.href='/owner.html'
+  
+  try{
+    const {data:auth,error:ae}=await supabase.auth.signUp({
+      email:fd.get('email'),
+      password:fd.get('password'),
+      options: {emailRedirectTo: location.origin + '/owner.html'}
+    });
+    if(ae){err.textContent='Auth ошибка: ' + ae.message; return}
+    if(!auth.user){err.textContent='Проверь почту. Supabase отправил письмо для подтверждения.'; return}
+    
+    const {data:rest,error:re}=await supabase.from('restaurants')
+      .insert({name:fd.get('restName'),owner_id:auth.user.id})
+      .select().single();
+    if(re){err.textContent='Ошибка ресторана: ' + re.message; return}
+    
+    const {error:pe}=await supabase.from('profiles')
+      .insert({id:auth.user.id,role:'owner',full_name:fd.get('fullName')});
+    if(pe){err.textContent='Ошибка профиля: ' + pe.message; return}
+    
+    location.href='/owner.html'
+  }catch(e2){
+    err.textContent='Критическая ошибка: ' + e2.message + '\nПроверь /js/config.js и путь к нему'
+  }
 })
 </script></body></html>
