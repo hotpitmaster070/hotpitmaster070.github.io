@@ -1,0 +1,30 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit - Присоединиться</title>
+<link rel="stylesheet" href="/css/style.css">
+</head><body>
+<div class="auth-wrap">
+  <h1>Присоединиться</h1>
+  <p>Вы приглашены как шеф</p>
+  <form id="join">
+    <input name="email" type="email" placeholder="Ваш Email" required>
+    <input name="password" type="password" placeholder="Пароль" required>
+    <input name="fullName" placeholder="ФИО" required>
+    <button type="submit">Войти</button>
+  </form>
+  <div id="err" style="color:#f87171;font-size:14px;margin-top:12px"></div>
+</div>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase=createClient('ТВОЙ_URL','ТВОЙ_ANON_KEY');
+const token=new URLSearchParams(location.search).get('token');
+join.addEventListener('submit',async e=>{
+  e.preventDefault(); err.textContent='Регистрирую...';
+  const fd=new FormData(join);
+  const {data:auth,error:ae}=await supabase.auth.signUp({email:fd.get('email'),password:fd.get('password')});
+  if(ae){err.textContent=ae.message;return}
+  const {error:fe}=await supabase.rpc('accept_invite',[token,fd.get('fullName'),'chef']);
+  if(fe){err.textContent=fe.message;return}
+  location.href='/kitchen.html'
+})
+</script></body></html>
