@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit</title>
 <link rel="stylesheet" href="./css/style.css">
-<!-- вот эта строка подгрузит supabase.js сама, без файлов у тебя -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 </head>
 <body>
@@ -21,11 +20,9 @@
 </div>
 
 <script>
-// 1. ВСТАВЬ СВОИ ДАННЫЕ ИЗ SUPABASE -> Settings -> API
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m0wNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 
-// 2. Проверка что библиотека подгрузилась
 const diag = document.getElementById('diag')
 const msg = document.getElementById('msg')
 const btn = document.getElementById('btn')
@@ -40,37 +37,74 @@ if(typeof window.supabase === 'undefined'){
   btn.onclick = async ()=>{
     btn.disabled = true
     msg.style.color = '#a3a3a3'
-    msg.textContent = 'Создаю аккаунт...'
+    msg.textContent = 'Проверяю...'
     
+    const email = document.getElementById('email').value.trim()
+    const password = document.getElementById('password').value
+    const full_name = document.getElementById('full_name').value
+    const rest_name = document.getElementById('rest_name').value
+
     try{
-      const {data, error} = await sb.auth.signUp({
-  email: document.getElementById('email').value.trim(),
-  password: document.getElementById('password').value
-})
-if(error) throw error
+      let user = null
+      
+      // 1. Пробуем signUp
+      let {data, error} = await sb.auth.signUp({email, password})
+      
+      if(error){
+        // Если юзер уже есть - логинимся
+        if(error.message.toLowerCase().includes('already registered')){
+          msg.textContent = 'Юзер есть, логинюсь...'
+          const {error:loginErr} = await sb.auth.signInWithPassword({email, password})
+          if(loginErr) throw loginErr
+          user = (await sb.auth.getUser()).data.user
+        } else {
+          throw error
+        }
+      } else {
+        user = data.user
+        // после signUp сразу логинимся чтобы была сессия для RLS
+        await sb.auth.signInWithPassword({email, password})
+        user = (await sb.auth.getUser()).data.user
+      }
+      
+      if(!user) throw new Error('Не удалось получить user')
 
-// Сразу логинимся, чтобы получить сессию
-const {error:loginErr} = await sb.auth.signInWithPassword({
-  email: document.getElementById('email').value.trim(),
-  password: document.getElementById('password').value
-})
-if(loginErr) throw loginErr
+      // 2. Проверяем есть ли ресторан у юзера
+      msg.textContent = 'Проверяю ресторан...'
+      let {data:rest, error:restSelectErr} = await sb.from('restaurants')
+        .select()
+        .eq('owner_id', user.id)
+        .maybeSingle()
+      
+      if(restSelectErr && restSelectErr.code !== 'PGRST116') throw restSelectErr
+      
+      if(!rest){
+        msg.textContent = 'Создаю ресторан...'
+        const {data:newRest, error:restErr} = await sb.from('restaurants')
+          .insert({owner_id:user.id, name:rest_name})
+          .select().single()
+        if(restErr) throw restErr
+        rest = newRest
+      }
 
-const user = (await sb.auth.getUser()).data.user
-if(!user) throw new Error('Не удалось получить user после логина')
-
-// Теперь insert пройдет, т.к. auth.uid() есть
-const {data:rest, error:restErr} = await sb.from('restaurants')
-  .insert({owner_id:user.id, name:document.getElementById('rest_name').value})
-  .select().single()
-if(restErr) throw restErr
-
-await sb.from('profiles').insert({
-  id:user.id, 
-  full_name:document.getElementById('full_name').value, 
-  restaurant_id:rest.id, 
-  role:'owner'
-})
+      // 3. Проверяем есть ли профиль
+      msg.textContent = 'Проверяю профиль...'
+      let {data:prof, error:profSelectErr} = await sb.from('profiles')
+        .select()
+        .eq('id', user.id)
+        .maybeSingle()
+      
+      if(profSelectErr && profSelectErr.code !== 'PGRST116') throw profSelectErr
+      
+      if(!prof){
+        const {error:profErr} = await sb.from('profiles').insert({
+          id:user.id, 
+          full_name:full_name, 
+          restaurant_id:rest.id, 
+          role:'owner'
+        })
+        if(profErr) throw profErr
+      }
 
       msg.style.color = '#22c55e'
       msg.textContent = 'Готово! Перехожу в кабинет...'
