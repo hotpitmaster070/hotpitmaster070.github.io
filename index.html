@@ -44,23 +44,33 @@ if(typeof window.supabase === 'undefined'){
     
     try{
       const {data, error} = await sb.auth.signUp({
-        email: document.getElementById('email').value.trim(),
-        password: document.getElementById('password').value
-      })
-      if(error) throw error
-      if(!data.user) throw new Error('user=null. Выключи "Confirm email" в Supabase->Auth->Settings')
-      
-      const {data:rest, error:restErr} = await sb.from('restaurants')
-        .insert({owner_id:data.user.id, name:document.getElementById('rest_name').value})
-        .select().single()
-      if(restErr) throw restErr
+  email: document.getElementById('email').value.trim(),
+  password: document.getElementById('password').value
+})
+if(error) throw error
 
-      await sb.from('profiles').insert({
-        id:data.user.id, 
-        full_name:document.getElementById('full_name').value, 
-        restaurant_id:rest.id, 
-        role:'owner'
-      })
+// Сразу логинимся, чтобы получить сессию
+const {error:loginErr} = await sb.auth.signInWithPassword({
+  email: document.getElementById('email').value.trim(),
+  password: document.getElementById('password').value
+})
+if(loginErr) throw loginErr
+
+const user = (await sb.auth.getUser()).data.user
+if(!user) throw new Error('Не удалось получить user после логина')
+
+// Теперь insert пройдет, т.к. auth.uid() есть
+const {data:rest, error:restErr} = await sb.from('restaurants')
+  .insert({owner_id:user.id, name:document.getElementById('rest_name').value})
+  .select().single()
+if(restErr) throw restErr
+
+await sb.from('profiles').insert({
+  id:user.id, 
+  full_name:document.getElementById('full_name').value, 
+  restaurant_id:rest.id, 
+  role:'owner'
+})
 
       msg.style.color = '#22c55e'
       msg.textContent = 'Готово! Перехожу в кабинет...'
