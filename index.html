@@ -1,67 +1,60 @@
 <!doctype html><html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit - Создать ресторан</title>
+<title>HotPit</title>
 <link rel="stylesheet" href="./css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head><body>
 <div class="auth-wrap">
   <h1>HotPit</h1>
-  <p>Создайте ресторан и добавьте шефа по QR</p>
+  <div id="diag" style="font-size:12px;color:#888;margin-bottom:8px">Проверка связи...</div>
   <form id="reg">
     <input id="full_name" placeholder="Ваше ФИО" required>
     <input id="rest_name" placeholder="Название ресторана" required>
     <input id="email" type="email" placeholder="Email" required>
-    <input id="password" type="password" placeholder="Пароль 6+ символов" minlength="6" required>
-    <button id="btn" type="submit">Начать</button>
+    <input id="password" type="password" placeholder="Пароль 6+" minlength="6" required>
+    <button id="btn">Начать</button>
   </form>
   <div id="msg" style="margin-top:12px;color:#f87171;font-size:13px;white-space:pre-wrap"></div>
 </div>
 
 <script>
-const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+const SUPABASE_URL = 'https://ТВОЙ-ПРОЕКТ.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ТВОЙ-ANON-KEY'
 
+const diag = document.getElementById('diag')
 const msg = document.getElementById('msg')
-const btn = document.getElementById('btn')
-
-// проверка что библиотека загрузилась
-if(typeof supabase === 'undefined'){
-  msg.textContent = 'Критично: supabase.js не загрузился. Проверь интернет/GitHub Pages'
-} else {
-  msg.textContent = 'Supabase подключен. Вставь данные и жми Начать...'
-}
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// Тест связи сразу при загрузке
+fetch(SUPABASE_URL + '/auth/v1/settings', {headers:{apikey:SUPABASE_ANON_KEY}})
+.then(r=>r.ok ? diag.textContent='Связь с Supabase: OK' : diag.textContent='Связь: HTTP '+r.status)
+.catch(e=>diag.textContent='Связь: НЕТ. Ошибка: '+e.message)
 
 document.getElementById('reg').addEventListener('submit', async (e)=>{
   e.preventDefault()
   msg.style.color = '#a3a3a3'
-  msg.textContent = 'Создаю...'
+  msg.textContent = 'Регистрирую...'
   btn.disabled = true
 
-  const full_name = document.getElementById('full_name').value.trim()
-  const rest_name = document.getElementById('rest_name').value.trim()
-  const email = document.getElementById('email').value.trim()
-  const password = document.getElementById('password').value
-
   try{
-    // 1. Регистрация
-    const {data:authData, error:authErr} = await sb.auth.signUp({email, password})
-    if(authErr) throw authErr
-    const user = authData.user
-    if(!user) throw new Error('Supabase вернул пустого user. Выключи "Email confirmations" в Auth->Settings')
+    const {data, error} = await sb.auth.signUp({
+      email: document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value
+    })
+    if(error) throw error
+    if(!data.user) throw new Error('user=null. Выключи "Confirm email" в Supabase->Auth->Settings')
 
-    // 2. Ресторан
     const {data:rest, error:restErr} = await sb.from('restaurants')
-      .insert({owner_id:user.id, name:rest_name})
+      .insert({owner_id:data.user.id, name:document.getElementById('rest_name').value})
       .select().single()
     if(restErr) throw restErr
 
-    // 3. Профиль
-    const {error:profErr} = await sb.from('profiles').insert({
-      id:user.id, full_name, restaurant_id:rest.id, role:'owner'
+    await sb.from('profiles').insert({
+      id:data.user.id, 
+      full_name:document.getElementById('full_name').value, 
+      restaurant_id:rest.id, 
+      role:'owner'
     })
-    if(profErr) throw profErr
 
     msg.style.color = '#4ade80'
     msg.textContent = 'Готово! Перехожу...'
@@ -69,8 +62,7 @@ document.getElementById('reg').addEventListener('submit', async (e)=>{
 
   }catch(err){
     msg.style.color = '#f87171'
-    // выводим ВСЁ что есть в ошибке
-    msg.textContent = 'Ошибка: ' + String(err.message || err) + '\n' + JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+    msg.textContent = err.name + ' + err.status + '\n' + (err.message || String(err))
     btn.disabled = false
   }
 })
