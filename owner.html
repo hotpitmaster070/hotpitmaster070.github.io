@@ -4,13 +4,29 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit Owner</title>
 <link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  /* Спиннер для загрузки. Поведение: пока грузит крутится, как данные пришли - исчезает */
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--muted);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .loading-wrap { display:flex; align-items:center; gap:8px; }
+</style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
-      <div><h2>HotPit</h2><div class="sub" id="restName">Загрузка...</div></div>
+      <div><h2>HotPit</h2><div class="sub" id="restName"><div class="loading-wrap"><div class="spinner"></div> Загрузка...</div></div></div>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
     <nav class="menu">
@@ -29,13 +45,13 @@
     </div>
     
     <div class="row">
-      <div class="modal" style="flex:1;max-width:none">Поваров: <b id="chefs">0</b></div>
-      <div class="modal" style="flex:1;max-width:none">Персонала: <b id="staff">0</b></div>
+      <div class="modal" style="flex:1;max-width:none">Поваров: <b id="chefs"><div class="spinner"></div></b></div>
+      <div class="modal" style="flex:1;max-width:none">Персонала: <b id="staff"><div class="spinner"></div></b></div>
     </div>
     
     <div class="modal" style="max-width:100%;margin-top:24px">
       <h3>Остатки склада</h3>
-      <div id="stockList">Загрузка...</div>
+      <div id="stockList"><div class="loading-wrap"><div class="spinner"></div> Загрузка...</div></div>
     </div>
   </main>
 </div>
@@ -55,6 +71,8 @@
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm'
+
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -69,6 +87,7 @@ const inviteModal = document.getElementById('inviteModal');
 const link = document.getElementById('link');
 const qrCanvas = document.getElementById('qrCanvas');
 
+// Кнопки
 document.getElementById('burgerBtn').onclick = ()=>{sidebar.classList.add('open');overlay.classList.add('show')}
 document.getElementById('closeBtn').onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
 overlay.onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
@@ -85,24 +104,30 @@ async function showInvite(){
   const {data:inv} = await supabase.from('invites').insert({restaurant_id:rest.id,created_by:user.id}).select('token').single();
   const url = location.origin + '/join.html?token=' + inv.token;
   link.value = url; 
-  QRCode.toCanvas(qrCanvas, url);
+  await QRCode.toCanvas(qrCanvas, url);
   inviteModal.style.display = 'flex';
 }
 
 try {
-  const {data:{user}} = await supabase.auth.getUser(); 
-  if(!user) return location.href='/index.html';
+  const {data:{user}, error:uErr} = await supabase.auth.getUser(); 
+  if(uErr || !user) throw new Error('Нет сессии. Войдите заново');
+  
   const {data:rest, error:rErr} = await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).single();
-  if(rErr || !rest){ restName.textContent='Ресторан не найден'; return }
-  restName.textContent = rest.name;
+  if(rErr) throw new Error('БД ошибка: ' + rErr.message);
+  if(!rest) throw new Error('Ресторан не найден');
+  
+  restName.textContent = rest.name; // Спиннер заменится на название
+  
   const {count:chefsCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).eq('role','chef');
   const {count:staffCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id);
-  chefsEl.textContent = chefsCount ?? 0;
+  
+  chefsEl.textContent = chefsCount ?? 0; // Спиннер заменится на 0
   staffEl.textContent = staffCount ?? 0;
-  stockList.textContent = 'Пока пусто';
+  stockList.textContent = 'Пока пусто. Склад добавим позже';
+  
 } catch(e) {
   console.error('Owner init error:', e);
-  restName.textContent = 'Ошибка: ' + e.message;
-  stockList.textContent = 'Проверь консоль F12';
+  restName.textContent = 'Ошибка';
+  stockList.textContent = e.message; // Спиннер заменится на текст ошибки
 }
 </script></body></html>
