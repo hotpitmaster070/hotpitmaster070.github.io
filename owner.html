@@ -94,18 +94,36 @@ overlay.onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove
 const doLogout = ()=>supabase.auth.signOut().then(()=>location.href='/index.html');
 document.getElementById('logoutBtn').onclick = doLogout;
 document.getElementById('logoutBtn2').onclick = doLogout;
-document.getElementById('addChefBtn').onclick = showInvite;
+
+// ВОТ ФИКС: закрываем меню и ловим ошибки
+document.getElementById('addChefBtn').onclick = ()=>{ 
+  sidebar.classList.remove('open'); 
+  overlay.classList.remove('show'); 
+  showInvite() 
+};
 document.getElementById('closeModalBtn').onclick = ()=>inviteModal.style.display='none';
 document.getElementById('copyBtn').onclick = ()=>navigator.clipboard.writeText(link.value);
 
 async function showInvite(){
-  const {data:{user}} = await supabase.auth.getUser();
-  const {data:rest} = await supabase.from('restaurants').select('id').eq('owner_id',user.id).single();
-  const {data:inv} = await supabase.from('invites').insert({restaurant_id:rest.id,created_by:user.id}).select('token').single();
-  const url = location.origin + '/join.html?token=' + inv.token;
-  link.value = url; 
-  await QRCode.toCanvas(qrCanvas, url);
-  inviteModal.style.display = 'flex';
+  try {
+    const {data:{user}, error: uErr} = await supabase.auth.getUser();
+    if(uErr || !user) throw new Error('Нет сессии');
+
+    const {data:rest, error: rErr} = await supabase.from('restaurants').select('id').eq('owner_id',user.id).single();
+    if(rErr) throw rErr;
+    if(!rest) throw new Error('Ресторан не найден');
+
+    const {data:inv, error: iErr} = await supabase.from('invites').insert({restaurant_id:rest.id,created_by:user.id}).select('token').single();
+    if(iErr) throw iErr; // Если RLS не настроен, упадет тут
+
+    const url = location.origin + '/join.html?token=' + inv.token;
+    link.value = url; 
+    await QRCode.toCanvas(qrCanvas, url);
+    inviteModal.style.display = 'flex';
+  } catch(e) {
+    console.error('Ошибка Добавить шефа:', e);
+    alert('Ошибка: ' + e.message + '\n\nЕсли "new row violates row-level security", иди в Supabase и добавь политику на таблицу invites.');
+  }
 }
 
 try {
@@ -116,18 +134,18 @@ try {
   if(rErr) throw new Error('БД ошибка: ' + rErr.message);
   if(!rest) throw new Error('Ресторан не найден');
   
-  restName.textContent = rest.name; // Спиннер заменится на название
+  restName.textContent = rest.name;
   
   const {count:chefsCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).eq('role','chef');
   const {count:staffCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id);
   
-  chefsEl.textContent = chefsCount ?? 0; // Спиннер заменится на 0
+  chefsEl.textContent = chefsCount ?? 0;
   staffEl.textContent = staffCount ?? 0;
   stockList.textContent = 'Пока пусто. Склад добавим позже';
   
 } catch(e) {
   console.error('Owner init error:', e);
   restName.textContent = 'Ошибка';
-  stockList.textContent = e.message; // Спиннер заменится на текст ошибки
+  stockList.textContent = e.message;
 }
 </script></body></html>
