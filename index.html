@@ -7,18 +7,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
   body{margin:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}
-  .wrap{background:#111;border-radius:24px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+ .wrap{background:#111;border-radius:24px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
   h1{color:#ff6b00;text-align:center;margin:0 0 6px;font-size:32px;font-weight:800}
-  .sub{color:#888;text-align:center;font-size:14px;margin-bottom:28px}
+ .sub{color:#888;text-align:center;font-size:14px;margin-bottom:28px}
   input{width:100%;padding:14px 16px;margin-bottom:12px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:12px;color:#fff;font-size:15px;box-sizing:border-box}
   input:focus{outline:none;border-color:#ff6b00}
   input::placeholder{color:#666}
   button{width:100%;padding:14px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px}
   button:disabled{opacity:.5;cursor:not-allowed}
-  .switch{color:#888;text-align:center;font-size:14px;margin-top:18px}
-  .switch a{color:#3b82f6;text-decoration:none;cursor:pointer}
+ .switch{color:#888;text-align:center;font-size:14px;margin-top:18px}
+ .switch a{color:#3b82f6;text-decoration:none;cursor:pointer}
   #msg{margin-top:12px;font-size:13px;white-space:pre-wrap}
-  .hidden{display:none}
+ .hidden{display:none}
   #diag{font-size:12px;color:#666;margin-bottom:16px}
 </style>
 </head>
@@ -28,7 +28,6 @@
   <div class="sub" id="subtitle">Управление кухней</div>
   <div id="diag">Проверка...</div>
 
-  <!-- ФОРМА РЕГИСТРАЦИИ -->
   <div id="regForm">
     <input id="full_name" placeholder="Ваше ФИО" required>
     <input id="rest_name" placeholder="Название ресторана" required>
@@ -38,7 +37,6 @@
     <div class="switch">Уже есть аккаунт? <a id="toLogin">Войти</a></div>
   </div>
 
-  <!-- ФОРМА ЛОГИНА -->
   <div id="loginForm" class="hidden">
     <input id="emailLogin" type="email" placeholder="Email" required>
     <input id="passwordLogin" type="password" placeholder="Пароль" required>
@@ -62,33 +60,28 @@ const loginForm = document.getElementById('loginForm')
 const subtitle = document.getElementById('subtitle')
 const roleInfo = document.getElementById('roleInfo')
 
-// переключение форм
 document.getElementById('toLogin').onclick = ()=>{regForm.classList.add('hidden');loginForm.classList.remove('hidden');subtitle.textContent='Вход';msg.textContent='';roleInfo.textContent=''}
 document.getElementById('toReg').onclick = ()=>{loginForm.classList.add('hidden');regForm.classList.remove('hidden');subtitle.textContent='Управление кухней';msg.textContent='';roleInfo.textContent=''}
 
-if(typeof window.supabase === 'undefined'){
-  diag.textContent = 'Ошибка: не смог загрузить supabase.js'
-  diag.style.color = 'red'
-} else {
-  diag.textContent = 'Supabase OK'
-}
+diag.textContent = typeof window.supabase === 'undefined'? 'Ошибка: не смог загрузить supabase.js' : 'Supabase OK'
+diag.style.color = typeof window.supabase === 'undefined'? 'red' : '#22c55e'
 
-// УМНАЯ РЕГИСТРАЦИЯ
+// УМНАЯ РЕГИСТРАЦИЯ ОВНЕРА
 document.getElementById('btnReg').onclick = async ()=>{
   const btn = document.getElementById('btnReg')
   btn.disabled = true
   msg.style.color = '#a3a3a3'
   msg.textContent = 'Проверяю...'
-  
+
   const email = document.getElementById('email').value.trim()
   const password = document.getElementById('password').value
-  const full_name = document.getElementById('full_name').value
-  const rest_name = document.getElementById('rest_name').value
+  const full_name = document.getElementById('full_name').value.trim()
+  const rest_name = document.getElementById('rest_name').value.trim()
 
   try{
     let user = null
     let {data, error} = await sb.auth.signUp({email, password})
-    
+
     if(error){
       if(error.message.toLowerCase().includes('already registered')){
         msg.textContent = 'Юзер есть, логинюсь...'
@@ -101,10 +94,9 @@ document.getElementById('btnReg').onclick = async ()=>{
       await sb.auth.signInWithPassword({email, password})
       user = (await sb.auth.getUser()).data.user
     }
-    
+
     if(!user) throw new Error('Не удалось получить user')
 
-    // доделываем ресторан если нет
     let {data:rest} = await sb.from('restaurants').select().eq('owner_id', user.id).maybeSingle()
     if(!rest){
       const {data:newRest, error:restErr} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name}).select().single()
@@ -112,17 +104,20 @@ document.getElementById('btnReg').onclick = async ()=>{
       rest = newRest
     }
 
-    // доделываем профиль если нет
-    let {data:prof} = await sb.from('profiles').select().eq('id', user.id).maybeSingle()
-    if(!prof){
-      const {error:profErr} = await sb.from('profiles').insert({id:user.id, full_name:full_name, restaurant_id:rest.id, role:'owner'})
-      if(profErr) throw profErr
-    }
+    // ГЛАВНЫЙ ФИКС: UPSERT вместо INSERT. Дубля не будет
+    const {error:profErr} = await sb.from('profiles').upsert({
+      id:user.id,
+      full_name:full_name,
+      restaurant_id:rest.id,
+      role:'owner',
+      is_active:true
+    }, {onConflict: 'id'})
+    if(profErr) throw profErr;
 
     msg.style.color = '#22c55e'
     msg.textContent = 'Готово! Перехожу...'
     setTimeout(()=>location.href='/owner.html', 600)
-    
+
   }catch(e){
     msg.style.color = '#f87171'
     msg.textContent = 'Ошибка: ' + e.message
@@ -144,21 +139,21 @@ document.getElementById('btnLogin').onclick = async ()=>{
   try{
     const {error} = await sb.auth.signInWithPassword({email, password})
     if(error) throw error
-    
+
     const user = (await sb.auth.getUser()).data.user
     const {data:prof} = await sb.from('profiles').select('role').eq('id', user.id).single()
-    
-    if(!prof || !prof.role){
+
+    if(!prof ||!prof.role){
       roleInfo.textContent = 'Роль не назначена'
       msg.textContent = 'Профиль не найден. Зарегистрируйтесь заново.'
       btn.disabled = false
       return
     }
-    
+
     msg.style.color = '#22c55e'
     msg.textContent = 'Вход успешен. Перехожу...'
     setTimeout(()=>location.href='/owner.html', 500)
-    
+
   }catch(e){
     msg.style.color = '#f87171'
     msg.textContent = 'Ошибка: ' + e.message
