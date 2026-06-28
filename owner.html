@@ -3,58 +3,57 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit Owner</title>
-<link rel="stylesheet" href="css/style.css">
 <style>
- .spinner { width: 20px; height: 20px; border: 3px solid var(--muted); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); }}
- .loading-wrap { display:flex; align-items:center; gap:8px; }
-  #qrCanvas { margin: 16px auto; display: block; background: white; padding: 8px; border-radius: 8px; }
-  #link { width: 100%; margin-top: 8px; font-size: 12px; }
+ body{margin:0;background:#0a0a0a;font-family:sans-serif;color:#fff}
+.app{display:flex;min-height:100vh}
+.sidebar{background:#111;width:260px;padding:24px}
+.sidebar h2{color:#ff6b00;margin:0 0 24px}
+.menu button{width:100%;padding:12px;text-align:left;background:transparent;border:none;color:#aaa;cursor:pointer;border-radius:8px;margin-bottom:8px;font-size:15px}
+.menu button.active,.menu button:hover{background:#1e1e1e;color:#fff}
+.content{flex:1;padding:24px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.row{display:flex;gap:16px;margin-bottom:16px}
+.modal{background:#111;padding:16px;border-radius:16px}
+.spinner{width:20px;height:20px;border:3px solid #333;border-top-color:#ff6b00;border-radius:50%;animation:spin.8s linear infinite;display:inline-block}
+ @keyframes spin{to{transform:rotate(360deg)}}
+ #qrCanvas{margin:16px auto;display:block;background:white;padding:8px;border-radius:8px}
+ #link{width:100%;margin-top:8px;font-size:12px;background:#0f1117;padding:12px;border-radius:12px;font-family:monospace;word-break:break-all;color:#22c55e;border:1px solid #22c55e}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center}
+.modal-overlay.modal{max-width:400px}
+ button{padding:12px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-head">
-      <div><h2>HotPit</h2><div class="sub" id="restName"><div class="loading-wrap"><div class="spinner"></div> Загрузка...</div></div></div>
-      <button class="close-btn" id="closeBtn">×</button>
-    </div>
+  <aside class="sidebar">
+    <h2>HotPit</h2>
+    <div class="sub" id="restName"><div class="spinner"></div> Загрузка...</div>
     <nav class="menu">
       <button class="active">Дашборд</button>
-      <button id="addChefBtn">+ Добавить шефа</button>
+      <button id="addChefBtn">+ Пригласить Шефа/Повара</button>
       <button id="logoutBtn">Выйти</button>
     </nav>
   </aside>
-  <div class="overlay" id="overlay"></div>
 
   <main class="content">
-    <div class="topbar">
-      <button class="burger" id="burgerBtn">☰</button>
-      <h1>Дашборд</h1>
-      <button class="logout" id="logoutBtn2">Выход</button>
-    </div>
-
+    <div class="topbar"><h1>Дашборд</h1></div>
     <div class="row">
-      <div class="modal" style="flex:1;max-width:none">Поваров: <b id="chefs"><div class="spinner"></div></b></div>
-      <div class="modal" style="flex:1;max-width:none">Персонала: <b id="staff"><div class="spinner"></div></b></div>
+      <div class="modal" style="flex:1">Шефы/Повара: <b id="chefs"><div class="spinner"></div></b></div>
+      <div class="modal" style="flex:1">Всего персонал: <b id="staff"><div class="spinner"></div></b></div>
     </div>
-
-    <div class="modal" style="max-width:100%;margin-top:24px">
-      <h3>Остатки склада</h3>
-      <div id="stockList"><div class="loading-wrap"><div class="spinner"></div> Загрузка...</div></div>
-    </div>
+    <div class="modal"><h3>Склад</h3><div id="stockList">Пока пусто</div></div>
   </main>
 </div>
 
 <div class="modal-overlay" id="inviteModal">
   <div class="modal">
-    <h3>Пригласить шефа</h3>
-    <p style="color:var(--muted);font-size:14px">Ссылка живет 24ч. После 1 входа сгорит.</p>
+    <h3>Пригласить</h3>
+    <p style="color:#888;font-size:14px">Ссылка живет 7 дней. 1 раз используется.</p>
     <canvas id="qrCanvas"></canvas>
-    <a id="link" href="#" target="_blank" readonly style="display:block; background:#0f1117; padding:12px; border-radius:12px; font-family:monospace; word-break:break-all; color:#22c55e; text-decoration:none; border:1px solid #22c55e;"></a>
+    <a id="link" href="#" target="_blank"></a>
     <div class="row" style="margin-top:12px;">
       <button id="copyBtn">Копировать</button>
-      <button id="closeModalBtn">Закрыть</button>
+      <button id="closeModalBtn" style="background:#333;color:#fff">Закрыть</button>
     </div>
   </div>
 </div>
@@ -70,86 +69,37 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const restName = document.getElementById('restName');
 const chefsEl = document.getElementById('chefs');
 const staffEl = document.getElementById('staff');
-const stockList = document.getElementById('stockList');
-const sidebar = document.getElementById('sidebar');
-const overlay = document.getElementById('overlay');
 const inviteModal = document.getElementById('inviteModal');
 const link = document.getElementById('link');
 const qrCanvas = document.getElementById('qrCanvas');
 
-document.getElementById('burgerBtn').onclick = ()=>{sidebar.classList.add('open');overlay.classList.add('show')}
-document.getElementById('closeBtn').onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
-overlay.onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show')}
-const doLogout = ()=>supabase.auth.signOut().then(()=>location.href='/index.html');
-document.getElementById('logoutBtn').onclick = doLogout;
-document.getElementById('logoutBtn2').onclick = doLogout;
-document.getElementById('addChefBtn').onclick = ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('show'); showInvite() };
+document.getElementById('logoutBtn').onclick = ()=>supabase.auth.signOut().then(()=>location.href='/index.html');
+document.getElementById('addChefBtn').onclick = showInvite;
 document.getElementById('closeModalBtn').onclick = ()=>inviteModal.style.display='none';
 document.getElementById('copyBtn').onclick = ()=>navigator.clipboard.writeText(link.textContent);
 
 async function showInvite(){
-  try {
-    const {data:{user}} = await supabase.auth.getUser();
-    if(!user) throw new Error('Нет сессии');
-
-    const {data:rest} = await supabase.from('restaurants').select('id').eq('owner_id',user.id).single();
-    if(!rest) throw new Error('Ресторан не найден');
-
-    const {data: existing} = await supabase.from('invites')
-       .select('token')
-       .eq('created_by', user.id)
-       .eq('restaurant_id', rest.id)
-       .eq('used', false)
-       .gt('expires_at', new Date().toISOString())
-       .limit(1)
-       .single();
-
-    let token;
-    if (existing) {
-        token = existing.token;
-    } else {
-        token = crypto.randomUUID();
-        const {error: iErr} = await supabase.from('invites').insert({
-            token,
-            created_by: user.id,
-            restaurant_id: rest.id,
-            expires_at: new Date(Date.now() + 24*60*60*1000).toISOString()
-        });
-        if(iErr) throw iErr;
-    }
-
-    const url = location.origin + '/join.html?token=' + token;
-    link.textContent = url;
-    link.href = url;
-    qrCanvas.width = 200; qrCanvas.height = 200;
-    await QRCode.toCanvas(qrCanvas, url);
-    inviteModal.style.display = 'flex';
-  } catch(e) {
-    console.error('Ошибка Добавить шефа:', e);
-    alert('Ошибка: ' + e.message);
-  }
-}
-
-try {
   const {data:{user}} = await supabase.auth.getUser();
-  if(!user) throw new Error('Нет сессии. Войдите заново');
+  const {data:rest} = await supabase.from('restaurants').select('id').eq('owner_id',user.id).single();
 
-  const {data:rest} = await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).single();
-  if(!rest) throw new Error('Ресторан не найден');
+  const token = crypto.randomUUID();
+  const {error} = await supabase.from('invites').insert({
+      token, restaurant_id: rest.id, role: 'chef', expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString()
+  });
+  if(error) return alert('Ошибка: '+error.message);
 
-  restName.textContent = rest.name;
-
-  // ГЛАВНЫЙ ФИКС: Считаем только активных
-  const {count:chefsCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).eq('role','chef').eq('is_active', true);
-  const {count:staffCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).eq('is_active', true);
-
-  chefsEl.textContent = chefsCount?? 0;
-  staffEl.textContent = staffCount?? 0;
-  stockList.textContent = 'Пока пусто. Склад добавим позже';
-
-} catch(e) {
-  console.error('Owner init error:', e);
-  restName.textContent = 'Ошибка';
-  stockList.textContent = e.message;
+  const url = location.origin + '/join.html?token=' + token;
+  link.textContent = url; link.href = url;
+  await QRCode.toCanvas(qrCanvas, url);
+  inviteModal.style.display = 'flex';
 }
+
+const {data:{user}} = await supabase.auth.getUser();
+const {data:rest} = await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).single();
+restName.textContent = rest.name;
+
+const {count:chefsCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).in('role',['chef','cook']).eq('is_active', true);
+const {count:staffCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',rest.id).eq('is_active', true);
+chefsEl.textContent = chefsCount?? 0;
+staffEl.textContent = staffCount?? 0;
 </script></body></html>
