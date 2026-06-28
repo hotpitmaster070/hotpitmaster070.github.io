@@ -6,9 +6,10 @@
 <link rel="stylesheet" href="/css/style.css">
 <style>
   body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
-  .auth-wrap { width: 100%; max-width: 380px; background: var(--card); padding: 24px; border-radius: 16px; }
+ .auth-wrap { width: 100%; max-width: 380px; background: var(--card); padding: 24px; border-radius: 16px; }
   input, button { width: 100%; margin-bottom: 12px; }
-  .hidden { display: none !important; }
+  button[disabled] { opacity:.6; cursor: not-allowed; }
+ .hidden { display: none!important; }
 </style>
 </head>
 <body>
@@ -19,7 +20,7 @@
     <input name="fullName" placeholder="ФИО" required>
     <input name="email" type="email" placeholder="Ваш Email" required>
     <input name="password" type="password" placeholder="Придумай пароль" required minlength="6">
-    <button type="submit">Принять приглашение</button>
+    <button type="submit" id="submitBtn">Принять приглашение</button>
   </form>
   <div id="err" style="color:#f87171;font-size:14px;margin-top:12px"></div>
 </div>
@@ -31,61 +32,65 @@ const supabase=createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const token=new URLSearchParams(location.search).get('token');
 const form = document.getElementById('join');
+const btn = document.getElementById('submitBtn');
 const err = document.getElementById('err');
 const restName = document.getElementById('restName');
-
-console.log('[JOIN] Token:', token);
 
 if(!token){
   restName.textContent = 'Ссылка невалидна: нет token в URL';
 } else {
-  // 1. Проверяем токен
   supabase.from('invites').select('restaurant_id').eq('token', token).eq('used', false).gt('expires_at', new Date().toISOString()).single()
-  .then(async ({data, error}) => {
-    console.log('[JOIN] Invite check:', {data, error});
+ .then(async ({data, error}) => {
+    if(error){ restName.textContent = 'Ошибка БД: ' + error.message; return; }
+    if(!data){ restName.textContent = 'Ссылка просрочена или уже использована'; return; }
     
-    if(error){
-      restName.textContent = 'Ошибка БД: ' + error.message;
-      return;
-    }
-    if(!data){
-      restName.textContent = 'Ссылка просрочена или уже использована';
-      return;
-    }
-    
-    // 2. Дергаем название ресторана
-    const {data: rest, error: restErr} = await supabase.from('restaurants').select('name').eq('id', data.restaurant_id).single();
-    console.log('[JOIN] Restaurant check:', {rest, restErr});
-
-    if(restErr){
-      restName.textContent = 'Не могу прочитать ресторан: ' + restErr.message;
-      return;
-    }
-    
+    const {data: rest} = await supabase.from('restaurants').select('name').eq('id', data.restaurant_id).single();
     restName.textContent = `Вас приглашают в: ${rest?.name || 'ресторан'}`;
     form.classList.remove('hidden');
   })
-  .catch(e => { // ВОТ ЭТОГО НЕ ХВАТАЛО
-    console.error('[JOIN] FATAL:', e);
+ .catch(e => {
     restName.textContent = 'Критическая ошибка: ' + e.message;
   })
 }
 
 form.addEventListener('submit',async e=>{
   e.preventDefault(); 
+  btn.disabled = true;
   err.textContent='Регистрирую...';
   err.style.color='#f87171';
   const fd=new FormData(form);
   const fullName = fd.get('fullName').trim();
-  const email = fd.get('email');
+  const email = fd.get('email').trim();
   const password = fd.get('password');
 
-  const {data: {user}, error: ae}=await supabase.auth.signUp({email, password});
-  if(ae || !user){err.textContent=ae?.message || 'Ошибка регистрации'; return}
+  let user = null;
 
-  const {error: se} = await supabase.auth.signInWithPassword({email, password});
-  if(se){err.textContent='Ошибка входа: ' + se.message; return}
+  // 1. Проверяем есть ли уже такой юзер
+  const {data: {user: existing}} = await supabase.auth.getUser();
+  if(existing?.email === email){
+    user = existing;
+  } else {
+    // 2. Пытаемся войти. Если получится - значит юзер уже есть
+    const {data: {user: logged}} = await supabase.auth.signInWithPassword({email, password});
+    if(logged){
+      user = logged;
+    } else {
+      // 3. Если нет - регистрируем
+      const {data: {user: newUser}, error: ae} = await supabase.auth.signUp({email, password});
+      if(ae ||!newUser){
+        err.textContent = ae?.message.includes('already registered') 
+         ? 'Этот email уже занят. Нажми "Войти"' 
+          : ae?.message || 'Ошибка регистрации'; 
+        btn.disabled = false; 
+        return
+      }
+      user = newUser;
+      // Сразу логиним после регистрации
+      await supabase.auth.signInWithPassword({email, password});
+    }
+  }
 
+  // 4. Вызываем RPC. Теперь он не упадет на дубле благодаря on conflict
   const {error:fe}=await supabase.rpc('accept_invite', {
     p_token: token, 
     p_user_id: user.id,
@@ -93,8 +98,11 @@ form.addEventListener('submit',async e=>{
   });
   
   if(fe){
-    err.textContent = fe.message; 
+    err.textContent = fe.message.includes('Invalid or used token') 
+     ? 'Ссылка уже использована' 
+      : fe.message; 
     await supabase.auth.signOut();
+    btn.disabled = false;
     return
   }
 
