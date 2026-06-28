@@ -58,12 +58,12 @@ const msg = document.getElementById('msg')
 document.getElementById('toLogin').onclick = ()=>{regForm.classList.add('hidden');loginForm.classList.remove('hidden');subtitle.textContent='Вход';msg.textContent=''}
 document.getElementById('toReg').onclick = ()=>{loginForm.classList.add('hidden');regForm.classList.remove('hidden');subtitle.textContent='Управление кухней';msg.textContent=''}
 
-// РЕГИСТРАЦИЯ OWNER/CHEF
+// РЕГИСТРАЦИЯ С УМОМ
 document.getElementById('btnReg').onclick = async ()=>{
   const btn = document.getElementById('btnReg')
   btn.disabled = true
   msg.style.color = '#a3a3a3'
-  msg.textContent = 'Создаю ресторан...'
+  msg.textContent = 'Проверяю...'
 
   const email = document.getElementById('email').value.trim()
   const password = document.getElementById('password').value
@@ -71,22 +71,31 @@ document.getElementById('btnReg').onclick = async ()=>{
   const rest_name = document.getElementById('rest_name').value.trim()
 
   try{
-    const {data: {user}, error: authErr} = await sb.auth.signUp({email, password})
-    if(authErr) throw authErr
-    if(!user) throw new Error('Не удалось создать пользователя')
+    let user;
+    const {data, error} = await sb.auth.signUp({email, password})
+    
+    if(error && error.message.toLowerCase().includes('already registered')){
+      msg.textContent = 'Такой email есть. Вхожу...'
+      const {error:loginErr} = await sb.auth.signInWithPassword({email, password})
+      if(loginErr) throw loginErr
+      user = (await sb.auth.getUser()).data.user
+    } else if(error) {
+      throw error
+    } else {
+      user = data.user
+      await sb.auth.signInWithPassword({email, password})
+      user = (await sb.auth.getUser()).data.user
+    }
 
-    await sb.auth.signInWithPassword({email, password})
+    const {data:rest} = await sb.from('restaurants').select().eq('owner_id', user.id).maybeSingle()
+    if(!rest){
+      const {data:newRest} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name, subscription_type: 'chef'}).select().single()
+      rest = newRest
+    }
 
-    const {data:rest, error:restErr} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name, subscription_type: 'chef'}).select().single()
-    if(restErr) throw restErr
-
-    const {error:profErr} = await sb.from('profiles').insert({
-      id:user.id,
-      full_name:full_name,
-      restaurant_id:rest.id,
-      role:'owner',
-      is_active:true
-    })
+    const {error:profErr} = await sb.from('profiles').upsert({
+      id:user.id, full_name:full_name, restaurant_id:rest.id, role:'owner', is_active:true
+    }, {onConflict: 'id'})
     if(profErr) throw profErr;
 
     msg.style.color = '#22c55e'
@@ -106,12 +115,8 @@ document.getElementById('btnLogin').onclick = async ()=>{
   btn.disabled = true
   msg.style.color = '#a3a3a3'
   msg.textContent = 'Входим...'
-
-  const email = document.getElementById('emailLogin').value.trim()
-  const password = document.getElementById('passwordLogin').value
-
   try{
-    const {error} = await sb.auth.signInWithPassword({email, password})
+    const {error} = await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(), password:document.getElementById('passwordLogin').value})
     if(error) throw error
     msg.style.color = '#22c55e'
     msg.textContent = 'Вход успешен. Перехожу...'
