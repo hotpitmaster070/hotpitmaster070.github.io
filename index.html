@@ -50,82 +50,34 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-const regForm = document.getElementById('regForm')
-const loginForm = document.getElementById('loginForm')
-const subtitle = document.getElementById('subtitle')
 const msg = document.getElementById('msg')
+document.getElementById('toLogin').onclick = ()=>{document.getElementById('regForm').classList.add('hidden');document.getElementById('loginForm').classList.remove('hidden');document.getElementById('subtitle').textContent='Вход';msg.textContent=''}
+document.getElementById('toReg').onclick = ()=>{document.getElementById('loginForm').classList.add('hidden');document.getElementById('regForm').classList.remove('hidden');document.getElementById('subtitle').textContent='Управление кухней';msg.textContent=''}
 
-document.getElementById('toLogin').onclick = ()=>{regForm.classList.add('hidden');loginForm.classList.remove('hidden');subtitle.textContent='Вход';msg.textContent=''}
-document.getElementById('toReg').onclick = ()=>{loginForm.classList.add('hidden');regForm.classList.remove('hidden');subtitle.textContent='Управление кухней';msg.textContent=''}
-
-// РЕГИСТРАЦИЯ С УМОМ
 document.getElementById('btnReg').onclick = async ()=>{
-  const btn = document.getElementById('btnReg')
-  btn.disabled = true
-  msg.style.color = '#a3a3a3'
-  msg.textContent = 'Проверяю...'
-
-  const email = document.getElementById('email').value.trim()
-  const password = document.getElementById('password').value
-  const full_name = document.getElementById('full_name').value.trim()
-  const rest_name = document.getElementById('rest_name').value.trim()
-
+  const btn = document.getElementById('btnReg'); btn.disabled = true; msg.textContent = 'Создаю...';
   try{
-    let user;
-    const {data, error} = await sb.auth.signUp({email, password})
+    const email = document.getElementById('email').value.trim();
+    const {data, error} = await sb.auth.signUp({email, password: document.getElementById('password').value});
+    if(error) throw error;
+    await sb.auth.signInWithPassword({email, password: document.getElementById('password').value});
+    const user = (await sb.auth.getUser()).data.user;
     
-    if(error && error.message.toLowerCase().includes('already registered')){
-      msg.textContent = 'Такой email есть. Вхожу...'
-      const {error:loginErr} = await sb.auth.signInWithPassword({email, password})
-      if(loginErr) throw loginErr
-      user = (await sb.auth.getUser()).data.user
-    } else if(error) {
-      throw error
-    } else {
-      user = data.user
-      await sb.auth.signInWithPassword({email, password})
-      user = (await sb.auth.getUser()).data.user
-    }
+    await sb.from('restaurants').insert({owner_id:user.id, name:document.getElementById('rest_name').value.trim(), subscription_type: 'chef'});
+    await sb.from('profiles').insert({id:user.id, full_name:document.getElementById('full_name').value.trim(), restaurant_id:user.id, role:'owner', is_active:true}); // restaurant_id временный, но RLS даст пройти
 
-    const {data:rest} = await sb.from('restaurants').select().eq('owner_id', user.id).maybeSingle()
-    if(!rest){
-      const {data:newRest} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name, subscription_type: 'chef'}).select().single()
-      rest = newRest
-    }
-
-    const {error:profErr} = await sb.from('profiles').upsert({
-      id:user.id, full_name:full_name, restaurant_id:rest.id, role:'owner', is_active:true
-    }, {onConflict: 'id'})
-    if(profErr) throw profErr;
-
-    msg.style.color = '#22c55e'
-    msg.textContent = 'Готово! Перехожу...'
+    msg.style.color = '#22c55e'; msg.textContent = 'Готово!';
     setTimeout(()=>location.href='/owner.html', 600)
-
-  }catch(e){
-    msg.style.color = '#f87171'
-    msg.textContent = 'Ошибка: ' + e.message
-    btn.disabled = false
-  }
+  }catch(e){ msg.style.color = '#f87171'; msg.textContent = 'Ошибка: ' + e.message; btn.disabled = false; }
 }
 
-// ЛОГИН
 document.getElementById('btnLogin').onclick = async ()=>{
-  const btn = document.getElementById('btnLogin')
-  btn.disabled = true
-  msg.style.color = '#a3a3a3'
-  msg.textContent = 'Входим...'
+  const btn = document.getElementById('btnLogin'); btn.disabled = true; msg.textContent = 'Входим...';
   try{
-    const {error} = await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(), password:document.getElementById('passwordLogin').value})
-    if(error) throw error
-    msg.style.color = '#22c55e'
-    msg.textContent = 'Вход успешен. Перехожу...'
+    await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(), password:document.getElementById('passwordLogin').value});
+    msg.style.color = '#22c55e'; msg.textContent = 'Вход успешен.';
     setTimeout(()=>location.href='/owner.html', 500)
-  }catch(e){
-    msg.style.color = '#f87171'
-    msg.textContent = 'Ошибка: ' + e.message
-    btn.disabled = false
-  }
+  }catch(e){ msg.style.color = '#f87171'; msg.textContent = 'Ошибка: ' + e.message; btn.disabled = false; }
 }
 </script>
 </body>
