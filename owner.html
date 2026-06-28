@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   .spinner { width: 20px; height: 20px; border: 3px solid var(--muted); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin { to { transform: rotate(360deg); }
   .loading-wrap { display:flex; align-items:center; gap:8px; }
   #qrCanvas { margin: 16px auto; display: block; background: white; padding: 8px; border-radius: 8px; }
   #link { width: 100%; margin-top: 8px; font-size: 12px; }
@@ -51,8 +51,11 @@
     <h3>Пригласить шефа</h3>
     <p style="color:var(--muted);font-size:14px">Ссылка живет 24ч. После 1 входа сгорит.</p>
     <canvas id="qrCanvas"></canvas>
-    <input id="link" readonly>
-    <div class="row">
+    
+    <!-- ВОТ ЭТОТ КУСОК ПОМЕНЯЛ -->
+    <a id="link" href="#" target="_blank" readonly style="display:block; background:#0f1117; padding:12px; border-radius:12px; font-family:monospace; word-break:break-all; color:#22c55e; text-decoration:none; border:1px solid #22c55e;"></a>
+    
+    <div class="row" style="margin-top:12px;">
       <button id="copyBtn">Копировать</button>
       <button id="closeModalBtn">Закрыть</button>
     </div>
@@ -86,7 +89,8 @@ document.getElementById('logoutBtn').onclick = doLogout;
 document.getElementById('logoutBtn2').onclick = doLogout;
 document.getElementById('addChefBtn').onclick = ()=>{ sidebar.classList.remove('open'); overlay.classList.remove('show'); showInvite() };
 document.getElementById('closeModalBtn').onclick = ()=>inviteModal.style.display='none';
-document.getElementById('copyBtn').onclick = ()=>navigator.clipboard.writeText(link.value);
+// Копируем теперь из textContent, а не value
+document.getElementById('copyBtn').onclick = ()=>navigator.clipboard.writeText(link.textContent);
 
 async function showInvite(){
   try {
@@ -96,7 +100,6 @@ async function showInvite(){
     const {data:rest} = await supabase.from('restaurants').select('id').eq('owner_id',user.id).single();
     if(!rest) throw new Error('Ресторан не найден');
 
-    // 1. Ищем активный инвайт: не использован, не просрочен 24ч
     const {data: existing} = await supabase.from('invites')
         .select('token')
         .eq('created_by', user.id)
@@ -108,22 +111,22 @@ async function showInvite(){
 
     let token;
     if (existing) {
-        token = existing.token; // Берем старый
+        token = existing.token;
     } else {
-        // Создаем новый
         token = crypto.randomUUID();
         const {error: iErr} = await supabase.from('invites').insert({
             token, 
             created_by: user.id, 
             restaurant_id: rest.id,
-            expires_at: new Date(Date.now() + 24*60*60*1000).toISOString() // +24 часа
+            expires_at: new Date(Date.now() + 24*60*60*1000).toISOString()
         });
         if(iErr) throw iErr;
     }
 
     const url = location.origin + '/join.html?token=' + token;
-    link.value = url; 
-    qrCanvas.width = 200; qrCanvas.height = 200; // чистим старый
+    link.textContent = url;  // Было .value
+    link.href = url;         // Добавили ссылку
+    qrCanvas.width = 200; qrCanvas.height = 200;
     await QRCode.toCanvas(qrCanvas, url);
     inviteModal.style.display = 'flex';
   } catch(e) {
