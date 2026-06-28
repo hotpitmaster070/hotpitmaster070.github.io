@@ -34,23 +34,40 @@ const form = document.getElementById('join');
 const err = document.getElementById('err');
 const restName = document.getElementById('restName');
 
+console.log('[JOIN] Token:', token);
+
 if(!token){
-  restName.textContent = 'Ссылка невалидна';
+  restName.textContent = 'Ссылка невалидна: нет token в URL';
 } else {
-  // 1. Проверяем токен. Берем только restaurant_id, чтобы не падать на RLS
+  // 1. Проверяем токен
   supabase.from('invites').select('restaurant_id').eq('token', token).eq('used', false).gt('expires_at', new Date().toISOString()).single()
   .then(async ({data, error}) => {
-    if(error || !data){
+    console.log('[JOIN] Invite check:', {data, error});
+    
+    if(error){
+      restName.textContent = 'Ошибка БД: ' + error.message;
+      return;
+    }
+    if(!data){
       restName.textContent = 'Ссылка просрочена или уже использована';
       return;
     }
     
-    // 2. Отдельно дергаем название ресторана
-    const {data: rest} = await supabase.from('restaurants').select('name').eq('id', data.restaurant_id).single();
-    restName.textContent = `Вас приглашают в: ${rest?.name || 'ресторан'}`;
+    // 2. Дергаем название ресторана
+    const {data: rest, error: restErr} = await supabase.from('restaurants').select('name').eq('id', data.restaurant_id).single();
+    console.log('[JOIN] Restaurant check:', {rest, restErr});
+
+    if(restErr){
+      restName.textContent = 'Не могу прочитать ресторан: ' + restErr.message;
+      return;
+    }
     
-    // 3. Показываем форму
+    restName.textContent = `Вас приглашают в: ${rest?.name || 'ресторан'}`;
     form.classList.remove('hidden');
+  })
+  .catch(e => { // ВОТ ЭТОГО НЕ ХВАТАЛО
+    console.error('[JOIN] FATAL:', e);
+    restName.textContent = 'Критическая ошибка: ' + e.message;
   })
 }
 
@@ -63,15 +80,12 @@ form.addEventListener('submit',async e=>{
   const email = fd.get('email');
   const password = fd.get('password');
 
-  // 1. Регистрируем в Auth
   const {data: {user}, error: ae}=await supabase.auth.signUp({email, password});
   if(ae || !user){err.textContent=ae?.message || 'Ошибка регистрации'; return}
 
-  // 2. Сразу логиним, чтобы сессия была
   const {error: se} = await supabase.auth.signInWithPassword({email, password});
   if(se){err.textContent='Ошибка входа: ' + se.message; return}
 
-  // 3. Вызываем RPC. Передаем user.id напрямую
   const {error:fe}=await supabase.rpc('accept_invite', {
     p_token: token, 
     p_user_id: user.id,
@@ -80,7 +94,7 @@ form.addEventListener('submit',async e=>{
   
   if(fe){
     err.textContent = fe.message; 
-    await supabase.auth.signOut(); // Чистим за собой если ссылка уже использована
+    await supabase.auth.signOut();
     return
   }
 
