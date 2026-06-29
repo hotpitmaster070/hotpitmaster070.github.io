@@ -55,24 +55,43 @@ document.getElementById('toLogin').onclick = ()=>{document.getElementById('regFo
 document.getElementById('toReg').onclick = ()=>{document.getElementById('loginForm').classList.add('hidden');document.getElementById('regForm').classList.remove('hidden');document.getElementById('subtitle').textContent='Управление кухней';msg.textContent=''}
 
 document.getElementById('btnReg').onclick = async ()=>{
-  const btn = document.getElementById('btnReg'); btn.disabled = true; msg.textContent = 'Создаю...';
+  const btn = document.getElementById('btnReg'); btn.disabled = true; msg.style.color='#a3a3a3'; msg.textContent = 'Создаю ресторан...';
   try{
     const email = document.getElementById('email').value.trim();
-    const {data, error} = await sb.auth.signUp({email, password: document.getElementById('password').value});
+    const password = document.getElementById('password').value;
+    const full_name = document.getElementById('full_name').value.trim();
+    const rest_name = document.getElementById('rest_name').value.trim();
+
+    // 1. Создаем юзера
+    const {data, error} = await sb.auth.signUp({email, password});
     if(error) throw error;
-    await sb.auth.signInWithPassword({email, password: document.getElementById('password').value});
+    if(!data.user) throw new Error('Не удалось создать пользователя');
+
+    // 2. Сразу логинимся, чтобы RLS пропустил insert
+    await sb.auth.signInWithPassword({email, password});
     const user = (await sb.auth.getUser()).data.user;
     
-    await sb.from('restaurants').insert({owner_id:user.id, name:document.getElementById('rest_name').value.trim(), subscription_type: 'chef'});
-    await sb.from('profiles').insert({id:user.id, full_name:document.getElementById('full_name').value.trim(), restaurant_id:user.id, role:'owner', is_active:true}); // restaurant_id временный, но RLS даст пройти
+    // 3. ГЛАВНЫЙ ФИКС: Сначала создаем ресторан и берем его id
+    msg.textContent = 'Создаю профиль...';
+    const {data:newRest, error:restErr} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name, subscription_type: 'chef'}).select('id').single();
+    if(restErr) throw restErr;
 
-    msg.style.color = '#22c55e'; msg.textContent = 'Готово!';
+    // 4. И только потом создаем профиль с ПРАВИЛЬНЫМ restaurant_id
+    const {error:profErr} = await sb.from('profiles').insert({id:user.id, full_name:full_name, restaurant_id:newRest.id, role:'owner', is_active:true});
+    if(profErr) throw profErr;
+
+    msg.style.color = '#22c55e'; msg.textContent = 'Готово! Перехожу...';
     setTimeout(()=>location.href='/owner.html', 600)
-  }catch(e){ msg.style.color = '#f87171'; msg.textContent = 'Ошибка: ' + e.message; btn.disabled = false; }
+  }catch(e){ 
+    console.error(e);
+    msg.style.color = '#f87171'; 
+    msg.textContent = 'Ошибка: ' + e.message; 
+    btn.disabled = false; 
+  }
 }
 
 document.getElementById('btnLogin').onclick = async ()=>{
-  const btn = document.getElementById('btnLogin'); btn.disabled = true; msg.textContent = 'Входим...';
+  const btn = document.getElementById('btnLogin'); btn.disabled = true; msg.style.color='#a3a3a3'; msg.textContent = 'Входим...';
   try{
     await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(), password:document.getElementById('passwordLogin').value});
     msg.style.color = '#22c55e'; msg.textContent = 'Вход успешен.';
