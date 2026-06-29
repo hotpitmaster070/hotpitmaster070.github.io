@@ -4,136 +4,153 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit Owner</title>
 <style>
- body{margin:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff}
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--radius:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh}
 .app{display:flex;min-height:100vh}
-.sidebar{background:#111;width:260px;padding:24px;flex-shrink:0}
-.sidebar h2{color:#ff6b00;margin:0 0 8px;font-size:24px}
-.sub{color:#888;font-size:14px;margin-bottom:24px}
-.menu button{width:100%;padding:12px;text-align:left;background:transparent;border:none;color:#aaa;cursor:pointer;border-radius:8px;margin-bottom:8px;font-size:15px}
-.menu button.active,.menu button:hover{background:#1e1e1e;color:#fff}
-.menu button:disabled{opacity:.4;cursor:not-allowed}
-.content{flex:1;padding:24px}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.topbar h1{margin:0;font-size:24px}
-.row{display:flex;gap:16px;margin-bottom:16px}
-.modal{background:#111;padding:16px;border-radius:16px}
-.spinner{width:20px;height:20px;border:3px solid #333;border-top-color:#ff6b00;border-radius:50%;animation:spin .8s linear infinite;display:inline-block;vertical-align:middle}
- @keyframes spin{to{transform:rotate(360deg)}}
- #qrCanvas{margin:16px auto;display:block;background:white;padding:8px;border-radius:8px}
- #link{width:100%;margin-top:8px;font-size:12px;background:#0f1117;padding:12px;border-radius:12px;font-family:monospace;word-break:break-all;color:#22c55e;text-decoration:none;border:1px solid #22c55e;display:block}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center;z-index:100}
-.modal-overlay > .modal{max-width:400px;width:100%}
- button{padding:12px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:700;cursor:pointer;font-size:15px}
- #msg{margin-top:12px;font-size:13px;color:#f87171;white-space:pre-wrap}
+.sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform .3s}
+.sidebar.open{transform:translateX(0)}
+.sidebar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.sidebar h2{color:var(--accent);font-size:24px}
+.sidebar .sub{color:var(--muted);font-size:12px}
+.menu{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.menu button{background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:8px;cursor:pointer;font-size:15px}
+.menu button.active,.menu button:hover{background:var(--card-2)}
+.menu hr{border:none;border-top:1px solid #262626;margin:8px 0}
+.badge{background:var(--accent);color:#000;font-size:11px;padding:2px 6px;border-radius:20px;margin-left:4px;font-weight:700}
+.content{flex:1;padding:24px;margin-left:0}
+.topbar{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.topbar h1{flex:1;font-size:24px}
+.burger,.close-btn{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:8px;cursor:pointer;font-size:20px;line-height:1}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;z-index:90}
+.overlay.show{display:block}
+.card{background:var(--card);padding:20px;border-radius:16px;margin-bottom:16px;border:1px solid #262626}
+.card h3{margin-bottom:12px}
+.card h4{margin:16px 0 8px;color:var(--muted)}
+button{padding:12px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:600;font-size:15px;cursor:pointer}
+.btn-danger{background:#ef4444;color:#fff}
+.progress{height:8px;background:var(--card-2);border-radius:8px;overflow:hidden;margin:8px 0}
+.progress>div{height:100%;background:var(--accent);transition:width .3s}
+.row{display:flex;gap:8px;margin-top:12px}
+@media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-btn{display:none}}
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar">
-    <h2>HotPit</h2>
-    <div class="sub" id="restName"><div class="spinner"></div> Загрузка...</div>
+  <div class="overlay" id="overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <h2>HotPit</h2>
+      <button class="close-btn" id="closeBtn">×</button>
+    </div>
+    <div class="sub" id="restName">Загрузка...</div>
     <nav class="menu">
-      <button class="active">Дашборд</button>
-      <button id="addChefBtn" disabled>+ Пригласить Шефа/Повара</button>
+      <button class="tab-btn active" data-tab="personal">👥 Персонал</button>
+      <button class="tab-btn" data-tab="grafik">📅 График</button>
+      <button class="tab-btn" data-tab="sklad">📦 Склад</button>
+      <button class="tab-btn" data-tab="otchet">📊 Отчет</button>
+      <button class="tab-btn" data-tab="fot">💰 ФОТ</button>
+      <button class="tab-btn" data-tab="zaprosy">⚠️ Запросы <span class="badge" id="reqBadge" style="display:none">1</span></button>
+      <hr>
+      <button class="tab-btn" data-tab="missia">💛 Миссия</button>
       <button id="logoutBtn">Выйти</button>
     </nav>
   </aside>
 
   <main class="content">
-    <div class="topbar"><h1>Дашборд</h1></div>
-    <div id="msg"></div>
-    <div class="row">
-      <div class="modal" style="flex:1">Шефы/Повара: <b id="chefs"><div class="spinner"></div></b></div>
-      <div class="modal" style="flex:1">Всего персонал: <b id="staff"><div class="spinner"></div></b></div>
+    <div class="topbar">
+      <button class="burger" id="burgerBtn">☰</button>
+      <h1 id="pageTitle">Персонал</h1>
     </div>
-    <div class="modal"><h3>Склад</h3><div id="stockList">Пока пусто. Добавим позже.</div></div>
+    
+    <div id="tab-content">
+      <div class="card" data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
+      <div class="card" data-tab-content="grafik" style="display:none"><h3>График на неделю</h3><div>Сколько поваров на смене по дням. Вызывает Шеф.</div></div>
+      <div class="card" data-tab-content="sklad" style="display:none"><h3>Склад</h3><div>Топ продуктов на исходе.</div></div>
+      <div class="card" data-tab-content="otchet" style="display:none"><h3>Отчет</h3><div>Списание, брак за месяц.</div></div>
+      <div class="card" data-tab-content="fot" style="display:none">
+        <h3>ФОТ Месяц</h3>
+        <b id="fotUsed">0</b> / <b id="fotLimit">400000</b> р
+        <div class="progress"><div id="fotBar"></div></div>
+        <h4>Зарплата к выплате</h4>
+        <div id="salaryList">Загрузка...</div>
+        <button id="closeMonthBtn" style="margin-top:12px;width:100%">Закрыть месяц и выплатить</button>
+      </div>
+      <div class="card" data-tab-content="zaprosy" style="display:none">
+        <h3>Запросы на увольнение</h3>
+        <div id="dismissList">Нет активных запросов</div>
+      </div>
+      <div class="card" data-tab-content="missia" style="display:none">
+        <h3>Наша Миссия</h3>
+        <p>Вы с нами в команде поддержки детей без родителей. Спасибо что выбрали HotPit.</p>
+      </div>
+    </div>
   </main>
-</div>
-
-<div class="modal-overlay" id="inviteModal">
-  <div class="modal">
-    <h3>Пригласить</h3>
-    <p style="color:#888;font-size:14px">Ссылка живет 7 дней. 1 раз используется.</p>
-    <canvas id="qrCanvas" width="200" height="200"></canvas>
-    <a id="link" href="#" target="_blank"></a>
-    <div class="row" style="margin-top:12px;">
-      <button id="copyBtn" style="flex:1">Копировать</button>
-      <button id="closeModalBtn" style="flex:1;background:#333;color:#fff">Закрыть</button>
-    </div>
-  </div>
 </div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-import QRCode from 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm'
-
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const restName = document.getElementById('restName');
-const chefsEl = document.getElementById('chefs');
-const staffEl = document.getElementById('staff');
-const inviteModal = document.getElementById('inviteModal');
-const link = document.getElementById('link');
-const qrCanvas = document.getElementById('qrCanvas');
-const msg = document.getElementById('msg');
-const addChefBtn = document.getElementById('addChefBtn');
-let myRestaurantId = null;
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+document.getElementById('burgerBtn').onclick = ()=>{sidebar.classList.add('open');overlay.classList.add('show');}
+document.getElementById('closeBtn').onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show');}
+overlay.onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show');}
+
+const tabBtns = document.querySelectorAll('.tab-btn');
+const pageTitle = document.getElementById('pageTitle');
+const tabContents = document.querySelectorAll('[data-tab-content]');
+tabBtns.forEach(btn=>{
+  btn.onclick = ()=>{
+    tabBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    pageTitle.textContent = btn.textContent.replace(/[^a-zA-Zа-яА-Я ]/g, '').trim();
+    tabContents.forEach(c=>c.style.display = c.dataset.tabContent === tab ? 'block' : 'none');
+    sidebar.classList.remove('open'); overlay.classList.remove('show');
+  }
+});
 
 document.getElementById('logoutBtn').onclick = ()=>supabase.auth.signOut().then(()=>location.href='/index.html');
-addChefBtn.onclick = showInvite;
-document.getElementById('closeModalBtn').onclick = ()=>inviteModal.style.display='none';
-document.getElementById('copyBtn').onclick = ()=>navigator.clipboard.writeText(link.textContent);
+document.getElementById('closeMonthBtn').onclick = ()=>alert('Логика закрытия месяца. Допишем после БД.');
 
-async function showInvite(){
-  try {
-    if(!myRestaurantId) throw new Error('ID ресторана не загружен');
-    const token = crypto.randomUUID();
-    const {error} = await supabase.from('invites').insert({
-        token, restaurant_id: myRestaurantId, role: 'chef', expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString()
-    });
-    if(error) throw error;
+let myRestaurantId = null;
 
-    const url = location.origin + '/join.html?token=' + token;
-    link.textContent = url; link.href = url;
-    await QRCode.toCanvas(qrCanvas, url);
-    inviteModal.style.display = 'flex';
-  } catch(e) {
-    alert('Ошибка: '+e.message);
+async function loadRequests() {
+  const count = 1; // заглушка. потом select из dismiss_requests
+  if(count > 0) {
+    document.getElementById('reqBadge').style.display = 'inline-block';
+    document.getElementById('dismissList').innerHTML = `<div class="card"><b>Шеф хочет уволить: Давид</b><br><span style="color:var(--muted);font-size:14px">Причина: Брак, 3 тарелки</span><div class="row"><button style="flex:1;background:#22c55e;color:#000">Одобрить</button> <button style="flex:1" class="btn-danger">Отклонить</button></div></div>`;
   }
 }
 
 async function init() {
-  try {
-    const {data:{user}} = await supabase.auth.getUser();
-    if(!user) throw new Error('Нет сессии. Войдите заново.');
+  const {data:{user}} = await supabase.auth.getUser();
+  if(!user) return location.href='/index.html';
+  const {data: rest} = await supabase.rpc('get_my_restaurant').single();
+  if(!rest) return location.href='/index.html';
+  myRestaurantId = rest.id;
+  document.getElementById('restName').textContent = rest.name;
+  
+  const limit = 400000;
+  const used = 287000;
+  document.getElementById('fotUsed').textContent = used.toLocaleString('ru');
+  document.getElementById('fotLimit').textContent = limit.toLocaleString('ru');
+  document.getElementById('fotBar').style.width = (used/limit*100)+'%';
+  
+  const {data:povara} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true);
+  document.getElementById('povaraList').innerHTML = povara.map(p=>`<div style="padding:8px 0;border-bottom:1px solid #262626">${p.full_name} - ${p.role} - ${p.salary||0}р/мес</div>`).join('') || 'Нет поваров';
+  
+  document.getElementById('salaryList').innerHTML = povara.map(p=>{
+    const fine = p.fines || 0;
+    const toPay = (p.salary||0) - fine;
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #262626"><span>${p.full_name}</span><span>${p.salary||0}р - ${fine}р = <b>${toPay}р</b></span></div>`
+  }).join('') || 'Нет данных';
 
-    // ГЛАВНОЕ: Берем все данные через 1 функцию.
-    const {data: rest, error} = await supabase.rpc('get_my_restaurant').single();
-    if(error) throw error;
-    if(!rest) throw new Error('Ресторан не найден.');
-
-    myRestaurantId = rest.id;
-    restName.textContent = rest.name;
-    addChefBtn.disabled = false; // Включаем кнопку только после успеха
-
-    // Считаем персонал
-    const {count:chefsCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',myRestaurantId).in('role',['chef','cook']).eq('is_active', true);
-    const {count:staffCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',myRestaurantId).eq('is_active', true);
-    
-    chefsEl.textContent = chefsCount ?? 0;
-    staffEl.textContent = staffCount ?? 0;
-
-  } catch(e) {
-    console.error('Owner init error:', e);
-    restName.textContent = 'Ошибка загрузки';
-    msg.textContent = e.message + ' \n\nУдалите аккаунт и зарегистрируйтесь заново.';
-    chefsEl.textContent = '0';
-    staffEl.textContent = '0';
-    addChefBtn.disabled = true; // Блокируем кнопку
-  }
+  loadRequests();
 }
-
 init();
 </script></body></html>
