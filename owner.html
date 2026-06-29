@@ -11,6 +11,7 @@
 .sub{color:#888;font-size:14px;margin-bottom:24px}
 .menu button{width:100%;padding:12px;text-align:left;background:transparent;border:none;color:#aaa;cursor:pointer;border-radius:8px;margin-bottom:8px;font-size:15px}
 .menu button.active,.menu button:hover{background:#1e1e1e;color:#fff}
+.menu button:disabled{opacity:.4;cursor:not-allowed}
 .content{flex:1;padding:24px}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
 .topbar h1{margin:0;font-size:24px}
@@ -33,7 +34,7 @@
     <div class="sub" id="restName"><div class="spinner"></div> Загрузка...</div>
     <nav class="menu">
       <button class="active">Дашборд</button>
-      <button id="addChefBtn">+ Пригласить Шефа/Повара</button>
+      <button id="addChefBtn" disabled>+ Пригласить Шефа/Повара</button>
       <button id="logoutBtn">Выйти</button>
     </nav>
   </aside>
@@ -77,10 +78,11 @@ const inviteModal = document.getElementById('inviteModal');
 const link = document.getElementById('link');
 const qrCanvas = document.getElementById('qrCanvas');
 const msg = document.getElementById('msg');
+const addChefBtn = document.getElementById('addChefBtn');
 let myRestaurantId = null;
 
 document.getElementById('logoutBtn').onclick = ()=>supabase.auth.signOut().then(()=>location.href='/index.html');
-document.getElementById('addChefBtn').onclick = showInvite;
+addChefBtn.onclick = showInvite;
 document.getElementById('closeModalBtn').onclick = ()=>inviteModal.style.display='none';
 document.getElementById('copyBtn').onclick = ()=>navigator.clipboard.writeText(link.textContent);
 
@@ -107,15 +109,16 @@ async function init() {
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) throw new Error('Нет сессии. Войдите заново.');
 
-    // ГЛАВНЫЙ ФИКС: Берем все данные через 1 функцию. Без select profiles/restaurants
+    // ГЛАВНОЕ: Берем все данные через 1 функцию.
     const {data: rest, error} = await supabase.rpc('get_my_restaurant').single();
     if(error) throw error;
-    if(!rest) throw new Error('Ресторан не найден. Пройдите регистрацию заново.');
+    if(!rest) throw new Error('Ресторан не найден.');
 
     myRestaurantId = rest.id;
     restName.textContent = rest.name;
+    addChefBtn.disabled = false; // Включаем кнопку только после успеха
 
-    // Считаем персонал. Теперь RLS пропустит, т.к. у нас есть restaurant_id из функции
+    // Считаем персонал
     const {count:chefsCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',myRestaurantId).in('role',['chef','cook']).eq('is_active', true);
     const {count:staffCount} = await supabase.from('profiles').select('*',{count:'exact',head:true}).eq('restaurant_id',myRestaurantId).eq('is_active', true);
     
@@ -125,9 +128,10 @@ async function init() {
   } catch(e) {
     console.error('Owner init error:', e);
     restName.textContent = 'Ошибка загрузки';
-    msg.textContent = e.message;
+    msg.textContent = e.message + ' \n\nУдалите аккаунт и зарегистрируйтесь заново.';
     chefsEl.textContent = '0';
     staffEl.textContent = '0';
+    addChefBtn.disabled = true; // Блокируем кнопку
   }
 }
 
