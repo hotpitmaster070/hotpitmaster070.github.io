@@ -41,6 +41,8 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 .muted{color:var(--muted);font-size:14px}
 .err{color:#f87171}
 input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px}
+a{color:var(--accent);word-break:break-all}
+#qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-btn{display:none}}
 </style>
 </head>
@@ -80,7 +82,8 @@ input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;bor
         <h4>Пригласить Шефа</h4>
         <input id="chefEmail" type="email" placeholder="Email Шефа">
         <button id="inviteChefBtn" class="btn-outline" style="width:100%;margin-top:8px">Сгенерировать ссылку</button>
-        <div id="inviteLink" class="muted" style="margin-top:8px;word-break:break-all"></div>
+        <div id="inviteLink" class="muted" style="margin-top:12px"></div>
+        <div id="qrcode"></div>
       </div>
       <div class="card" data-tab-content="grafik" style="display:none"><h3>График на неделю</h3><div>Сколько поваров на смене по дням. Вызывает Шеф.</div></div>
       <div class="card" data-tab-content="sklad" style="display:none"><h3>Склад</h3><div>Топ продуктов на исходе.</div></div>
@@ -105,6 +108,7 @@ input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;bor
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
@@ -137,22 +141,28 @@ document.getElementById('closeMonthBtn').onclick = ()=>alert('Логика за�
 
 let myRestaurantId = null;
 let myUserId = null;
+let qr = null;
 
 document.getElementById('inviteChefBtn').onclick = async ()=>{
   const email = document.getElementById('chefEmail').value.trim();
   if(!email) return alert('Введи email Шефа');
   const link = `${location.origin}/register.html?role=chef&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}`;
-  document.getElementById('inviteLink').innerHTML = `Скинь Шефу эту ссылку: <br><b>${link}</b>`;
+  
+  document.getElementById('inviteLink').innerHTML = `Скинь Шефу эту ссылку: <br><a href="${link}" target="_blank">${link}</a>`;
   navigator.clipboard.writeText(link);
-  alert('Ссылка скопирована');
+  
+  document.getElementById('qrcode').innerHTML = '';
+  qr = new QRCode(document.getElementById("qrcode"), { text: link, width: 200, height: 200, colorDark : "#000", colorLight : "#ffffff" });
+  
+  alert('Ссылка скопирована + QR готов');
 }
 
 async function loadRequests() {
   const {data:reqs, error} = await supabase.from('dismiss_requests')
-  .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
-  .eq('restaurant_id', myRestaurantId)
-  .in('status', ['chef_requested','owner_review','cook_agreed'])
-  .order('created_at', {ascending:false});
+ .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
+ .eq('restaurant_id', myRestaurantId)
+ .in('status', ['chef_requested','owner_review','cook_agreed'])
+ .order('created_at', {ascending:false});
 
   const badge = document.getElementById('reqBadge');
   const list = document.getElementById('dismissList');
@@ -204,7 +214,7 @@ window.finalDismiss = async(reqId, userId)=>{
   if(e2) return alert(e2.message);
   alert('Повар уволен');
   loadRequests();
-  init(); // обновить список персонала
+  init();
 }
 
 async function init() {
