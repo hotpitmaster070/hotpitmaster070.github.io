@@ -8,11 +8,11 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh}
 .app{display:flex;min-height:100vh}
-.sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform .3s}
+.sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform.3s}
 .sidebar.open{transform:translateX(0)}
 .sidebar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
 .sidebar h2{color:var(--accent);font-size:24px}
-.sidebar .sub{color:var(--muted);font-size:12px}
+.sidebar.sub{color:var(--muted);font-size:12px}
 .menu{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .menu button{background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:8px;cursor:pointer;font-size:15px}
 .menu button.active,.menu button:hover{background:var(--card-2)}
@@ -28,15 +28,17 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),t
 .card h3{margin-bottom:12px}
 .card h4{margin:16px 0 8px;color:var(--muted)}
 button{padding:12px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:600;font-size:15px;cursor:pointer}
+button[disabled]{opacity:.6;cursor:not-allowed}
 .btn-danger{background:#ef4444;color:#fff}
 .btn-green{background:#22c55e;color:#000}
 .progress{height:8px;background:var(--card-2);border-radius:8px;overflow:hidden;margin:8px 0}
-.progress>div{height:100%;background:var(--accent);transition:width .3s}
+.progress>div{height:100%;background:var(--accent);transition:width.3s}
 .row{display:flex;gap:8px;margin-top:12px}
 .row button{flex:1}
 .req-card{border:1px solid #333;padding:16px;border-radius:12px;margin-bottom:12px}
 .req-card b{font-size:16px}
 .muted{color:var(--muted);font-size:14px}
+.err{color:#f87171}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-btn{display:none}}
 </style>
 </head>
@@ -114,7 +116,7 @@ tabBtns.forEach(btn=>{
     btn.classList.add('active');
     const tab = btn.dataset.tab;
     pageTitle.textContent = btn.textContent.replace(/[^a-zA-Zа-яА-Я ]/g, '').trim();
-    tabContents.forEach(c=>c.style.display = c.dataset.tabContent === tab ? 'block' : 'none');
+    tabContents.forEach(c=>c.style.display = c.dataset.tabContent === tab? 'block' : 'none');
     sidebar.classList.remove('open'); overlay.classList.remove('show');
     if(tab==='zaprosy') loadRequests();
   }
@@ -127,15 +129,16 @@ let myRestaurantId = null;
 let myUserId = null;
 
 async function loadRequests() {
-  const {data:reqs} = await supabase.from('dismiss_requests')
-    .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
-    .eq('restaurant_id', myRestaurantId)
-    .in('status', ['chef_requested','owner_review','cook_agreed'])
-    .order('created_at', {ascending:false});
+  const {data:reqs, error} = await supabase.from('dismiss_requests')
+   .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
+   .eq('restaurant_id', myRestaurantId)
+   .in('status', ['chef_requested','owner_review','cook_agreed'])
+   .order('created_at', {ascending:false});
 
   const badge = document.getElementById('reqBadge');
   const list = document.getElementById('dismissList');
   
+  if(error){list.innerHTML=`<div class="err">Ошибка: ${error.message}</div>`; return;}
   if(!reqs || reqs.length===0){
     badge.style.display='none';
     list.innerHTML='Нет активных запросов';
@@ -159,7 +162,7 @@ async function loadRequests() {
     if(r.status==='chef_requested' || r.status==='owner_review'){
       btns = `<div class="row"><button class="btn-green" onclick="decide('${r.id}','approve')">Одобрить</button> 
               <button class="btn-danger" onclick="decide('${r.id}','reject')">Отклонить</button></div>`;
-    } else if(r.status==='cook_agreed' && !r.has_debt){
+    } else if(r.status==='cook_agreed' &&!r.has_debt){
       btns = `<div class="muted">Повар согласен. Жми Уволить.</div><button class="btn-danger" style="width:100%;margin-top:8px" onclick="finalDismiss('${r.id}','${r.user_id}')">Уволить сейчас</button>`;
     }
 
@@ -168,7 +171,7 @@ async function loadRequests() {
 }
 
 window.decide = async(id, action)=>{
-  const status = action==='approve' ? 'owner_review' : 'owner_rejected';
+  const status = action==='approve'? 'owner_review' : 'owner_rejected';
   const {error} = await supabase.from('dismiss_requests').update({status}).eq('id',id);
   if(error) return alert(error.message);
   loadRequests();
@@ -189,8 +192,8 @@ async function init() {
   const {data:{user}} = await supabase.auth.getUser();
   if(!user) return location.href='/index.html';
   myUserId=user.id;
-  const {data: rest} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
-  if(!rest) return location.href='/index.html';
+  const {data: rest, error: restErr} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
+  if(restErr ||!rest) return location.href='/index.html';
   myRestaurantId = rest.restaurant_id;
   document.getElementById('restName').textContent = rest.restaurants.name;
   
@@ -200,14 +203,24 @@ async function init() {
   document.getElementById('fotLimit').textContent = limit.toLocaleString('ru');
   document.getElementById('fotBar').style.width = (used/limit*100)+'%';
   
-  const {data:povara} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true);
-  document.getElementById('povaraList').innerHTML = povara.map(p=>`<div style="padding:8px 0;border-bottom:1px solid #262626">${p.full_name} - ${p.role} - ${p.salary||0}р/мес</div>`).join('') || 'Нет поваров';
+  const {data:povara, error: pErr} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true);
   
-  document.getElementById('salaryList').innerHTML = povara.map(p=>{
-    const fine = p.fines || 0;
-    const toPay = (p.salary||0) - fine;
-    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #262626"><span>${p.full_name}</span><span>${p.salary||0}р - ${fine}р = <b>${toPay}р</b></span></div>`
-  }).join('') || 'Нет данных';
+  // ФИКС №1: Убираем вечную загрузку
+  if (pErr) {
+    document.getElementById('povaraList').innerHTML = `<div class="err">Ошибка доступа: ${pErr.message}</div>`;
+  } else {
+    document.getElementById('povaraList').innerHTML = povara.length? povara.map(p=>`<div style="padding:8px 0;border-bottom:1px solid #262626">${p.full_name} - ${p.role} - ${p.salary||0}р/мес</div>`).join('') : '<div class="muted">В ресторане нет активных поваров</div>';
+  }
+  
+  if (pErr) {
+    document.getElementById('salaryList').innerHTML = `<div class="err">Ошибка доступа: ${pErr.message}</div>`;
+  } else {
+    document.getElementById('salaryList').innerHTML = povara.length? povara.map(p=>{
+      const fine = p.fines || 0;
+      const toPay = (p.salary||0) - fine;
+      return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #262626"><span>${p.full_name}</span><span>${p.salary||0}р - ${fine}р = <b>${toPay}р</b></span></div>`
+    }).join('') : '<div class="muted">Нет данных</div>';
+  }
 
   loadRequests();
 }
