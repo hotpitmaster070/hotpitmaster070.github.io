@@ -9,9 +9,10 @@
 .wrap{background:#111;border-radius:24px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
   h1{color:#ff6b00;text-align:center;margin:0 0 6px;font-size:32px;font-weight:800}
 .sub{color:#888;text-align:center;font-size:14px;margin-bottom:28px}
-  input{width:100%;padding:14px 16px;margin-bottom:12px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:12px;color:#fff;font-size:15px;box-sizing:border-box}
-  input:focus{outline:none;border-color:#ff6b00}
+  input,select{width:100%;padding:14px 16px;margin-bottom:12px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:12px;color:#fff;font-size:15px;box-sizing:border-box}
+  input:focus,select:focus{outline:none;border-color:#ff6b00}
   input::placeholder{color:#666}
+  select{appearance:none}
   button{width:100%;padding:14px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:700;font-size:16px;cursor:pointer;margin-top:8px}
   button:disabled{opacity:.5;cursor:not-allowed}
 .switch{color:#888;text-align:center;font-size:14px;margin-top:18px}
@@ -26,6 +27,10 @@
   <div class="sub" id="subtitle">Управление кухней</div>
 
   <div id="regForm">
+    <select id="role">
+      <option value="chef">Я Шеф. Создать свой ресторан</option>
+      <option value="owner">Я Овнер. Создать свой ресторан</option>
+    </select>
     <input id="full_name" placeholder="Ваше ФИО" required>
     <input id="rest_name" placeholder="Название ресторана/цеха" required>
     <input id="email" type="email" placeholder="Email" required>
@@ -61,6 +66,7 @@ document.getElementById('btnReg').onclick = async ()=>{
     const password = document.getElementById('password').value;
     const full_name = document.getElementById('full_name').value.trim();
     const rest_name = document.getElementById('rest_name').value.trim();
+    const role = document.getElementById('role').value; // <-- ГЛАВНЫЙ ФИКС
 
     // 1. Создаем юзера
     const {data, error} = await sb.auth.signUp({email, password});
@@ -71,17 +77,20 @@ document.getElementById('btnReg').onclick = async ()=>{
     await sb.auth.signInWithPassword({email, password});
     const user = (await sb.auth.getUser()).data.user;
     
-    // 3. ГЛАВНЫЙ ФИКС: Сначала создаем ресторан и берем его id
+    // 3. Создаем ресторан и берем его id
     msg.textContent = 'Создаю профиль...';
-    const {data:newRest, error:restErr} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name, subscription_type: 'chef'}).select('id').single();
+    const {data:newRest, error:restErr} = await sb.from('restaurants').insert({owner_id:user.id, name:rest_name, subscription_type: role}).select('id').single();
     if(restErr) throw restErr;
 
-    // 4. И только потом создаем профиль с ПРАВИЛЬНЫМ restaurant_id
-    const {error:profErr} = await sb.from('profiles').insert({id:user.id, full_name:full_name, restaurant_id:newRest.id, role:'owner', is_active:true});
+    // 4. Создаем профиль с ПРАВИЛЬНОЙ ролью
+    const {error:profErr} = await sb.from('profiles').insert({id:user.id, full_name:full_name, restaurant_id:newRest.id, role:role, is_active:true});
     if(profErr) throw profErr;
 
     msg.style.color = '#22c55e'; msg.textContent = 'Готово! Перехожу...';
-    setTimeout(()=>location.href='/owner.html', 600)
+    setTimeout(()=>{
+      if(role === 'chef') location.href='/chef.html'; // <-- Отправляем Шефа к себе
+      else location.href='/owner.html'
+    }, 600)
   }catch(e){ 
     console.error(e);
     msg.style.color = '#f87171'; 
@@ -94,8 +103,16 @@ document.getElementById('btnLogin').onclick = async ()=>{
   const btn = document.getElementById('btnLogin'); btn.disabled = true; msg.style.color='#a3a3a3'; msg.textContent = 'Входим...';
   try{
     await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(), password:document.getElementById('passwordLogin').value});
+    
+    const user = (await sb.auth.getUser()).data.user;
+    const {data: prof} = await sb.from('profiles').select('role').eq('id',user.id).single();
+
     msg.style.color = '#22c55e'; msg.textContent = 'Вход успешен.';
-    setTimeout(()=>location.href='/owner.html', 500)
+    setTimeout(()=>{
+      if(prof?.role==='chef') location.href='/chef.html';
+      else if(prof?.role==='owner') location.href='/owner.html';
+      else location.href='/cook.html';
+    }, 500)
   }catch(e){ msg.style.color = '#f87171'; msg.textContent = 'Ошибка: ' + e.message; btn.disabled = false; }
 }
 </script>
