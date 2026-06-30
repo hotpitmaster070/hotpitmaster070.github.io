@@ -1,1 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit Регистрация Шефа</title>
+<style>
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
+h1{font-size:22px;margin-bottom:8px}
+.muted{color:var(--muted);font-size:14px;margin-bottom:16px}
+input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-size:15px}
+button{width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;font-size:15px;cursor:pointer;margin-top:12px}
+button[disabled]{opacity:.6;cursor:not-allowed}
+.err{color:#f87171;font-size:14px;margin-top:8px}
+.ok{color:#22c55e;font-size:14px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Регистрация Шефа</h1>
+  <div class="muted" id="restInfo">Загрузка ресторана...</div>
+  
+  <input id="fullName" type="text" placeholder="Ваше ФИО">
+  <input id="email" type="email" placeholder="Email" readonly>
+  <input id="password" type="password" placeholder="Придумайте пароль 6+ символов">
+  <button id="regBtn">Создать аккаунт Шефа</button>
+  <div id="msg"></div>
+</div>
 
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const params = new URLSearchParams(location.search);
+const role = params.get('role');
+const restaurant_id = params.get('restaurant_id');
+const email = params.get('email');
+
+document.getElementById('email').value = email || '';
+
+async function init(){
+  if(role!== 'chef' ||!restaurant_id ||!email){
+    document.getElementById('restInfo').innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
+    document.getElementById('regBtn').disabled = true;
+    return;
+  }
+  const {data: rest} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).single();
+  document.getElementById('restInfo').textContent = `Вас пригласили в ресторан: ${rest?.name || 'Неизвестен'}`;
+}
+init();
+
+document.getElementById('regBtn').onclick = async ()=>{
+  const fullName = document.getElementById('fullName').value.trim();
+  const password = document.getElementById('password').value;
+  const msg = document.getElementById('msg');
+  msg.innerHTML = '';
+
+  if(!fullName || password.length < 6) return msg.innerHTML = `<div class="err">Заполни ФИО и пароль 6+ символов</div>`;
+  
+  document.getElementById('regBtn').disabled = true;
+  msg.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
+
+  // 1. Создаем юзера в Auth
+  const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({email, password});
+  if(signUpErr) {
+    document.getElementById('regBtn').disabled = false;
+    return msg.innerHTML = `<div class="err">${signUpErr.message}</div>`;
+  }
+  const user = signUpData.user;
+  if(!user) return msg.innerHTML = `<div class="err">Ошибка создания. Проверь почту.</div>`;
+
+  // 2. Создаем профиль Шефа
+  const {error: profErr} = await supabase.from('profiles').insert({
+    id: user.id,
+    full_name: fullName,
+    email: email,
+    role: 'chef',
+    restaurant_id: restaurant_id,
+    is_active: true
+  });
+
+  if(profErr) {
+    document.getElementById('regBtn').disabled = false;
+    return msg.innerHTML = `<div class="err">${profErr.message}</div>`;
+  }
+
+  msg.innerHTML = `<div class="ok">Готово! Шеф создан. Войди в аккаунт.</div>`;
+  setTimeout(()=>location.href='/index.html', 2000);
+}
+</script></body></html>
