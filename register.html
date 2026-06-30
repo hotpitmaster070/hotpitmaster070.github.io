@@ -21,7 +21,7 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 <div class="card">
   <h1>Регистрация Шефа</h1>
   <div class="muted" id="restInfo">Загрузка ресторана...</div>
-  
+
   <input id="fullName" type="text" placeholder="Ваше ФИО">
   <input id="email" type="email" placeholder="Email" readonly>
   <input id="password" type="password" placeholder="Придумайте пароль 6+ символов">
@@ -41,39 +41,54 @@ const restaurant_id = params.get('restaurant_id');
 const email = params.get('email');
 
 document.getElementById('email').value = email || '';
+const msgBox = document.getElementById('msg');
+const restInfo = document.getElementById('restInfo');
 
 async function init(){
   if(role!== 'chef' ||!restaurant_id ||!email){
-    document.getElementById('restInfo').innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
+    restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
     document.getElementById('regBtn').disabled = true;
     return;
   }
-  const {data: rest} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).single();
-  document.getElementById('restInfo').textContent = `Вас пригласили в ресторан: ${rest?.name || 'Неизвестен'}`;
+  const {data: rest, error} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).maybeSingle();
+  if(error ||!rest){
+    restInfo.innerHTML = `<div class="err">Ресторан не найден</div>`;
+    document.getElementById('regBtn').disabled = true;
+    return;
+  }
+  restInfo.textContent = `Вас пригласили в ресторан: ${rest.name}`;
 }
 init();
 
 document.getElementById('regBtn').onclick = async ()=>{
   const fullName = document.getElementById('fullName').value.trim();
   const password = document.getElementById('password').value;
-  const msg = document.getElementById('msg');
-  msg.innerHTML = '';
+  msgBox.innerHTML = '';
 
-  if(!fullName || password.length < 6) return msg.innerHTML = `<div class="err">Заполни ФИО и пароль 6+ символов</div>`;
-  
+  if(!fullName || password.length < 6) return msgBox.innerHTML = `<div class="err">Заполни ФИО и пароль 6+ символов</div>`;
+
   document.getElementById('regBtn').disabled = true;
-  msg.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
+  msgBox.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
 
-  // 1. Создаем юзера в Auth. Email хранится тут.
-  const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({email, password});
+  // БЕТОН 1: signUp без подтверждения почты
+  const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: undefined } // <-- Отключаем письмо
+  });
   if(signUpErr) {
     document.getElementById('regBtn').disabled = false;
-    return msg.innerHTML = `<div class="err">${signUpErr.message}</div>`;
+    return msgBox.innerHTML = `<div class="err">${signUpErr.message}</div>`;
+  }
+
+  // БЕТОН 2: Проверка что сессия есть. Если нет = включи в Supabase "Disable email confirmations"
+  if(!signUpData.session){
+    document.getElementById('regBtn').disabled = false;
+    return msgBox.innerHTML = `<div class="err">В Supabase -> Auth -> Providers -> Email -> выключи "Confirm email"</div>`;
   }
   const user = signUpData.user;
-  if(!user) return msg.innerHTML = `<div class="err">Ошибка создания. Проверь почту.</div>`;
 
-  // 2. ФИКС: Убрали email отсюда. Он только в auth.users
+  // БЕТОН 3: Создаем профиль. Без email. Он только в auth.users
   const {error: profErr} = await supabase.from('profiles').insert({
     id: user.id,
     full_name: fullName,
@@ -84,10 +99,10 @@ document.getElementById('regBtn').onclick = async ()=>{
 
   if(profErr) {
     document.getElementById('regBtn').disabled = false;
-    return msg.innerHTML = `<div class="err">${profErr.message}</div>`;
+    return msgBox.innerHTML = `<div class="err">${profErr.message}</div>`;
   }
 
-  msg.innerHTML = `<div class="ok">Готово! Шеф создан. Войди в аккаунт.</div>`;
-  setTimeout(()=>location.href='/index.html', 2000);
+  msgBox.innerHTML = `<div class="ok">Готово! Заходим в кабинет...</div>`;
+  setTimeout(()=>location.href='/chef.html', 800); // <-- БЕТОН: Сразу в кабинет Шефа
 }
 </script></body></html>
