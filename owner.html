@@ -40,6 +40,7 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 .req-card b{font-size:16px}
 .muted{color:var(--muted);font-size:14px}
 .err{color:#f87171}
+.ok{color:#22c55e}
 input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px}
 a{color:var(--accent);word-break:break-all}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
@@ -73,7 +74,7 @@ a{color:var(--accent);word-break:break-all}
       <button class="burger" id="burgerBtn">☰</button>
       <h1 id="pageTitle">Персонал</h1>
     </div>
-    
+
     <div id="tab-content">
       <div class="card" data-tab-content="personal">
         <h3>Команда</h3>
@@ -81,7 +82,7 @@ a{color:var(--accent);word-break:break-all}
         <hr style="border:none;border-top:1px solid #262626;margin:16px 0">
         <h4>Пригласить Шефа</h4>
         <input id="chefEmail" type="email" placeholder="Email Шефа">
-        <button id="inviteChefBtn" class="btn-outline" style="width:100%;margin-top:8px">Сгенерировать ссылку</button>
+        <button id="inviteChefBtn" class="btn-outline" style="width:100%;margin-top:8px" disabled>Сгенерировать ссылку</button> <!-- ФИКС 1: Кнопка заблокирована -->
         <div id="inviteLink" class="muted" style="margin-top:12px"></div>
         <div id="qrcode"></div>
       </div>
@@ -145,42 +146,49 @@ let qr = null;
 
 document.getElementById('inviteChefBtn').onclick = async ()=>{
   const email = document.getElementById('chefEmail').value.trim();
-  if(!email) return alert('Введи email Шефа');
+  const msgBox = document.getElementById('inviteLink');
+  if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email Шефа</div>`;
+  if(!myRestaurantId) return msgBox.innerHTML = `<div class="err">Ресторан еще не загрузился. Подожди 2 сек.</div>`; // ФИКС 2: Защита от null
+
+  msgBox.innerHTML = `<div class="muted">Создаю приглашение...</div>`;
+  document.getElementById('inviteChefBtn').disabled = true;
+
   const link = `${location.origin}/register.html?role=chef&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}`;
-  
-  document.getElementById('inviteLink').innerHTML = `Скинь Шефу эту ссылку: <br><a href="${link}" target="_blank">${link}</a>`;
+
+  msgBox.innerHTML = `Скинь Шефу эту ссылку: <br><a href="${link}" target="_blank">${link}</a>`;
   navigator.clipboard.writeText(link);
-  
+
   document.getElementById('qrcode').innerHTML = '';
   qr = new QRCode(document.getElementById("qrcode"), { text: link, width: 200, height: 200, colorDark : "#000", colorLight : "#ffffff" });
-  
-  alert('Ссылка скопирована + QR готов');
+
+  msgBox.innerHTML += `<div class="ok">Ссылка скопирована + QR готов</div>`;
+  document.getElementById('inviteChefBtn').disabled = false;
 }
 
 async function loadRequests() {
   const {data:reqs, error} = await supabase.from('dismiss_requests')
- .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
- .eq('restaurant_id', myRestaurantId)
- .in('status', ['chef_requested','owner_review','cook_agreed'])
- .order('created_at', {ascending:false});
+.select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
+.eq('restaurant_id', myRestaurantId)
+.in('status', ['chef_requested','owner_review','cook_agreed'])
+.order('created_at', {ascending:false});
 
   const badge = document.getElementById('reqBadge');
   const list = document.getElementById('dismissList');
-  
+
   if(error){list.innerHTML=`<div class="err">Ошибка: ${error.message}</div>`; return;}
   if(!reqs || reqs.length===0){
     badge.style.display='none';
     list.innerHTML='Нет активных запросов';
     return;
   }
-  
+
   badge.style.display='inline-block';
   badge.textContent=reqs.length;
 
   list.innerHTML = reqs.map(r=>{
     let body = `<b>Шеф ${r.requested_by_profile?.full_name||'Шеф'} хочет уволить: ${r.profiles.full_name}</b><br>
     <span class="muted">Причина: ${r.reason}</span>`;
-    
+
     if(r.has_debt && r.cook_comment){
       body += `<br><span style="color:#f87171">Повар не согласен. Долг: ${r.cook_comment}</span>`;
     } else if(r.has_debt){
@@ -189,7 +197,7 @@ async function loadRequests() {
 
     let btns = '';
     if(r.status==='chef_requested' || r.status==='owner_review'){
-      btns = `<div class="row"><button class="btn-green" onclick="decide('${r.id}','approve')">Одобрить</button> 
+      btns = `<div class="row"><button class="btn-green" onclick="decide('${r.id}','approve')">Одобрить</button>
               <button class="btn-danger" onclick="decide('${r.id}','reject')">Отклонить</button></div>`;
     } else if(r.status==='cook_agreed' &&!r.has_debt){
       btns = `<div class="muted">Повар согласен. Жми Уволить.</div><button class="btn-danger" style="width:100%;margin-top:8px" onclick="finalDismiss('${r.id}','${r.user_id}')">Уволить сейчас</button>`;
@@ -221,25 +229,41 @@ async function init() {
   const {data:{user}} = await supabase.auth.getUser();
   if(!user) return location.href='/index.html';
   myUserId=user.id;
-  const {data: rest, error: restErr} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
-  if(restErr ||!rest) return location.href='/index.html';
-  myRestaurantId = rest.restaurant_id;
-  document.getElementById('restName').textContent = rest.restaurants.name;
-  
+
+  // ФИКС 3: Бетон. Если ресторана нет - создаем его тут 1 раз.
+  let {data: prof} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
+
+  if(!prof ||!prof.restaurant_id){
+    const {data: newRest, error: restErr} = await supabase.from('restaurants')
+     .insert({owner_id: user.id, name: 'Полло', subscription_type: 'owner'})
+     .select('id, name').single(); // <-- Ждем id из БД
+
+    if(restErr) return document.getElementById('restName').innerHTML = `<div class="err">Ошибка БД: ${restErr.message}</div>`;
+
+    await supabase.from('profiles').update({restaurant_id: newRest.id, role: 'owner'}).eq('id', user.id);
+    myRestaurantId = newRest.id;
+    document.getElementById('restName').textContent = newRest.name;
+  } else {
+    myRestaurantId = prof.restaurant_id;
+    document.getElementById('restName').textContent = prof.restaurants.name;
+  }
+
+  document.getElementById('inviteChefBtn').disabled = false; // ФИКС 4: Разблокируем кнопку только когда id есть
+
   const limit = 400000;
   const used = 287000;
   document.getElementById('fotUsed').textContent = used.toLocaleString('ru');
   document.getElementById('fotLimit').textContent = limit.toLocaleString('ru');
   document.getElementById('fotBar').style.width = (used/limit*100)+'%';
-  
+
   const {data:povara, error: pErr} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true).neq('role', 'owner');
-  
+
   if (pErr) {
     document.getElementById('povaraList').innerHTML = `<div class="err">Ошибка доступа: ${pErr.message}</div>`;
   } else {
     document.getElementById('povaraList').innerHTML = povara.length? povara.map(p=>`<div style="padding:8px 0;border-bottom:1px solid #262626">${p.full_name} - ${p.role} - ${p.salary||0}р/мес</div>`).join('') : '<div class="muted">В ресторане нет активных поваров</div>';
   }
-  
+
   if (pErr) {
     document.getElementById('salaryList').innerHTML = `<div class="err">Ошибка доступа: ${pErr.message}</div>`;
   } else {
