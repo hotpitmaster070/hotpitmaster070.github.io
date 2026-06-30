@@ -64,7 +64,7 @@ document.getElementById('regBtn').onclick = async ()=>{
   document.getElementById('regBtn').disabled = true;
   msg.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
 
-  // 1. Создаем юзера в Auth
+  // 1. Создаем юзера в Auth. Email хранится тут.
   const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({email, password});
   if(signUpErr) {
     document.getElementById('regBtn').disabled = false;
@@ -73,11 +73,10 @@ document.getElementById('regBtn').onclick = async ()=>{
   const user = signUpData.user;
   if(!user) return msg.innerHTML = `<div class="err">Ошибка создания. Проверь почту.</div>`;
 
-  // 2. Создаем профиль Шефа
+  // 2. ФИКС: Убрали email отсюда. Он только в auth.users
   const {error: profErr} = await supabase.from('profiles').insert({
     id: user.id,
     full_name: fullName,
-    email: email,
     role: 'chef',
     restaurant_id: restaurant_id,
     is_active: true
