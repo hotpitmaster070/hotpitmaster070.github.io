@@ -31,6 +31,7 @@ button{padding:12px;border:none;border-radius:10px;background:var(--accent);colo
 button[disabled]{opacity:.6;cursor:not-allowed}
 .btn-danger{background:#ef4444;color:#fff}
 .btn-green{background:#22c55e;color:#000}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
 .progress{height:8px;background:var(--card-2);border-radius:8px;overflow:hidden;margin:8px 0}
 .progress>div{height:100%;background:var(--accent);transition:width.3s}
 .row{display:flex;gap:8px;margin-top:12px}
@@ -39,6 +40,7 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 .req-card b{font-size:16px}
 .muted{color:var(--muted);font-size:14px}
 .err{color:#f87171}
+input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-btn{display:none}}
 </style>
 </head>
@@ -71,7 +73,15 @@ button[disabled]{opacity:.6;cursor:not-allowed}
     </div>
     
     <div id="tab-content">
-      <div class="card" data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
+      <div class="card" data-tab-content="personal">
+        <h3>Команда</h3>
+        <div id="povaraList">Загрузка...</div>
+        <hr style="border:none;border-top:1px solid #262626;margin:16px 0">
+        <h4>Пригласить Шефа</h4>
+        <input id="chefEmail" type="email" placeholder="Email Шефа">
+        <button id="inviteChefBtn" class="btn-outline" style="width:100%;margin-top:8px">Сгенерировать ссылку</button>
+        <div id="inviteLink" class="muted" style="margin-top:8px;word-break:break-all"></div>
+      </div>
       <div class="card" data-tab-content="grafik" style="display:none"><h3>График на неделю</h3><div>Сколько поваров на смене по дням. Вызывает Шеф.</div></div>
       <div class="card" data-tab-content="sklad" style="display:none"><h3>Склад</h3><div>Топ продуктов на исходе.</div></div>
       <div class="card" data-tab-content="otchet" style="display:none"><h3>Отчет</h3><div>Списание, брак за месяц.</div></div>
@@ -128,12 +138,21 @@ document.getElementById('closeMonthBtn').onclick = ()=>alert('Логика за�
 let myRestaurantId = null;
 let myUserId = null;
 
+document.getElementById('inviteChefBtn').onclick = async ()=>{
+  const email = document.getElementById('chefEmail').value.trim();
+  if(!email) return alert('Введи email Шефа');
+  const link = `${location.origin}/register.html?role=chef&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}`;
+  document.getElementById('inviteLink').innerHTML = `Скинь Шефу эту ссылку: <br><b>${link}</b>`;
+  navigator.clipboard.writeText(link);
+  alert('Ссылка скопирована');
+}
+
 async function loadRequests() {
   const {data:reqs, error} = await supabase.from('dismiss_requests')
-   .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
-   .eq('restaurant_id', myRestaurantId)
-   .in('status', ['chef_requested','owner_review','cook_agreed'])
-   .order('created_at', {ascending:false});
+  .select('*, profiles!dismiss_requests_user_id_fkey(full_name), requested_by_profile:profiles!dismiss_requests_requested_by_fkey(full_name)')
+  .eq('restaurant_id', myRestaurantId)
+  .in('status', ['chef_requested','owner_review','cook_agreed'])
+  .order('created_at', {ascending:false});
 
   const badge = document.getElementById('reqBadge');
   const list = document.getElementById('dismissList');
@@ -203,9 +222,8 @@ async function init() {
   document.getElementById('fotLimit').textContent = limit.toLocaleString('ru');
   document.getElementById('fotBar').style.width = (used/limit*100)+'%';
   
-  const {data:povara, error: pErr} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true);
+  const {data:povara, error: pErr} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true).neq('role', 'owner');
   
-  // ФИКС №1: Убираем вечную загрузку
   if (pErr) {
     document.getElementById('povaraList').innerHTML = `<div class="err">Ошибка доступа: ${pErr.message}</div>`;
   } else {
