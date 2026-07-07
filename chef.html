@@ -29,6 +29,7 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),t
 .btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
 input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:12px;color:var(--text);margin-top:8px;font-size:15px}
 .muted{color:var(--muted);font-size:14px}
+.err{color:#f87171}
 
 /* КАРТОЧКИ КАК НА СКРИНЕ */
 .povar-list{display:flex;flex-direction:column;gap:16px}
@@ -101,6 +102,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
       <option value="fixed">Оклад в месяц</option>
     </select>
     <input id="newPovarSalary" type="number" placeholder="Ставка: 5 или 1000">
+    <div id="povarMsg" style="margin-top:12px"></div>
     <div style="display:flex;gap:10px;margin-top:16px">
       <button class="btn-outline" id="cancelPovarBtn" style="flex:1">Отмена</button>
       <button class="btn" id="savePovarBtn" style="flex:1">Создать</button>
@@ -129,7 +131,8 @@ document.getElementById('addPovarBtn').onclick = ()=>modal.classList.add('show')
 document.getElementById('cancelPovarBtn').onclick = ()=>modal.classList.remove('show');
 
 let myRestaurantId = null;
-let currentDate = new Date(); // Текущий месяц
+let myUserId = null; // ДОБАВИЛ
+let currentDate = new Date(2026, 5, 1); // Поставил июнь 2026 как у тебя
 let attendanceCache = {};
 
 function updateMonth() {
@@ -146,10 +149,35 @@ document.getElementById('savePovarBtn').onclick = async ()=>{
   const role = document.getElementById('newPovarRole').value;
   const salaryType = document.getElementById('salaryType').value;
   const salary = document.getElementById('newPovarSalary').value;
+  const msg = document.getElementById('povarMsg');
   
-  const {data: signUpData} = await supabase.auth.signUp({email, password: pass, options: { emailRedirectTo: undefined }});
-  await supabase.from('profiles').insert({id: signUpData.user.id, full_name: name, role: 'cook', job_title: role, restaurant_id: myRestaurantId, salary: salary, salary_type: salaryType, is_active: true});
-  modal.classList.remove('show'); init();
+  document.getElementById('savePovarBtn').disabled = true;
+  msg.innerHTML = `<div class="muted">Создаем...</div>`;
+
+  const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({
+    email, 
+    password: pass, 
+    options: { emailRedirectTo: undefined }
+  });
+  
+  if(signUpErr) {msg.innerHTML = `<div class="err">${signUpErr.message}</div>`; document.getElementById('savePovarBtn').disabled = false; return;}
+  if(!signUpData.user) {msg.innerHTML = `<div class="err">Выключи "Confirm email" в Supabase</div>`; document.getElementById('savePovarBtn').disabled = false; return;}
+
+  const {error: profErr} = await supabase.from('profiles').insert({
+    id: signUpData.user.id, 
+    full_name: name, 
+    role: 'cook', 
+    job_title: role, 
+    restaurant_id: myRestaurantId, 
+    salary: Number(salary), 
+    salary_type: salaryType, 
+    is_active: true
+  });
+  
+  if(profErr) {msg.innerHTML = `<div class="err">${profErr.message}</div>`; document.getElementById('savePovarBtn').disabled = false; return;}
+
+  msg.innerHTML = `<div class="ok">Готово!</div>`;
+  setTimeout(()=>{modal.classList.remove('show'); init();}, 800);
 }
 
 async function toggleDay(cookId, dateStr, el) {
@@ -164,7 +192,9 @@ async function toggleDay(cookId, dateStr, el) {
 }
 
 function renderTotal(cookId) {
-  const {cook, days} = attendanceCache[cookId];
+  const data = attendanceCache[cookId];
+  if(!data) return;
+  const {cook, days} = data;
   const daysCount = days.length;
   let total = 0; let text = '';
   
@@ -177,7 +207,12 @@ function renderTotal(cookId) {
 
 async function init() {
   const {data:{user}} = await supabase.auth.getUser();
-  const {data: prof} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
+  if(!user) return location.href='/index.html';
+  myUserId = user.id; // ДОБАВИЛ
+  
+  const {data: prof, error} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
+  if(error ||!prof) return alert('Ошибка: ' + error.message);
+  
   myRestaurantId = prof.restaurant_id;
   document.getElementById('restName').textContent = prof.restaurants.name;
   
@@ -187,11 +222,17 @@ async function init() {
   const monthStart = `${year}-${String(month+1).padStart(2,'0')}-01`;
   const monthEnd = `${year}-${String(month+1).padStart(2,'0')}-${daysInMonth}`;
 
-  const {data:povara} = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId).eq('is_active', true).eq('role', 'cook');
+  const {data:povara} = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId).eq('is_active', true).eq('role', 'cook').order('full_name');
   const {data:attendance} = await supabase.from('attendance').select('*').eq('restaurant_id', myRestaurantId).gte('work_date', monthStart).lte('work_date', monthEnd);
   
+  attendanceCache = {};
   povara.forEach(p=>{attendanceCache[p.id] = {cook: p, days: attendance.filter(a=>a.cook_id===p.id).map(a=>a.work_date)}});
   
+  if(povara.length === 0){
+    document.getElementById('povaraList').innerHTML = `<div class="muted" style="text-align:center;padding:40px">Команда пуста. Добавь первого сотрудника 👨‍🍳</div>`;
+    return;
+  }
+
   document.getElementById('povaraList').innerHTML = povara.map(p=>{
     let salaryText = '';
     if(p.salary_type==='hourly') salaryText = `${p.salary}₽/ч`;
