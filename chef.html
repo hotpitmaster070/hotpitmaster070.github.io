@@ -3,8 +3,296 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit PRO</title>
-<style>:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--ok:#22c55e;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--danger:#ef4444}*{box-sizing:border-box;margin:0;padding:0}body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh}.app{display:flex;min-height:100vh}.sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform.3s}.sidebar.open{transform:translateX(0)}.sidebar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.sidebar h2{color:var(--accent);font-size:24px}.sidebar.sub{color:var(--muted);font-size:12px}.menu{display:flex;flex-direction:column;gap:8px;margin-top:16px}.menu button{background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:500}.menu button.active,.menu button:hover{background:var(--card-2)}.content{flex:1;padding:24px;margin-left:0}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}.topbar h1{font-size:28px;display:flex;align-items:center;gap:10px}.top-controls{display:flex;gap:10px;margin-bottom:20px;width:100%}.btn-nav{padding:12px 18px;border:none;border-radius:12px;background:var(--card-2);color:var(--text);font-weight:700;cursor:pointer}.btn-month{padding:12px;border:none;border-radius:12px;background:var(--card-2);color:var(--text);font-weight:600;cursor:pointer;flex:1;text-align:center}.burger,.close-btn{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-size:20px}.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;z-index:90}.overlay.show{display:block}.btn{padding:12px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;font-size:15px;cursor:pointer}.btn-danger{background:var(--danger);color:#fff;padding:8px 14px;font-size:14px}.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:12px;color:var(--text);margin-top:8px;font-size:15px}.muted{color:var(--muted);font-size:14px;text-align:center;padding:40px}.povar-list{display:flex;flex-direction:column;gap:16px}.povar-card{background:var(--card);padding:20px;border-radius:20px;border:1px solid #262626}.povar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}.povar-info{display:flex;align-items:center;gap:12px}.avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:18px}.povar-name{font-weight:700;font-size:18px}.povar-role{color:var(--muted);font-size:14px}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}.day{aspect-ratio:1;border-radius:12px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;font-weight:500;user-select:none;transition:0.2s}.day.work{background:var(--work);color:#000;font-weight:700}.day.sick{background:var(--sick);color:#000;font-weight:700}.day.vac{background:var(--vac);color:#fff;font-weight:700}.day.locked{background:#1a1a1a;color:#444;cursor:not-allowed}.total{margin-top:16px;padding-top:16px;border-top:1px solid #333;font-weight:700;font-size:16px}.grafik-wrapper{overflow-x:auto;padding-bottom:10px}.grafik-grid{display:grid;gap:4px;width:max-content}.grafik-header{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px;min-width:40px}.grafik-name{padding:10px 8px;background:var(--card);border-radius:8px;font-weight:600;font-size:14px;min-width:120px;position:sticky;left:0;z-index:2}.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;transition:0.2s;font-weight:700}.grafik-cell.work{background:var(--work);color:#000}.grafik-cell.sick{background:var(--sick);color:#000}.grafik-cell.vac{background:var(--vac);color:#fff}.modal{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #333}.status-btn{padding:12px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}.err{color:#f87171;text-align:center;padding:20px;background:var(--card-2);border-radius:12px;margin-bottom:16px}</style>
+<style>
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--ok:#22c55e;--danger:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh}
+.app{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform.3s}
+.sidebar.open{transform:translateX(0)}
+.sidebar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.sidebar h2{color:var(--accent);font-size:24px}
+.sidebar.sub{color:var(--muted);font-size:12px}
+.menu{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.menu button{background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:500}
+.menu button.active,.menu button:hover{background:var(--card-2)}
+.content{flex:1;padding:24px;margin-left:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.topbar h1{font-size:28px;display:flex;align-items:center;gap:10px}
+.top-controls{display:flex;gap:10px;margin-bottom:20px;width:100%}
+.btn-nav{padding:12px 18px;border:none;border-radius:12px;background:var(--card-2);color:var(--text);font-weight:700;cursor:pointer}
+.btn-month{padding:12px;border:none;border-radius:12px;background:var(--card-2);color:var(--text);font-weight:600;cursor:pointer;flex:1;text-align:center}
+.burger,.close-btn{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-size:20px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;z-index:90}
+.overlay.show{display:block}
+.btn{padding:12px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;font-size:15px;cursor:pointer}
+.btn-danger{background:var(--danger);color:#fff;padding:8px 14px;font-size:14px}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:12px;color:var(--text);margin-top:8px;font-size:15px}
+.muted{color:var(--muted);font-size:14px;text-align:center;padding:40px}
+.povar-list{display:flex;flex-direction:column;gap:16px}
+.povar-card{background:var(--card);padding:20px;border-radius:20px;border:1px solid #262626}
+.povar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
+.povar-info{display:flex;align-items:center;gap:12px}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:18px}
+.povar-name{font-weight:700;font-size:18px}
+.povar-role{color:var(--muted);font-size:14px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:12px}
+.day{aspect-ratio:1;border-radius:12px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;font-weight:500;user-select:none;transition:0.2s}
+.day.active{background:var(--ok);color:#000;font-weight:700}
+.day.locked{background:#1a1a1a;color:#444;cursor:not-allowed}
+.total{margin-top:16px;padding-top:16px;border-top:1px solid #333;font-weight:700;font-size:16px}
+.grafik-wrapper{overflow-x:auto;padding-bottom:10px}
+.grafik-grid{display:grid;gap:4px;width:max-content}
+.grafik-header{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px;min-width:40px}
+.grafik-name{padding:10px 8px;background:var(--card);border-radius:8px;font-weight:600;font-size:14px;min-width:120px;position:sticky;left:0;z-index:2}
+.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;transition:0.2s}
+.grafik-cell.work{background:var(--ok);color:#000;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal.show{display:flex}
+.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #333}
+@media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-btn{display:none}}
+</style>
 </head>
 <body>
-<div class="app"><div class="overlay" id="overlay"></div><aside class="sidebar" id="sidebar"><div class="sidebar-head"><h2>HotPit</h2><button class="close-btn" id="closeBtn">×</button></div><div class="sub" id="restName">Загрузка...</div><nav class="menu"><button class="tab-btn active" data-tab="personal">👥 Моя Команда</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button class="tab-btn" data-tab="sklad">📦 Склад</button><button id="logoutBtn">Выйти</button></nav></aside><main class="content"><div class="topbar"><div style="display:flex;align-items:center;gap:16px"><button class="burger" id="burgerBtn">☰</button><h1 id="pageTitle">👥 Моя Команда</h1></div><button class="btn" id="addBtn">+ Добавить сотрудника</button></div><div id="tab-content"><div data-tab-content="personal"><div id="povaraList" class="povar-list">Загрузка...</div></div><div data-tab-content="tabel" style="display:none"><div class="top-controls"><button class="btn-nav" id="prevMonthT"><</button><button class="btn-month" id="monthYearT">Загрузка...</button><button class="btn-nav" id="nextMonthT">></button></div><div id="tabelList" class="povar-list">Загрузка...</div></div><div data-tab-content="grafik" style="display:none"><div class="top-controls"><button class="btn-nav" id="prevMonthG"><</button><button class="btn-month" id="monthYearG">Загрузка...</button><button class="btn-nav" id="nextMonthG">></button></div><div class="grafik-wrapper" id="grafikList">Загрузка...</div></div><div class="card" data-tab-content="sklad" style="display:none"><h3>📦 Склад</h3><div class="muted">Тут будет учет продуктов и списания</div></div></div></main></div><div class="modal" id="addModal"><div class="modal-card"><h3 style="margin-bottom:16px" id="modalTitle">Новый сотрудник</h3><div id="modalBody"></div><div id="modalMsg" style="margin-top:12px"></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn-outline" id="cancelBtn" style="flex:1">Отмена</button><button class="btn" id="saveBtn" style="flex:1">Сохранить</button></div></div></div><div class="modal" id="statusModal"><div class="modal-card"><h3 style="margin-bottom:16px">Выберите статус на <span id="statusDate"></span></h3><button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Смена</button><button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button><button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button><button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button><button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
-<script type="module">import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'const SUPABASE_URL='https://xljogkyropyocvuuodfl.supabase.co'const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'const supabase=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);let currentTab='personal';let myRestaurantId=null;let currentDate=new Date();let povaraCache=[];let attendanceCache={};let tempStatusData={};const sidebar=document.getElementById('sidebar');const overlay=document.getElementById('overlay');document.getElementById('burgerBtn').onclick=()=>{sidebar.classList.add('open');overlay.classList.add('show');}document.getElementById('closeBtn').onclick=()=>{sidebar.classList.remove('open');overlay.classList.remove('show');}overlay.onclick=()=>{sidebar.classList.remove('open');overlay.classList.remove('show');}document.querySelectorAll('.tab-btn').forEach(btn=>{btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('pageTitle').innerHTML=btn.textContent.trim();document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');document.getElementById('addBtn').textContent=currentTab==='sklad'?'+ Добавить товар':'+ Добавить сотрудника';sidebar.classList.remove('open');overlay.classList.remove('show');loadData();}});document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html');const modal=document.getElementById('addModal');document.getElementById('addBtn').onclick=()=>openModal();document.getElementById('cancelBtn').onclick=()=>modal.classList.remove('show');function updateMonth(prefix){document.getElementById(`monthYear${prefix}`).textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});loadData();}document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonth('T');}document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonth('T');}document.getElementById('prevMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonth('G');}document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonth('G');}function openModal(){const body=document.getElementById('modalBody');if(currentTab==='sklad'){document.getElementById('modalTitle').textContent='Новый товар';body.innerHTML=`<input id="itemName" placeholder="Название товара"><input id="itemQty" type="number" placeholder="Кол-во">`;}else{document.getElementById('modalTitle').textContent='Новый сотрудник';body.innerHTML=`<input id="newPovarName" placeholder="ФИО"><input id="newPovarEmail" type="email" placeholder="Email для входа"><input id="newPovarPass" type="password" placeholder="Пароль 6+"><select id="newPovarRole"><option>Повар</option><option>Мойщик</option><option>Су-шеф</option></select><select id="salaryType"><option value="hourly">Оплата за час</option><option value="daily">Оплата за смену</option><option value="fixed">Оклад в месяц</option></select><input id="newPovarSalary" type="number" placeholder="Ставка: 500">`;}modal.classList.add('show');}document.getElementById('saveBtn').onclick=async()=>{if(currentTab==='sklad')return alert('Склад в разработке');const name=document.getElementById('newPovarName').value.trim();const email=document.getElementById('newPovarEmail').value.trim();const pass=document.getElementById('newPovarPass').value;const role=document.getElementById('newPovarRole').value;const salaryType=document.getElementById('salaryType').value;const salary=document.getElementById('newPovarSalary').value;const {data:signUpData,error}=await supabase.auth.signUp({email,password:pass});if(error)return document.getElementById('modalMsg').innerHTML=`<div style="color:#f87171">${error.message}</div>`;await supabase.from('profiles').insert({id:signUpData.user.id,full_name:name,role:'cook',job_title:role,restaurant_id:myRestaurantId,salary:Number(salary),salary_type:salaryType,is_active:true});modal.classList.remove('show');loadData();}async function requestDismiss(cookId,name){if(!confirm(`Уволить ${name}?`))return;await supabase.from('profiles').update({is_active:false}).eq('id',cookId);loadData();}function openStatusModal(cookId,dateStr){const today=new Date().toISOString().split('T')[0];if(dateStr<today)return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show');}async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId].days.find(d=>d.work_date===dateStr);if(status==='off'){if(existing)await supabase.from('attendance').delete().eq('id',existing.id);}else{if(existing){await supabase.from('attendance').update({status}).eq('id',existing.id);}else{await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status});}}loadData();}function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const {cook,days}=data;const workDays=days.filter(d=>d.status==='work').length;let total=0;if(cook.salary_type==='daily')total=workDays*cook.salary;if(cook.salary_type==='hourly')total=workDays*8*cook.salary;if(cook.salary_type==='fixed')total=cook.salary;document.getElementById(`total-${cookId}`)&&(document.getElementById(`total-${cookId}`).textContent=`${workDays} смен = ${total.toLocaleString()}₽`);}function renderGrafik(){const year=currentDate.getFullYear();const month=currentDate.getMonth();const daysInMonth=new Date(year,month+1,0).getDate();let grafikHtml=`<div class="grafik-grid" style="grid-template-columns:120px repeat(${daysInMonth},40px)">`;grafikHtml+=`<div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=daysInMonth;i++)grafikHtml+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{grafikHtml+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=daysInMonth;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const dayData=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr);const status=dayData?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';grafikHtml+=`<div class="grafik-cell ${status}" onclick="openStatusModal('${p.id}','${dateStr}')">${symbol}</div>`;}});grafikHtml+=`</div>`;document.getElementById('grafikList').innerHTML=povaraCache.length?grafikHtml:`<div class="muted">Нет данных</div>`;}async function loadData(){try{const {data:{user}}=await supabase.auth.getUser();if(!user)throw new Error('Вы не вошли');let {data:prof}=await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();if(prof.role==='chef'&&!prof.restaurant_id){const {data:newRest}=await supabase.from('restaurants').insert({name:prof.full_name+' - Ресторан'}).select().single();await supabase.from('profiles').update({restaurant_id:newRest.id}).eq('id',user.id);prof.restaurant_id=newRest.id;prof.restaurants={name:newRest.name};}myRestaurantId=prof.restaurant_id;document.getElementById('restName').textContent=prof.restaurants?.name||'Ресторан';const year=currentDate.getFullYear();const month=currentDate.getMonth();const daysInMonth=new Date(year,month+1,0).getDate();const monthStart=`${year}-${String(month+1).padStart(2,'0')}-01`;const monthEnd=`${year}-${String(month+1).padStart(2,'0')}-${daysInMonth}`;document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});document.getElementById('monthYearG').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook').order('full_name');const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',monthStart).lte('work_date',monthEnd);povaraCache=povara||[];const attendanceData=attendance||[];attendanceCache={};povaraCache.forEach(p=>{attendanceCache[p.id]={cook:p,days:attendanceData.filter(a=>a.cook_id===p.id)}});document.getElementById('povaraList').innerHTML=povaraCache.map(p=>`<div class="povar-card"><div class="povar-head"><div class="povar-info"><div class="avatar">${p.full_name[0]}</div><div><div class="povar-name">${p.full_name}</div><div class="povar-role">${p.job_title||'Повар'} • ${p.salary}₽</div></div></div><button class="btn-danger" onclick="requestDismiss('${p.id}','${p.full_name}')">Уволить</button></div></div>`).join('')||`<div class="muted">Команда пуста</div>`;const today=new Date().toISOString().split('T')[0];document.getElementById('tabelList').innerHTML=povaraCache.map(p=>{let salaryText=p.salary_type==='hourly'?`${p.salary}₽/ч`:p.salary_type==='daily'?`${p.salary}₽/смена`:`${p.salary}₽/мес`;const daysHtml=Array.from({length:daysInMonth},(_,i)=>{const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const dayData=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr);const status=dayData?.status||'off';const isLocked=dateStr<today&&currentDate.getMonth()===new Date().getMonth()?'locked':'';return`<div class="day ${status} ${isLocked}" onclick="openStatusModal('${p.id}','${dateStr}')">${day}</div>`}).join('');return`<div class="povar-card"><div class="povar-head"><div class="povar-info"><div class="avatar">${p.full_name[0]}</div><div><div class="povar-name">${p.full_name}</div><div class="povar-role">${p.job_title||'Повар'} • ${salaryText}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`}).join('')||`<div class="muted">Добавьте сотрудников</div>`;povaraCache.forEach(p=>renderTotal(p.id));renderGrafik();}catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`;}}loadData();window.openStatusModal=openStatusModal;window.setStatus=setStatus;window.requestDismiss=requestDismiss;</script></body></html>
+<div class="app">
+  <div class="overlay" id="overlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head"><h2>HotPit</h2><button class="close-btn" id="closeBtn">×</button></div>
+    <div class="sub" id="restName">Загрузка...</div>
+    <nav class="menu">
+      <button class="tab-btn active" data-tab="personal">👥 Моя Команда</button>
+      <button class="tab-btn" data-tab="tabel">📋 Табель</button>
+      <button class="tab-btn" data-tab="grafik">📅 График</button>
+      <button class="tab-btn" data-tab="sklad">📦 Склад</button>
+      <button id="logoutBtn">Выйти</button>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:16px">
+        <button class="burger" id="burgerBtn">☰</button>
+        <h1 id="pageTitle">👥 Моя Команда</h1>
+      </div>
+      <button class="btn" id="addBtn">+ Добавить сотрудника</button>
+    </div>
+
+    <div id="tab-content">
+      <div data-tab-content="personal"><div id="povaraList" class="povar-list">Загрузка...</div></div>
+      <div data-tab-content="tabel" style="display:none">
+        <div class="top-controls">
+          <button class="btn-nav" id="prevMonthT"><</button>
+          <button class="btn-month" id="monthYearT">Загрузка...</button>
+          <button class="btn-nav" id="nextMonthT">></button>
+        </div>
+        <div id="tabelList" class="povar-list">Загрузка...</div>
+      </div>
+      <div data-tab-content="grafik" style="display:none">
+        <div class="top-controls">
+          <button class="btn-nav" id="prevMonthG"><</button>
+          <button class="btn-month" id="monthYearG">Загрузка...</button>
+          <button class="btn-nav" id="nextMonthG">></button>
+        </div>
+        <div class="grafik-wrapper" id="grafikList">Загрузка...</div>
+      </div>
+      <div class="card" data-tab-content="sklad" style="display:none"><h3>📦 Склад</h3><div class="muted">Тут будет учет продуктов и списания</div></div>
+    </div>
+  </main>
+</div>
+
+<div class="modal" id="addModal">
+  <div class="modal-card">
+    <h3 style="margin-bottom:16px" id="modalTitle">Новый сотрудник</h3>
+    <div id="modalBody"></div>
+    <div id="modalMsg" style="margin-top:12px"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-outline" id="cancelBtn" style="flex:1">Отмена</button>
+      <button class="btn" id="saveBtn" style="flex:1">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentTab = 'personal';
+let myRestaurantId = null;
+let currentDate = new Date();
+let povaraCache = [];
+let attendanceCache = {};
+
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+document.getElementById('burgerBtn').onclick = ()=>{sidebar.classList.add('open');overlay.classList.add('show');}
+document.getElementById('closeBtn').onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show');}
+overlay.onclick = ()=>{sidebar.classList.remove('open');overlay.classList.remove('show');}
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.onclick = ()=>{
+  currentTab = btn.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  document.getElementById('pageTitle').innerHTML = btn.textContent.trim();
+  document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display = c.dataset.tabContent === currentTab? 'block' : 'none');
+  document.getElementById('addBtn').textContent = currentTab==='sklad'? '+ Добавить товар' : '+ Добавить сотрудника';
+  sidebar.classList.remove('open'); overlay.classList.remove('show'); loadData();
+}});
+document.getElementById('logoutBtn').onclick = ()=>supabase.auth.signOut().then(()=>location.href='/index.html');
+
+const modal = document.getElementById('addModal');
+document.getElementById('addBtn').onclick = ()=>openModal();
+document.getElementById('cancelBtn').onclick = ()=>modal.classList.remove('show');
+
+function updateMonth(prefix) {
+  document.getElementById(`monthYear${prefix}`).textContent = currentDate.toLocaleString('ru', {month: 'long', year: 'numeric'});
+  loadData();
+}
+document.getElementById('prevMonthT').onclick = ()=>{currentDate.setMonth(currentDate.getMonth()-1); updateMonth('T');}
+document.getElementById('nextMonthT').onclick = ()=>{currentDate.setMonth(currentDate.getMonth()+1); updateMonth('T');}
+document.getElementById('prevMonthG').onclick = ()=>{currentDate.setMonth(currentDate.getMonth()-1); updateMonth('G');}
+document.getElementById('nextMonthG').onclick = ()=>{currentDate.setMonth(currentDate.getMonth()+1); updateMonth('G');}
+
+function openModal(){
+  const body = document.getElementById('modalBody');
+  if(currentTab === 'sklad'){
+    document.getElementById('modalTitle').textContent = 'Новый товар';
+    body.innerHTML = `<input id="itemName" placeholder="Название товара"><input id="itemQty" type="number" placeholder="Кол-во">`;
+  } else {
+    document.getElementById('modalTitle').textContent = 'Новый сотрудник';
+    body.innerHTML = `
+      <input id="newPovarName" placeholder="ФИО">
+      <input id="newPovarEmail" type="email" placeholder="Email для входа">
+      <input id="newPovarPass" type="password" placeholder="Пароль 6+">
+      <select id="newPovarRole"><option>Повар</option><option>Мойщик</option><option>Су-шеф</option></select>
+      <select id="salaryType"><option value="hourly">Оплата за час</option><option value="daily">Оплата за смену</option><option value="fixed">Оклад в месяц</option></select>
+      <input id="newPovarSalary" type="number" placeholder="Ставка: 500">`;
+  }
+  modal.classList.add('show');
+}
+
+document.getElementById('saveBtn').onclick = async ()=>{
+  if(currentTab === 'sklad') return alert('Склад в разработке');
+  
+  const name = document.getElementById('newPovarName').value.trim();
+  const email = document.getElementById('newPovarEmail').value.trim();
+  const pass = document.getElementById('newPovarPass').value;
+  const role = document.getElementById('newPovarRole').value;
+  const salaryType = document.getElementById('salaryType').value;
+  const salary = document.getElementById('newPovarSalary').value;
+  
+  const {data: signUpData, error} = await supabase.auth.signUp({email, password: pass});
+  if(error) return document.getElementById('modalMsg').innerHTML = `<div style="color:#f87171">${error.message}</div>`;
+  await supabase.from('profiles').insert({
+    id: signUpData.user.id, full_name: name, role: 'cook', job_title: role,
+    restaurant_id: myRestaurantId, salary: Number(salary), salary_type: salaryType, is_active: true
+  });
+  modal.classList.remove('show'); loadData();
+}
+
+async function requestDismiss(cookId, name) {
+  if(!confirm(`Уволить ${name}?`)) return;
+  await supabase.from('profiles').update({is_active: false}).eq('id', cookId);
+  loadData();
+}
+
+async function toggleDay(cookId, dateStr, el) {
+  if(el.classList.contains('locked')) return;
+  el.classList.toggle('active');
+  const isActive = el.classList.contains('active');
+  
+  if(isActive){ 
+    await supabase.from('attendance').insert({cook_id: cookId, restaurant_id: myRestaurantId, work_date: dateStr});
+    if(!attendanceCache[cookId].days.includes(dateStr)) attendanceCache[cookId].days.push(dateStr);
+  } else { 
+    await supabase.from('attendance').delete().eq('cook_id', cookId).eq('work_date', dateStr);
+    attendanceCache[cookId].days = attendanceCache[cookId].days.filter(d => d!== dateStr);
+  }
+  renderTotal(cookId);
+  renderGrafik();
+}
+
+function renderTotal(cookId) {
+  const data = attendanceCache[cookId]; if(!data) return;
+  const {cook, days} = data; 
+  const daysCount = days.length; 
+  let total = 0; 
+  let text = '';
+  if(cook.salary_type === 'daily') {total = daysCount * cook.salary; text = `${daysCount} смен х ${cook.salary}₽ = ${total.toLocaleString()}₽`}
+  if(cook.salary_type === 'hourly') {total = daysCount * 8 * cook.salary; text = `${daysCount} смен х 8ч х ${cook.salary}₽ = ${total.toLocaleString()}₽`}
+  if(cook.salary_type === 'fixed') {total = cook.salary; text = `Оклад: ${total.toLocaleString()}₽`}
+  document.getElementById(`total-${cookId}`) && (document.getElementById(`total-${cookId}`).textContent = text);
+}
+
+function renderGrafik() {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  
+  let grafikHtml = `<div class="grafik-grid" style="grid-template-columns: 120px repeat(${daysInMonth}, 40px)">`;
+  grafikHtml += `<div class="grafik-header">Сотрудник</div>`;
+  for(let i=1; i<=daysInMonth; i++) grafikHtml += `<div class="grafik-header">${i}</div>`;
+  
+  povaraCache.forEach(p=>{
+    grafikHtml += `<div class="grafik-name">${p.full_name}</div>`;
+    for(let i=1; i<=daysInMonth; i++){
+      const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+      const isWork = attendanceCache[p.id]?.days.includes(dateStr);
+      grafikHtml += `<div class="grafik-cell ${isWork?'work':''}" onclick="toggleDay('${p.id}','${dateStr}',this)">${isWork?'С':'-'}</div>`;
+    }
+  });
+  grafikHtml += `</div>`;
+  document.getElementById('grafikList').innerHTML = povaraCache.length? grafikHtml : `<div class="muted">Нет данных</div>`;
+}
+
+async function loadData() {
+  const {data:{user}} = await supabase.auth.getUser();
+  const {data: prof} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
+  myRestaurantId = prof.restaurant_id;
+  document.getElementById('restName').textContent = prof.restaurants?.name || 'Ресторан';
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const monthStart = `${year}-${String(month+1).padStart(2,'0')}-01`;
+  const monthEnd = `${year}-${String(month+1).padStart(2,'0')}-${daysInMonth}`;
+  document.getElementById('monthYearT').textContent = currentDate.toLocaleString('ru', {month: 'long', year: 'numeric'});
+  document.getElementById('monthYearG').textContent = currentDate.toLocaleString('ru', {month: 'long', year: 'numeric'});
+
+  const {data:povara} = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId).eq('is_active', true).eq('role', 'cook').order('full_name');
+  const {data:attendance} = await supabase.from('attendance').select('*').eq('restaurant_id', myRestaurantId).gte('work_date', monthStart).lte('work_date', monthEnd);
+  povaraCache = povara || [];
+  const attendanceData = attendance || [];
+  attendanceCache = {};
+  povaraCache.forEach(p=>{attendanceCache[p.id] = {cook: p, days: attendanceData.filter(a=>a.cook_id===p.id).map(a=>a.work_date)}});
+
+  document.getElementById('povaraList').innerHTML = povaraCache.map(p=>`
+    <div class="povar-card">
+      <div class="povar-head">
+        <div class="povar-info">
+          <div class="avatar">${p.full_name[0]}</div>
+          <div><div class="povar-name">${p.full_name}</div><div class="povar-role">${p.job_title||'Повар'} • ${p.salary}₽</div></div>
+        </div>
+        <button class="btn-danger" onclick="requestDismiss('${p.id}','${p.full_name}')">Уволить</button>
+      </div>
+    </div>
+  `).join('') || `<div class="muted">Команда пуста</div>`;
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('tabelList').innerHTML = povaraCache.map(p=>{
+    let salaryText = p.salary_type==='hourly'?`${p.salary}₽/ч`:p.salary_type==='daily'?`${p.salary}₽/смена`:`${p.salary}₽/мес`;
+    const daysHtml = Array.from({length: daysInMonth}, (_, i)=>{
+      const day = i+1; const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const isActive = attendanceCache[p.id]?.days.includes(dateStr);
+      const isLocked = dateStr < today && currentDate.getMonth() === new Date().getMonth()? 'locked' : '';
+      return `<div class="day ${isActive?'active':''} ${isLocked}" onclick="toggleDay('${p.id}','${dateStr}',this)">${day}</div>`
+    }).join('');
+    return `<div class="povar-card"><div class="povar-head"><div class="povar-info"><div class="avatar">${p.full_name[0]}</div><div><div class="povar-name">${p.full_name}</div><div class="povar-role">${p.job_title||'Повар'} • ${salaryText}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+  }).join('') || `<div class="muted">Добавьте сотрудников</div>`;
+  povaraCache.forEach(p=>renderTotal(p.id));
+  renderGrafik();
+}
+loadData();
+window.toggleDay = toggleDay;
+window.requestDismiss = requestDismiss;
+</script></body></html>
