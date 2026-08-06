@@ -20,11 +20,7 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 <body>
 <div class="card">
   <h1 id="title">Регистрация</h1>
-  <div class="muted" id="restInfo">Загрузка...</div>
-
-  <div id="createRestBlock" style="display:none">
-    <input id="restName" type="text" placeholder="Название ресторана">
-  </div>
+  <div class="muted" id="restInfo">Загрузка ресторана...</div>
 
   <input id="fullName" type="text" placeholder="Ваше ФИО">
   <input id="email" type="email" placeholder="Email" readonly>
@@ -40,9 +36,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const params = new URLSearchParams(location.search);
-let role = params.get('role'); // chef или cook
-let restaurant_id = params.get('restaurant_id');
-let email = params.get('email');
+const role = params.get('role'); // chef или cook
+const restaurant_id = params.get('restaurant_id');
+const email = params.get('email');
 
 document.getElementById('email').value = email || '';
 const msgBox = document.getElementById('msg');
@@ -50,43 +46,27 @@ const restInfo = document.getElementById('restInfo');
 const title = document.getElementById('title');
 const pageTitle = document.getElementById('pageTitle');
 const regBtn = document.getElementById('regBtn');
-const createRestBlock = document.getElementById('createRestBlock');
 
-let isCreateMode = false;
-
-// РЕЖИМ 1: СОЗДАНИЕ РЕСТОРАНА. /register.html
-if(!role &&!restaurant_id){
-  isCreateMode = true;
-  role = 'chef'; // Первый всегда шеф
-  title.textContent = 'Создать ресторан';
-  pageTitle.textContent = 'HotPit Создание ресторана';
-  regBtn.textContent = 'Создать ресторан и аккаунт';
-  restInfo.textContent = 'Вы станете Шеф-поваром и Владельцем';
-  document.getElementById('email').readOnly = false;
-  createRestBlock.style.display = 'block';
-}
-
-// РЕЖИМ 2: ПРИГЛАШЕНИЕ. /register.html?role=cook&restaurant_id=xxx&email=xxx
-else if(role && restaurant_id && email){
-  if(role === 'chef'){
-    title.textContent = 'Регистрация Шефа';
-    pageTitle.textContent = 'HotPit Регистрация Шефа';
-    regBtn.textContent = 'Создать аккаунт Шефа';
-  } else if(role === 'cook'){
-    title.textContent = 'Регистрация Повара';
-    pageTitle.textContent = 'HotPit Регистрация Повара';
-    regBtn.textContent = 'Создать аккаунт Повара';
-  }
-  loadRestName();
-}
-
-// ОШИБКА
-else {
+// Настраиваем текст в зависимости от роли
+if(role === 'chef'){
+  title.textContent = 'Регистрация Шефа';
+  pageTitle.textContent = 'HotPit Регистрация Шефа';
+  regBtn.textContent = 'Создать аккаунт Шефа';
+} else if(role === 'cook'){
+  title.textContent = 'Регистрация Повара';
+  pageTitle.textContent = 'HotPit Регистрация Повара';
+  regBtn.textContent = 'Создать аккаунт Повара';
+} else {
   restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
   regBtn.disabled = true;
 }
 
-async function loadRestName(){
+async function init(){
+  if(!role ||!restaurant_id ||!email){
+    restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
+    regBtn.disabled = true;
+    return;
+  }
   const {data: rest, error} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).maybeSingle();
   if(error ||!rest){
     restInfo.innerHTML = `<div class="err">Ресторан не найден</div>`;
@@ -95,58 +75,43 @@ async function loadRestName(){
   }
   restInfo.textContent = `Вас пригласили в ресторан: ${rest.name}`;
 }
+init();
 
 document.getElementById('regBtn').onclick = async ()=>{
   const fullName = document.getElementById('fullName').value.trim();
   const password = document.getElementById('password').value;
-  const emailVal = document.getElementById('email').value.trim();
-  const restNameVal = document.getElementById('restName').value.trim();
   msgBox.innerHTML = '';
 
-  if(!fullName || password.length < 6 ||!emailVal) return msgBox.innerHTML = `<div class="err">Заполни все поля. Пароль 6+ символов</div>`;
-  if(isCreateMode &&!restNameVal) return msgBox.innerHTML = `<div class="err">Введи название ресторана</div>`;
+  if(!fullName || password.length < 6) return msgBox.innerHTML = `<div class="err">Заполни ФИО и пароль 6+ символов</div>`;
 
   regBtn.disabled = true;
   msgBox.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
 
-  // 1. Создаем юзера в Auth
   const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({
-    email: emailVal,
-    password
+    email,
+    password,
+    options: { emailRedirectTo: undefined }
   });
   if(signUpErr) {
     regBtn.disabled = false;
     return msgBox.innerHTML = `<div class="err">${signUpErr.message}</div>`;
   }
-  const user = signUpData.user;
-  let final_restaurant_id = restaurant_id;
 
-  // 2. Если это создание ресторана - создаем ресторан
-  if(isCreateMode){
-    const {data: newRest, error: restErr} = await supabase.from('restaurants').insert({name: restNameVal}).select().single();
-    if(restErr) return msgBox.innerHTML = `<div class="err">${restErr.message}</div>`;
-    final_restaurant_id = newRest.id;
+  if(!signUpData.session){
+    regBtn.disabled = false;
+    return msgBox.innerHTML = `<div class="err">В Supabase -> Auth -> Providers -> Email -> выключи "Confirm email"</div>`;
   }
+  const user = signUpData.user;
 
-  // 3. Создаем профиль
-  const final_role = isCreateMode? 'chef' : role;
-
-  const profileData = {
+  // Создаем профиль с той ролью, которая пришла в ссылке
+  const {error: profErr} = await supabase.from('profiles').insert({
     id: user.id,
     full_name: fullName,
-    role: final_role,
-    restaurant_id: final_restaurant_id,
+    role: role, // <-- chef или cook
+    restaurant_id: restaurant_id,
     is_active: true
-  };
+  });
 
-  // Если это шеф - даем ему должность и ставку 0
-  if(final_role === 'chef'){
-    profileData.job_title = 'Шеф-повар';
-    profileData.salary = 0;
-    profileData.salary_type = 'monthly';
-  }
-
-  const {error: profErr} = await supabase.from('profiles').insert(profileData);
   if(profErr) {
     regBtn.disabled = false;
     return msgBox.innerHTML = `<div class="err">${profErr.message}</div>`;
@@ -154,17 +119,10 @@ document.getElementById('regBtn').onclick = async ()=>{
 
   msgBox.innerHTML = `<div class="ok">Готово! Заходим в кабинет...</div>`;
 
-  // 4. СРАЗУ ЛОГИНИМ ЧТОБЫ БЫЛА СЕССИЯ
-  const {error: loginErr} = await supabase.auth.signInWithPassword({email: emailVal, password})
-  if(loginErr){
-    regBtn.disabled = false;
-    return msgBox.innerHTML = `<div class="err">Аккаунт создан. Зайди вручную через /index.html</div>`;
-  }
-
-  // Реддирект
+  // Реддирект в зависимости от роли
   setTimeout(()=>{
-    if(final_role === 'chef') location.href='/chef.html';
-    if(final_role === 'cook') location.href='/cook.html';
+    if(role === 'chef') location.href='/chef.html';
+    if(role === 'cook') location.href='/cook.html';
   }, 800)
 }
 </script></body></html>
