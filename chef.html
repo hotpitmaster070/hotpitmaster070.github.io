@@ -65,23 +65,14 @@ function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().spl
 async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
 function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const total=workDays*8*data.cook.salary;document.getElementById(`total-${cookId}`)&&(document.getElementById(`total-${cookId}`).textContent=`${workDays} смен = ${total.toLocaleString()}₽`)}
 function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" onclick="openStatusModal('${p.id}','${dateStr}')">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>'}
+
 async function loadData(){
   try{
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
     
-    // ФИКС: Защита от null + автосоздание профиля
-    let {data:prof, error: profErr} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-    
-    if(profErr || !prof){
-      document.getElementById('tab-content').innerHTML = `<div class="err">Профиль не найден. Создай ресторан в index.html сначала.</div>`;
-      return;
-    }
-    
-    if(!prof.restaurant_id){
-      document.getElementById('tab-content').innerHTML = `<div class="err">У вас нет ресторана. Зайдите через index.html и создайте.</div>`;
-      return;
-    }
+    let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+    if(!prof || !prof.restaurant_id) throw new Error('Профиль не найден или нет restaurant_id');
     
     myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
@@ -91,12 +82,14 @@ async function loadData(){
     
     const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).in('role',['cook','chef']);
     const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    
     povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
     
     document.getElementById('povaraList').innerHTML=povaraCache.map(p=>`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title} • ${p.salary}₽/ч</div></div></div>${p.role==='cook'?`<button class="btn-danger" onclick="fireCook('${p.id}','${p.full_name}')">Уволить</button>`:''}</div></div>`).join('');
     
-    document.getElementById('tabelList').innerHTML=povaraCache.map(p=>{const today=new Date().toISOString().split('T')[0];const daysHtml=Array.from({length:days},(_,i)=>{const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';return`<div class="day ${status}" onclick="openStatusModal('${p.id}','${dateStr}')">${day}</div>`}).join('');return`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`}).join('');
+    document.getElementById('tabelList').innerHTML=povaraCache.map(p=>{const daysHtml=Array.from({length:days},(_,i)=>{const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';return`<div class="day ${status}" onclick="openStatusModal('${p.id}','${dateStr}')">${day}</div>`}).join('');return`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`}).join('');
     povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`}
+}
 loadData();window.openStatusModal=openStatusModal;window.setStatus=setStatus;window.fireCook=fireCook;
 </script></body></html>
