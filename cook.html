@@ -1,40 +1,121 @@
-<!doctype html><html lang="ru"><head>
+<!doctype html>
+<html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit | Повар</title><link rel="stylesheet" href="css/style.css"></head><body>
-<div class="auth-wrap">
+<title>HotPit | Повар</title>
+<style>
+body{margin:0;background:#0a0a0a;color:#fff;font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.wrap{background:#111;padding:32px 24px;border-radius:20px;width:100%;max-width:360px;text-align:center;border:1px solid #262626}
+h1{font-size:24px;margin-bottom:8px;color:#ff6b00}
+p{color:#888;margin-bottom:20px}
+.btn{width:100%;padding:16px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:700;font-size:16px;cursor:pointer}
+.btn-danger{background:#ef4444;color:#fff}
+.btn:disabled{opacity:.5}
+.err{color:#f87171}
+.ok{color:#22c55e}
+</style>
+</head><body>
+<div class="wrap">
   <h1 id="name">Загрузка...</h1>
-  <p id="status">Проверка QR...</p>
-  <button id="btn" class="btn-primary" style="display:none" onclick="toggleShift()">...</button>
+  <p id="status">Проверяем авторизацию...</p>
+  <button id="btn" class="btn" style="display:none" onclick="toggleShift()">...</button>
+  <div id="msg" style="margin-top:12px;font-size:13px"></div>
 </div>
+
 <script type="module">
-import { supabase } from './js/api.js'
-const qr=new URLSearchParams(location.search).get('qr');
-let cookId=null,restaurantId=null,onShift=false
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+
+let cookId=null, restaurantId=null, today=new Date().toISOString().split('T')[0];
 
 async function init(){
-  if(!qr){name.textContent='Ошибка: QR не найден';return}
-  const {data:cook}=await supabase.from('cooks').select('id,full_name,restaurant_id').eq('qr_token',qr).single()
-  if(!cook){name.textContent='QR недействителен';return}
-  cookId=cook.id;restaurantId=cook.restaurant_id;name.textContent=cook.full_name
-  const {data:shift}=await supabase.from('shifts').select('id').eq('user_id',cookId).is('clock_out',null).single()
-  onShift=!!shift;updateBtn()
-}
-function updateBtn(){
-  btn.style.display='block';
-  btn.textContent=onShift?'Уйти со смены':'Прийти на смену';
-  status.textContent=onShift?'На смене':'Не на смене';
-  btn.className=onShift?'btn-danger':'btn-primary'
-}
-window.toggleShift=async()=>{
-  btn.disabled=true;
-  if(!onShift){
-    await supabase.from('shifts').insert({user_id:cookId,restaurant_id:restaurantId})
-    onShift=true
-  }else{
-    await supabase.from('shifts').update({clock_out:new Date()}).eq('user_id',cookId).is('clock_out',null)
-    onShift=false
+  const {data:{user}} = await supabase.auth.getUser();
+
+  // Если не залогинен - выкидываем на вход
+  if(!user) return location.href='/index.html';
+
+  cookId = user.id;
+
+  // 1. Берем повара из profiles
+  const {data:cook, error} = await supabase.from('profiles')
+  .select('full_name, restaurant_id, role')
+  .eq('id', cookId)
+  .eq('is_active', true)
+  .single();
+
+  if(error ||!cook){
+    document.getElementById('name').innerHTML='<div class="err">Профиль не найден</div>';
+    document.getElementById('msg').textContent = error?.message;
+    return
   }
-  updateBtn();btn.disabled=false
+
+  // Проверка что это реально повар
+  if(cook.role!== 'cook'){
+    document.getElementById('name').innerHTML='<div class="err">У вас нет доступа</div>';
+    return
+  }
+
+  restaurantId = cook.restaurant_id;
+  document.getElementById('name').textContent = cook.full_name;
+
+  // 2. Проверяем есть ли смена сегодня в attendance
+  const {data:shift} = await supabase.from('attendance')
+  .select('id')
+  .eq('cook_id', cookId)
+  .eq('work_date', today)
+  .eq('status', 'work')
+  .maybeSingle();
+
+  updateBtn(!!shift);
 }
+
+function updateBtn(onShift){
+  const btn = document.getElementById('btn');
+  const status = document.getElementById('status');
+  btn.style.display='block';
+
+  if(onShift){
+    btn.textContent='Уйти со смены';
+    btn.className='btn btn-danger';
+    status.innerHTML='<div class="ok">Вы на смене</div>';
+  } else {
+    btn.textContent='Прийти на смену';
+    btn.className='btn';
+    status.textContent='Не на смене';
+  }
+}
+
+window.toggleShift = async()=>{
+  const btn = document.getElementById('btn');
+  const msg = document.getElementById('msg');
+  btn.disabled=true; msg.textContent = 'Сохраняю...';
+
+  const onShift = btn.textContent.includes('Уйти');
+
+  try{
+    if(!onShift){
+      // Пришли на смену = пишем в attendance
+      const {error} = await supabase.from('attendance').insert({
+        cook_id: cookId,
+        restaurant_id: restaurantId,
+        work_date: today,
+        status: 'work'
+      })
+      if(error) throw error;
+    }else{
+      // Ушли = удаляем запись за сегодня
+      const {error} = await supabase.from('attendance').delete()
+      .eq('cook_id', cookId)
+      .eq('work_date', today)
+      if(error) throw error;
+    }
+
+    updateBtn(!onShift);
+    msg.textContent = '';
+  }catch(e){
+    msg.innerHTML = `<div class="err">${e.message}</div>`;
+  }
+  btn.disabled=false;
+}
+
 init()
 </script></body></html>
