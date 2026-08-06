@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit Регистрация Шефа</title>
+<title id="pageTitle">HotPit Регистрация</title>
 <style>
 :root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -19,13 +19,13 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 </head>
 <body>
 <div class="card">
-  <h1>Регистрация Шефа</h1>
+  <h1 id="title">Регистрация</h1>
   <div class="muted" id="restInfo">Загрузка ресторана...</div>
 
   <input id="fullName" type="text" placeholder="Ваше ФИО">
   <input id="email" type="email" placeholder="Email" readonly>
   <input id="password" type="password" placeholder="Придумайте пароль 6+ символов">
-  <button id="regBtn">Создать аккаунт Шефа</button>
+  <button id="regBtn">Создать аккаунт</button>
   <div id="msg"></div>
 </div>
 
@@ -36,24 +36,41 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const params = new URLSearchParams(location.search);
-const role = params.get('role');
+const role = params.get('role'); // chef или cook
 const restaurant_id = params.get('restaurant_id');
 const email = params.get('email');
 
 document.getElementById('email').value = email || '';
 const msgBox = document.getElementById('msg');
 const restInfo = document.getElementById('restInfo');
+const title = document.getElementById('title');
+const pageTitle = document.getElementById('pageTitle');
+const regBtn = document.getElementById('regBtn');
+
+// Настраиваем текст в зависимости от роли
+if(role === 'chef'){
+  title.textContent = 'Регистрация Шефа';
+  pageTitle.textContent = 'HotPit Регистрация Шефа';
+  regBtn.textContent = 'Создать аккаунт Шефа';
+} else if(role === 'cook'){
+  title.textContent = 'Регистрация Повара';
+  pageTitle.textContent = 'HotPit Регистрация Повара';
+  regBtn.textContent = 'Создать аккаунт Повара';
+} else {
+  restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
+  regBtn.disabled = true;
+}
 
 async function init(){
-  if(role!== 'chef' ||!restaurant_id ||!email){
+  if(!role ||!restaurant_id ||!email){
     restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
-    document.getElementById('regBtn').disabled = true;
+    regBtn.disabled = true;
     return;
   }
   const {data: rest, error} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).maybeSingle();
   if(error ||!rest){
     restInfo.innerHTML = `<div class="err">Ресторан не найден</div>`;
-    document.getElementById('regBtn').disabled = true;
+    regBtn.disabled = true;
     return;
   }
   restInfo.textContent = `Вас пригласили в ресторан: ${rest.name}`;
@@ -67,42 +84,45 @@ document.getElementById('regBtn').onclick = async ()=>{
 
   if(!fullName || password.length < 6) return msgBox.innerHTML = `<div class="err">Заполни ФИО и пароль 6+ символов</div>`;
 
-  document.getElementById('regBtn').disabled = true;
+  regBtn.disabled = true;
   msgBox.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
 
-  // БЕТОН 1: signUp без подтверждения почты
   const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: undefined } // <-- Отключаем письмо
+    options: { emailRedirectTo: undefined }
   });
   if(signUpErr) {
-    document.getElementById('regBtn').disabled = false;
+    regBtn.disabled = false;
     return msgBox.innerHTML = `<div class="err">${signUpErr.message}</div>`;
   }
 
-  // БЕТОН 2: Проверка что сессия есть. Если нет = включи в Supabase "Disable email confirmations"
   if(!signUpData.session){
-    document.getElementById('regBtn').disabled = false;
+    regBtn.disabled = false;
     return msgBox.innerHTML = `<div class="err">В Supabase -> Auth -> Providers -> Email -> выключи "Confirm email"</div>`;
   }
   const user = signUpData.user;
 
-  // БЕТОН 3: Создаем профиль. Без email. Он только в auth.users
+  // Создаем профиль с той ролью, которая пришла в ссылке
   const {error: profErr} = await supabase.from('profiles').insert({
     id: user.id,
     full_name: fullName,
-    role: 'chef',
+    role: role, // <-- chef или cook
     restaurant_id: restaurant_id,
     is_active: true
   });
 
   if(profErr) {
-    document.getElementById('regBtn').disabled = false;
+    regBtn.disabled = false;
     return msgBox.innerHTML = `<div class="err">${profErr.message}</div>`;
   }
 
   msgBox.innerHTML = `<div class="ok">Готово! Заходим в кабинет...</div>`;
-  setTimeout(()=>location.href='/chef.html', 800); // <-- БЕТОН: Сразу в кабинет Шефа
+
+  // Реддирект в зависимости от роли
+  setTimeout(()=>{
+    if(role === 'chef') location.href='/chef.html';
+    if(role === 'cook') location.href='/cook.html';
+  }, 800)
 }
 </script></body></html>
