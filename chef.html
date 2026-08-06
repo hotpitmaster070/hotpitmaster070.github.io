@@ -29,18 +29,29 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
 .muted{color:var(--muted);font-size:12px;margin-top:8px}
 .ok{color:#22c55e}
-.subtitle{color:var(--muted);font-size:14px;margin-top:-8px;margin-bottom:20px}
+.brand{color:var(--accent);font-size:22px;font-weight:800;margin-bottom:4px}
+.restaurant-name{color:var(--muted);font-size:14px;margin-bottom:20px}
+.chef-name{font-size:20px;font-weight:700}
+.chef-role{font-size:14px;color:var(--muted)}
+.sidebar-chef{padding:12px;border-radius:12px;background:var(--card-2);margin-bottom:20px}
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <div class="app"><div class="overlay" id="overlay"></div>
-<aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2><div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
+<aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2>
+<div id="sidebarChef" class="sidebar-chef" style="display:none">
+  <div style="font-size:12px;color:var(--muted)">Шеф-повар</div>
+  <div id="sidebarChefName" style="font-weight:700"></div>
+</div>
+<div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
 <nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button id="logoutBtn">Выйти</button></nav></aside>
 <main class="content"><div class="topbar"><button class="burger" id="burgerBtn">☰</button>
-<div>
-  <h1 id="pageTitle">👨‍🍳 Загрузка...</h1>
-  <div class="subtitle" id="pageSubtitle">Загрузка ресторана...</div>
+<div style="flex:1">
+  <div class="brand">HotPit KITCHEN</div>
+  <div class="restaurant-name" id="pageSubtitle">Загрузка ресторана...</div>
+  <div class="chef-name" id="pageTitle">Загрузка...</div>
+  <div class="chef-role">Шеф-повар</div>
 </div>
-<button class="btn" id="addBtn" style="margin-left:auto">+ Добавить</button></div>
+<button class="btn" id="addBtn">+ Добавить</button></div>
 
 <div id="tab-content">
 <div data-tab-content="personal"><div id="povaraList">Загрузка...</div></div>
@@ -72,7 +83,7 @@ const JOB_TITLES = ['Су-шеф','Повар','Повар горячего це
 
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('pageTitle').innerText=btn.textContent.trim();document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');loadData()});
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');loadData()});
 document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
 function updateMonth(){document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});document.getElementById('monthYearG').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});loadData()}
 document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonth()}
@@ -113,8 +124,12 @@ async function loadData(){
     const restName = prof.restaurants?.name || 'Ресторан';
     document.getElementById('restName').textContent=restName;
 
-    document.getElementById('pageTitle').innerText = `👨‍🍳 ${me.full_name} | Шеф-повар`;
-    document.getElementById('pageSubtitle').innerText = `Команда кухни: ${restName}`;
+    document.querySelector('.brand').innerText = `HotPit KITCHEN`;
+    document.getElementById('pageSubtitle').innerText = restName;
+    document.getElementById('pageTitle').innerText = me.full_name;
+
+    document.getElementById('sidebarChef').style.display = 'block';
+    document.getElementById('sidebarChefName').innerText = me.full_name;
 
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonth();
@@ -140,6 +155,6 @@ async function loadData(){
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
     povaraCache.filter(p => p.id!== me.id).forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`}
-} // <-- ВОТ ТУТ ДОБАВИЛ ЗАКРЫВАЮЩУЮ СКОБКУ
+}
 loadData();
 </script></body></html>
