@@ -113,7 +113,6 @@ async function loadData(){
     const restName = prof.restaurants?.name || 'Ресторан';
     document.getElementById('restName').textContent=restName;
 
-    // ВОТ ТУТ МЕНЯЕМ ШАПКУ
     document.getElementById('pageTitle').innerText = `👨‍🍳 ${me.full_name} | Шеф-повар`;
     document.getElementById('pageSubtitle').innerText = `Команда кухни: ${restName}`;
 
@@ -141,5 +140,6 @@ async function loadData(){
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
     povaraCache.filter(p => p.id!== me.id).forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`}
+} // <-- ВОТ ТУТ ДОБАВИЛ ЗАКРЫВАЮЩУЮ СКОБКУ
 loadData();
 </script></body></html>
