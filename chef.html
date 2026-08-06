@@ -29,12 +29,20 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
 .muted{color:var(--muted);font-size:12px;margin-top:8px}
 .ok{color:#22c55e}
+.chef-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:16px;background:var(--card);border-radius:16px;border:1px solid #262626}
+.chef-header.avatar{width:52px;height:52px;font-size:20px}
+.chef-info b{font-size:18px}
+.chef-info div{color:var(--muted);font-size:14px}
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2><div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
 <nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button id="logoutBtn">Выйти</button></nav></aside>
-<main class="content"><div class="topbar"><button class="burger" id="burgerBtn">☰</button><h1 id="pageTitle">👨‍🍳 Команда Кухни</h1><button class="btn" id="addBtn" style="margin-left:auto">+ Добавить</button></div>
+<main class="content">
+<div class="topbar"><button class="burger" id="burgerBtn">☰</button><h1 id="pageTitle">👨‍🍳 Команда Кухни</h1><button class="btn" id="addBtn" style="margin-left:auto">+ Добавить</button></div>
+
+<div id="chefHeader"></div> <!-- ТУТ БУДЕТ ИМЯ ШЕФА -->
+
 <div id="tab-content">
 <div data-tab-content="personal"><div id="povaraList">Загрузка...</div></div>
 <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT">></button></div><div id="tabelList">Загрузка...</div></div>
@@ -60,7 +68,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={};
+let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null;
 const JOB_TITLES = ['Су-шеф','Повар','Повар горячего цеха','Повар холодного цеха','Повар-универсал','Повар-кондитер','Пиццайоло','Сушист','Мойщик посуды'];
 
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
@@ -101,8 +109,21 @@ async function loadData(){
     if(!user) return location.href='/index.html';
     let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
     if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
+    me = prof; // Сохраняем кто залогинен
     myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
+
+    // ШАПКА С ИМЕНЕМ ШЕФА
+    document.getElementById('chefHeader').innerHTML = `
+      <div class="chef-header">
+        <div class="avatar">👨‍🍳</div>
+        <div class="chef-info">
+          <b>${me.full_name}</b>
+          <div>Шеф-повар</div>
+        </div>
+      </div>
+    `;
+
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonth();
     const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).in('role',['cook','chef']);
@@ -110,22 +131,24 @@ async function loadData(){
     povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
 
     let povaraHTML = '';
-    povaraCache.forEach(p=>{
+    povaraCache
+   .filter(p => p.id!== me.id) // <-- ВОТ ТУТ УБИРАЕМ САМОГО ШЕФА ИЗ СПИСКА
+   .forEach(p=>{
       const btns = p.role==='cook'? `<button class="btn-outline" onclick="openInviteModal('${p.id}')">QR</button> <button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button>` : '';
       povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title} • ${p.salary}₽/ч</div></div></div><div>${btns}</div></div></div>`
     });
-    document.getElementById('povaraList').innerHTML = povaraHTML;
+    document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Добавьте первого.</div>';
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
 
     let tabelHTML = '';
-    povaraCache.forEach(p=>{
+    povaraCache.filter(p => p.id!== me.id).forEach(p=>{ // И ТУТ ТОЖЕ
       let daysHtml='';
       for(let i=0;i<days;i++){const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`}
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
-    povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
+    povaraCache.filter(p => p.id!== me.id).forEach(p=>renderTotal(p.id));renderGrafik() // И ТУТ
   }catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`}
 }
 loadData();
