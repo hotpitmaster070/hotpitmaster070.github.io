@@ -8,7 +8,7 @@
 .menu button.active{background:var(--card-2)}.content{flex:1;padding:20px}.topbar{display:flex;align-items:center;gap:16px;margin-bottom:20px}
 .burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-size:20px}
 .btn{padding:12px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;cursor:pointer}
-.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px}
 .btn-danger{background:var(--danger);color:#fff;padding:8px 12px;border:none;border-radius:8px;cursor:pointer;font-size:12px}
 input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:12px;color:var(--text);margin-top:8px}
 .povar-card{background:var(--card);padding:16px;border-radius:16px;border:1px solid #262626;margin-bottom:12px}
@@ -26,7 +26,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
 .err{color:var(--danger);padding:20px}
+#qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
+.muted{color:var(--muted);font-size:12px;margin-top:8px}
+.ok{color:#22c55e}
 </style></head><body>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2><div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
 <nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button id="logoutBtn">Выйти</button></nav></aside>
@@ -36,13 +40,23 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT">></button></div><div id="tabelList">Загрузка...</div></div>
 <div data-tab-content="grafik" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthG"><</button><div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthG">></button></div><div class="grafik-wrapper" id="grafikList">Загрузка...</div></div>
 </div></main></div>
+
 <div class="modal" id="addModal"><div class="modal-card"><h3>Новый сотрудник кухни</h3><div id="modalBody"></div><div style="display:flex;gap:10px;margin-top:16px"><button class="btn-outline" id="cancelBtn" style="flex:1">Отмена</button><button class="btn" id="saveBtn" style="flex:1">Сохранить</button></div></div></div>
+
+<div class="modal" id="inviteModal"><div class="modal-card"><h3>Пригласить повара</h3>
+<input id="cookEmail" type="email" placeholder="Email повара">
+<button class="btn" id="genInviteBtn" style="width:100%;margin-top:8px">Сгенерировать ссылку + QR</button>
+<div id="inviteLink" class="muted" style="margin-top:12px"></div>
+<div id="qrcode"></div>
+<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('inviteModal').classList.remove('show')">Закрыть</button></div></div>
+
 <div class="modal" id="statusModal"><div class="modal-card"><h3>Статус на <span id="statusDate"></span></h3>
 <button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Смена</button>
 <button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>
 <button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>
 <button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
+
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
@@ -63,6 +77,19 @@ document.getElementById('cancelBtn').onclick=()=>document.getElementById('addMod
 document.getElementById('saveBtn').onclick=async()=>{const name=document.getElementById('newPovarName').value;const email=document.getElementById('newPovarEmail').value;const pass=document.getElementById('newPovarPass').value;const {data} = await supabase.auth.signUp({email,password:pass});await supabase.from('profiles').insert({id:data.user.id,full_name:name,role:'cook',job_title:document.getElementById('newPovarRole').value,restaurant_id:myRestaurantId,salary:Number(document.getElementById('newPovarSalary').value),salary_type:'hourly',is_active:true});document.getElementById('addModal').classList.remove('show');loadData()};
 
 function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
+function openInviteModal(cookId){document.getElementById('cookEmail').value='';document.getElementById('inviteLink').innerHTML='';document.getElementById('qrcode').innerHTML='';document.getElementById('inviteModal').classList.add('show');document.getElementById('genInviteBtn').onclick=()=>genInvite(cookId)}
+async function genInvite(cookId){
+  const email = document.getElementById('cookEmail').value.trim();
+  const msgBox = document.getElementById('inviteLink');
+  if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
+  const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}`;
+  msgBox.innerHTML = `Скинь повару ссылку: <br><a href="${link}" target="_blank">${link}</a>`;
+  navigator.clipboard.writeText(link);
+  document.getElementById('qrcode').innerHTML = '';
+  new QRCode(document.getElementById("qrcode"), { text: link, width: 200, height: 200 });
+  msgBox.innerHTML += `<div class="ok">Ссылка скопирована + QR готов</div>`;
+}
+
 function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
 async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
 function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const total=workDays*8*data.cook.salary;const el=document.getElementById(`total-${cookId}`);if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`}
@@ -72,29 +99,24 @@ async function loadData(){
   try{
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
-    
     let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-    if(!prof || !prof.restaurant_id) throw new Error('Профиль не найден или нет restaurant_id');
-    
+    if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
     myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
-    
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonth();
-    
     const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).in('role',['cook','chef']);
     const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
-    
     povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
-    
+
     let povaraHTML = '';
     povaraCache.forEach(p=>{
-      const btn = p.role==='cook' ? `<button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button>` : '';
-      povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title} • ${p.salary}₽/ч</div></div></div>${btn}</div></div>`
+      const btns = p.role==='cook'? `<button class="btn-outline" onclick="openInviteModal('${p.id}')">QR</button> <button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button>` : '';
+      povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title} • ${p.salary}₽/ч</div></div></div><div>${btns}</div></div></div>`
     });
     document.getElementById('povaraList').innerHTML = povaraHTML;
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
-    
+
     let tabelHTML = '';
     povaraCache.forEach(p=>{
       let daysHtml='';
@@ -105,5 +127,6 @@ async function loadData(){
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
     povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`}
+}
 loadData();
 </script></body></html>
