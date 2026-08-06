@@ -39,7 +39,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2>
 <div id="sidebarChef" class="sidebar-chef" style="display:none">
-  <div style="font-size:12px;color:var(--muted)">Шеф-повар</div>
+  <div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div>
   <div id="sidebarChefName" style="font-weight:700"></div>
 </div>
 <div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
@@ -49,7 +49,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <div class="brand">HotPit KITCHEN</div>
   <div class="restaurant-name" id="pageSubtitle">Загрузка ресторана...</div>
   <div class="chef-name" id="pageTitle">Загрузка...</div>
-  <div class="chef-role">Шеф-повар</div>
+  <div class="chef-role" id="pageRole">Загрузка...</div>
 </div>
 <button class="btn" id="addBtn">+ Добавить</button></div>
 
@@ -78,21 +78,27 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null;
+let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null,headChef=null;
 const JOB_TITLES = ['Су-шеф','Повар','Повар горячего цеха','Повар холодного цеха','Повар-универсал','Повар-кондитер','Пиццайоло','Сушист','Мойщик посуды'];
 
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');loadData()});
 document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
-function updateMonth(){document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});document.getElementById('monthYearG').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});loadData()}
-document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonth()}
-document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonth()}
-document.getElementById('prevMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonth()}
-document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonth()}
+
+function updateMonthLabels(){
+  document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});
+  document.getElementById('monthYearG').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});
+}
+
+document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
+document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
+document.getElementById('prevMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
+document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
+
 document.getElementById('addBtn').onclick=()=>{const rolesHtml = JOB_TITLES.map(r=>`<option>${r}</option>`).join('');document.getElementById('modalBody').innerHTML=`<input id="newPovarName" placeholder="ФИО"><input id="newPovarEmail" type="email" placeholder="Email"><input id="newPovarPass" type="password" placeholder="Пароль 6+"><select id="newPovarRole">${rolesHtml}</select><input id="newPovarSalary" type="number" placeholder="Ставка в час">`;document.getElementById('addModal').classList.add('show')};
 document.getElementById('cancelBtn').onclick=()=>document.getElementById('addModal').classList.remove('show');
-document.getElementById('saveBtn').onclick=async()=>{const name=document.getElementById('newPovarName').value;const email=document.getElementById('newPovarEmail').value;const pass=document.getElementById('newPovarPass').value;const {data} = await supabase.auth.signUp({email,password:pass});await supabase.from('profiles').insert({id:data.user.id,full_name:name,role:'cook',job_title:document.getElementById('newPovarRole').value,restaurant_id:myRestaurantId,salary:Number(document.getElementById('newPovarSalary').value),salary_type:'hourly',is_active:true});document.getElementById('addModal').classList.remove('show');loadData()};
+document.getElementById('saveBtn').onclick=async()=>{const name=document.getElementById('newPovarName').value;const email=document.getElementById('newPovarEmail').value;const pass=document.getElementById('newPovarPass').value;const {data} = await supabase.auth.signUp({email,password:pass});await supabase.from('profiles').insert({id:data.user.id,full_name:name,role:'cook',job_title:document.getElementById('newPovarRole').value,restaurant_id:myRestaurantId,salary:Number(document.getElementById('newPovarSalary').value)||0,salary_type:'hourly',is_active:true});document.getElementById('addModal').classList.remove('show');loadData()};
 
 function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
 function openInviteModal(cookId){document.getElementById('cookEmail').value='';document.getElementById('inviteLink').innerHTML='';document.getElementById('qrcode').innerHTML='';document.getElementById('inviteModal').classList.add('show');document.getElementById('genInviteBtn').onclick=()=>genInvite(cookId)}
@@ -110,51 +116,64 @@ async function genInvite(cookId){
 
 function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
 async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
-function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const total=workDays*8*data.cook.salary;const el=document.getElementById(`total-${cookId}`);if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`}
+function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const salary = Number(data.cook.salary) || 0; const total=workDays*8*salary;const el=document.getElementById(`total-${cookId}`);if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`}
 function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';document.querySelectorAll('.grafik-cell').forEach(c=>c.onclick=()=>openStatusModal(c.dataset.id,c.dataset.date))}
 
 async function loadData(){
   try{
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
-    let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+    let {data:prof, error:profErr} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+    if(profErr) throw profErr;
     if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
     me = prof;
     myRestaurantId=prof.restaurant_id;
     const restName = prof.restaurants?.name || 'Ресторан';
     document.getElementById('restName').textContent=restName;
 
+    const {data:allStaff, error:staffErr} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
+    if(staffErr) throw staffErr;
+    headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
+
     document.querySelector('.brand').innerText = `HotPit KITCHEN`;
     document.getElementById('pageSubtitle').innerText = restName;
-    document.getElementById('pageTitle').innerText = me.full_name;
+    document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
+    document.getElementById('pageRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
 
     document.getElementById('sidebarChef').style.display = 'block';
-    document.getElementById('sidebarChefName').innerText = me.full_name;
+    document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
+    document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
 
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
-    updateMonth();
-    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).in('role',['cook','chef']);
-    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    updateMonthLabels();
+    const {data:povara, error:povErr}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    if(povErr) throw povErr;
+    const {data:attendance, error:attErr}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    if(attErr) throw attErr; // ВОТ ТУТ БЫЛА ОШИБКА
     povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
 
     let povaraHTML = '';
-    povaraCache.filter(p => p.id!== me.id).forEach(p=>{
-      const btns = p.role==='cook'? `<button class="btn-outline" onclick="openInviteModal('${p.id}')">QR</button> <button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button>` : '';
-      povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title} • ${p.salary}₽/ч</div></div></div><div>${btns}</div></div></div>`
+    povaraCache.forEach(p=>{
+      const job = p.job_title || 'Повар';
+      const salary = Number(p.salary) || 0;
+      povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><div><button class="btn-outline" onclick="openInviteModal('${p.id}')">QR</button> <button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div></div>`
     });
     document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Добавьте первого.</div>';
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
 
     let tabelHTML = '';
-    povaraCache.filter(p => p.id!== me.id).forEach(p=>{
+    povaraCache.forEach(p=>{
       let daysHtml='';
       for(let i=0;i<days;i++){const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`}
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
-    povaraCache.filter(p => p.id!== me.id).forEach(p=>renderTotal(p.id));renderGrafik()
-  }catch(e){document.getElementById('povaraList').innerHTML=`<div class="err">${e.message}</div>`}
+    povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
+  }catch(e){
+    console.error(e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
 }
 loadData();
 </script></body></html>
