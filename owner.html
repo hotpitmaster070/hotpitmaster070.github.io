@@ -77,12 +77,12 @@ a{color:var(--accent);word-break:break-all}
 
     <div id="tab-content">
       <div class="card" data-tab-content="personal">
-        <h3>Команда</h3>
+        <h3>Команда Кухни</h3>
         <div id="povaraList">Загрузка...</div>
         <hr style="border:none;border-top:1px solid #262626;margin:16px 0">
         <h4>Пригласить Шефа</h4>
         <input id="chefEmail" type="email" placeholder="Email Шефа">
-        <button id="inviteChefBtn" class="btn-outline" style="width:100%;margin-top:8px" disabled>Сгенерировать ссылку</button> <!-- ФИКС 1: Кнопка заблокирована -->
+        <button id="inviteChefBtn" class="btn-outline" style="width:100%;margin-top:8px" disabled>Сгенерировать ссылку</button>
         <div id="inviteLink" class="muted" style="margin-top:12px"></div>
         <div id="qrcode"></div>
       </div>
@@ -148,7 +148,7 @@ document.getElementById('inviteChefBtn').onclick = async ()=>{
   const email = document.getElementById('chefEmail').value.trim();
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email Шефа</div>`;
-  if(!myRestaurantId) return msgBox.innerHTML = `<div class="err">Ресторан еще не загрузился. Подожди 2 сек.</div>`; // ФИКС 2: Защита от null
+  if(!myRestaurantId) return msgBox.innerHTML = `<div class="err">Ресторан еще не загрузился. Подожди 2 сек.</div>`;
 
   msgBox.innerHTML = `<div class="muted">Создаю приглашение...</div>`;
   document.getElementById('inviteChefBtn').disabled = true;
@@ -230,13 +230,12 @@ async function init() {
   if(!user) return location.href='/index.html';
   myUserId=user.id;
 
-  // ФИКС 3: Бетон. Если ресторана нет - создаем его тут 1 раз.
   let {data: prof} = await supabase.from('profiles').select('restaurant_id, restaurants(name)').eq('id',user.id).single();
 
   if(!prof ||!prof.restaurant_id){
     const {data: newRest, error: restErr} = await supabase.from('restaurants')
-     .insert({owner_id: user.id, name: 'Полло', subscription_type: 'owner'})
-     .select('id, name').single(); // <-- Ждем id из БД
+   .insert({owner_id: user.id, name: 'Новый ресторан', subscription_type: 'owner'})
+   .select('id, name').single();
 
     if(restErr) return document.getElementById('restName').innerHTML = `<div class="err">Ошибка БД: ${restErr.message}</div>`;
 
@@ -248,7 +247,7 @@ async function init() {
     document.getElementById('restName').textContent = prof.restaurants.name;
   }
 
-  document.getElementById('inviteChefBtn').disabled = false; // ФИКС 4: Разблокируем кнопку только когда id есть
+  document.getElementById('inviteChefBtn').disabled = false;
 
   const limit = 400000;
   const used = 287000;
@@ -256,12 +255,13 @@ async function init() {
   document.getElementById('fotLimit').textContent = limit.toLocaleString('ru');
   document.getElementById('fotBar').style.width = (used/limit*100)+'%';
 
-  const {data:povara, error: pErr} = await supabase.from('profiles').select('full_name, role, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true).neq('role', 'owner');
+  // ГЛАВНОЕ: Ищем и поваров и шефов для отображения
+  const {data:povara, error: pErr} = await supabase.from('profiles').select('full_name, role, job_title, salary, fines').eq('restaurant_id', myRestaurantId).eq('is_active', true).in('role',['cook','chef']);
 
   if (pErr) {
     document.getElementById('povaraList').innerHTML = `<div class="err">Ошибка доступа: ${pErr.message}</div>`;
   } else {
-    document.getElementById('povaraList').innerHTML = povara.length? povara.map(p=>`<div style="padding:8px 0;border-bottom:1px solid #262626">${p.full_name} - ${p.role} - ${p.salary||0}р/мес</div>`).join('') : '<div class="muted">В ресторане нет активных поваров</div>';
+    document.getElementById('povaraList').innerHTML = povara.length? povara.map(p=>`<div style="padding:8px 0;border-bottom:1px solid #262626">${p.full_name} - ${p.job_title||p.role} - ${p.salary||0}р/мес</div>`).join('') : '<div class="muted">В ресторане нет активных сотрудников</div>';
   }
 
   if (pErr) {
