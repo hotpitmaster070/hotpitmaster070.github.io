@@ -1,7 +1,7 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit KITCHEN</title><style>
 :root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--danger:#ef4444}
-*{box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;margin:0}
+*{box-sizing:border-box; -webkit-tap-highlight-color: transparent}body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;margin:0}
 .app{display:flex;min-height:100vh}.sidebar{width:260px;background:var(--card);padding:20px;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:.3s}
 .sidebar.open{transform:translateX(0)}.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
 .menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-weight:500}
@@ -15,15 +15,15 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .povar-head{display:flex;align-items:center;justify-content:space-between}
 .avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:20px}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
-.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600}
+.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600;user-select:none}
 .day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}
 .total{margin-top:12px;padding-top:12px;border-top:1px solid #333;font-weight:700}
 .grafik-wrapper{overflow-x:auto}.grafik-grid{display:grid;gap:4px;width:max-content}
 .grafik-header,.grafik-name{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px}
 .grafik-name{position:sticky;left:0;z-index:2;text-align:left;min-width:140px;background:var(--card)}
-.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;font-weight:700}
+.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;font-weight:700;user-select:none}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px}
+.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;z-index:101}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
 .err{color:var(--danger);padding:20px}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
@@ -76,11 +76,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 </div></div>
 
 <div class="modal" id="statusModal"><div class="modal-card"><h3>Статус на <span id="statusDate"></span></h3>
-<button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Смена</button>
-<button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>
-<button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>
-<button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button>
-<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
+<button class="status-btn" style="background:var(--work)" id="btnWork">Смена</button>
+<button class="status-btn" style="background:var(--sick)" id="btnSick">Больничный</button>
+<button class="status-btn" style="background:var(--vac)" id="btnVac">Отпуск</button>
+<button class="status-btn" style="background:var(--card-2)" id="btnOff">Выходной</button>
+<button class="btn-outline" style="margin-top:12px;width:100%" id="btnCancel">Отмена</button></div></div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -123,9 +123,18 @@ async function genInvite(){
 document.getElementById('genInviteBtn').onclick=genInvite;
 
 function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
+
+document.getElementById('btnWork').onclick=()=>setStatus('work');
+document.getElementById('btnSick').onclick=()=>setStatus('sick');
+document.getElementById('btnVac').onclick=()=>setStatus('vac');
+document.getElementById('btnOff').onclick=()=>setStatus('off');
+document.getElementById('btnCancel').onclick=()=>document.getElementById('statusModal').classList.remove('show');
+
 async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
+
 function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const salary = Number(data.cook.salary) || 0; const total=workDays*8*salary;const el=document.getElementById(`total-${cookId}`);if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`}
-function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';document.querySelectorAll('.grafik-cell').forEach(c=>c.onclick=()=>openStatusModal(c.dataset.id,c.dataset.date))}
+
+function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';setTimeout(()=>{document.querySelectorAll('.grafik-cell').forEach(c=>c.addEventListener('click',()=>openStatusModal(c.dataset.id,c.dataset.date)))},100)}
 
 async function loadData(){
   try{
@@ -167,7 +176,7 @@ async function loadData(){
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
-    document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
+    setTimeout(()=>{document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)))},100);
     povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){
     console.error(e);
