@@ -116,7 +116,7 @@ document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentD
 
 document.getElementById('addBtn').onclick=()=>{
   const rolesHtml = JOB_TITLES.map(r=>`<option>${r}</option>`).join('');
-  document.getElementById('modalBody').innerHTML=`<input id="newPovarName" placeholder="ФИО"><input id="newPovarEmail" type="email" placeholder="Email"><input id="newPovarPass" type="password" placeholder="Пароль 6+"><select id="newPovarRole">${rolesHtml}</select><input id="newPovarSalary" type="number" placeholder="Ставка в час">`;
+  document.getElementById('modalBody').innerHTML=`<input id="newPovarName" placeholder="ФИО"><input id="newPovarEmail" type="email" placeholder="Email"><select id="newPovarRole">${rolesHtml}</select><input id="newPovarSalary" type="number" placeholder="Ставка в час">`;
   document.getElementById('addModal').classList.add('show')
 };
 
@@ -129,13 +129,32 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
 document.getElementById('cancelBtn').onclick=()=>document.getElementById('addModal').classList.remove('show');
 document.getElementById('closeInviteBtn').onclick=()=>document.getElementById('addModal').classList.remove('show');
 
+// ИСПРАВЛЕННАЯ КНОПКА СОХРАНИТЬ
 document.getElementById('saveBtn').onclick=async()=>{
   const name=document.getElementById('newPovarName').value;
   const email=document.getElementById('newPovarEmail').value;
-  const pass=document.getElementById('newPovarPass').value;
-  const {data} = await supabase.auth.signUp({email,password:pass});
-  await supabase.from('profiles').insert({id:data.user.id,full_name:name,role:'cook',job_title:document.getElementById('newPovarRole').value,restaurant_id:myRestaurantId,salary:Number(document.getElementById('newPovarSalary').value)||0,salary_type:'hourly',is_active:true});
-  document.getElementById('addModal').classList.remove('show');loadData()
+  const job=document.getElementById('newPovarRole').value;
+  const salary=Number(document.getElementById('newPovarSalary').value)||0;
+  
+  if(!name || !email) return alert('Заполни ФИО и Email');
+  
+  const {error} = await supabase.from('profiles').insert({
+    id: crypto.randomUUID(), 
+    full_name: name,
+    email: email,
+    role: 'cook',
+    job_title: job,
+    restaurant_id: myRestaurantId,
+    salary: salary,
+    salary_type: 'hourly',
+    is_active: true
+  });
+  
+  if(error) return alert('Ошибка: '+error.message);
+  
+  document.getElementById('addModal').classList.remove('show');
+  alert(`Готово! ${name} - ${job} - ${salary}₽/ч`);
+  loadData()
 };
 
 function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
