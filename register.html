@@ -10,6 +10,8 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),t
 .card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
 h1{font-size:22px;margin-bottom:8px}
 .muted{color:var(--muted);font-size:14px;margin-bottom:16px}
+.info-box{background:var(--card-2);padding:12px;border-radius:10px;margin-bottom:16px;font-size:14px}
+.info-box b{color:var(--accent)}
 input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-size:15px}
 button{width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;font-size:15px;cursor:pointer;margin-top:12px}
 button[disabled]{opacity:.6;cursor:not-allowed}
@@ -21,6 +23,7 @@ button[disabled]{opacity:.6;cursor:not-allowed}
 <div class="card">
   <h1 id="title">Регистрация</h1>
   <div class="muted" id="restInfo">Загрузка ресторана...</div>
+  <div class="info-box" id="jobInfo" style="display:none"></div>
 
   <input id="fullName" type="text" placeholder="Ваше ФИО">
   <input id="email" type="email" placeholder="Email" readonly>
@@ -39,10 +42,14 @@ const params = new URLSearchParams(location.search);
 const role = params.get('role'); // chef или cook
 const restaurant_id = params.get('restaurant_id');
 const email = params.get('email');
+// ВОТ ЭТО НОВОЕ - читаем из ссылки
+const job = params.get('job') || 'Повар';
+const salary = Number(params.get('salary')) || 0;
 
 document.getElementById('email').value = email || '';
 const msgBox = document.getElementById('msg');
 const restInfo = document.getElementById('restInfo');
+const jobInfo = document.getElementById('jobInfo');
 const title = document.getElementById('title');
 const pageTitle = document.getElementById('pageTitle');
 const regBtn = document.getElementById('regBtn');
@@ -56,6 +63,11 @@ if(role === 'chef'){
   title.textContent = 'Регистрация Повара';
   pageTitle.textContent = 'HotPit Регистрация Повара';
   regBtn.textContent = 'Создать аккаунт Повара';
+  // Покажем должность и ставку если они есть в ссылке
+  if(job && salary){
+    jobInfo.style.display = 'block';
+    jobInfo.innerHTML = `Вас приглашают на должность: <b>${job}</b><br>Ставка: <b>${salary}₽/час</b>`;
+  }
 } else {
   restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
   regBtn.disabled = true;
@@ -103,12 +115,16 @@ document.getElementById('regBtn').onclick = async ()=>{
   }
   const user = signUpData.user;
 
-  // Создаем профиль с той ролью, которая пришла в ссылке
+  // Создаем профиль. ВОТ ТУТ ГЛАВНЫЙ ФИКС
   const {error: profErr} = await supabase.from('profiles').insert({
     id: user.id,
     full_name: fullName,
-    role: role, // <-- chef или cook
+    email: email,
+    role: role,
     restaurant_id: restaurant_id,
+    job_title: role === 'cook'? job : null, // <-- Берем из ссылки
+    salary: role === 'cook'? salary : null, // <-- Берем из ссылки
+    salary_type: 'hourly',
     is_active: true
   });
 
@@ -119,7 +135,6 @@ document.getElementById('regBtn').onclick = async ()=>{
 
   msgBox.innerHTML = `<div class="ok">Готово! Заходим в кабинет...</div>`;
 
-  // Реддирект в зависимости от роли
   setTimeout(()=>{
     if(role === 'chef') location.href='/chef.html';
     if(role === 'cook') location.href='/cook.html';
