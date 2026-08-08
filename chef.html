@@ -13,7 +13,6 @@
     .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0,.8); display: none; z-index: 90 }
     .overlay.show { display: block }
     .menu button { width: 100%; background: transparent; border: none; color: var(--text); text-align: left; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 500; font-size: 15px }
-    .menu button.active { background: var(--card-2) }
     .content { flex: 1; padding: 20px }
     .topbar { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px }
     .burger { background: var(--card-2); border: 1px solid #333; color: var(--text); padding: 10px 16px; border-radius: 12px; cursor: pointer; font-size: 20px }
@@ -27,6 +26,8 @@
     .sidebar-chef { padding: 12px; border-radius: 12px; background: var(--card-2); margin-bottom: 20px }
     .error-box { background: var(--danger); padding: 16px; border-radius: 12px; margin: 20px 0; color: #fff; white-space: pre-wrap; font-size: 12px }
     .header-info { flex: 1 }
+    .povar-card { background: var(--card); padding: 16px; border-radius: 16px; margin-bottom: 12px }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #000; font-size: 20px }
   </style>
 </head>
 <body>
@@ -38,7 +39,7 @@
     <div class="sidebar-header"><h2 style="color:var(--accent);margin:0">HotPit</h2><button class="close-btn" style="background:var(--card-2);border:none;color:var(--text);width:36px;height:36px;border-radius:10px;font-size:20px" id="closeSidebar">×</button></div>
     <div id="sidebarChef" class="sidebar-chef"><div style="font-size:12px;color:var(--muted)">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
     <nav class="menu">
-      <button class="tab-btn active" data-tab="personal">👨‍🍳 Команда</button>
+      <button>👨‍🍳 Команда</button>
       <button id="logoutBtn">Выйти</button>
     </nav>
   </aside>
@@ -76,30 +77,28 @@
   
   async function loadData() { 
     try { 
-      showError('Шаг 1: Проверяю авторизацию...')
       const { data: { user }, error: err1 } = await supabase.auth.getUser(); 
       if (err1) throw err1
-      if (!user) return location.href = '/index.html'; 
+      if (!user) { showError('Не авторизован. Войдите'); return } 
 
-      showError('Шаг 2: Гружу профиль ID: ' + user.id)
-      // Упрощенный запрос без join
-      const { data: prof, error: err2 } = await supabase.from('profiles').select('*').eq('id', user.id).single(); 
+      const { data: prof, error: err2 } = await supabase.from('profiles').select('*,restaurants(name)').eq('id', user.id).single(); 
       if (err2) throw err2
-      if(!prof) throw new Error('Профиль не найден')
+      if(!prof) throw new Error('Профиль не найден в таблице profiles')
 
-      showError('Шаг 3: Гружу ресторан ID: ' + prof.restaurant_id)
-      const { data: rest, error: err3 } = await supabase.from('restaurants').select('name').eq('id', prof.restaurant_id).single(); 
-      if (err3) throw err3
-
-      document.getElementById('pageSubtitle').innerText = rest.name; 
+      document.getElementById('pageSubtitle').innerText = prof.restaurants.name; 
       document.getElementById('pageTitle').innerText = prof.full_name; 
       document.getElementById('pageRole').innerText = 'Шеф-повар'; 
       document.getElementById('sidebarChefName').innerText = prof.full_name; 
-      document.getElementById('povaraList').innerHTML = '<div style="color:green">Успех! Данные подтянулись</div>';
+      
+      const { data: povara } = await supabase.from('profiles').select('*').eq('restaurant_id', prof.restaurant_id).eq('role', 'cook');
+      let html = ''
+      povara.forEach(p => { html += `<div class="povar-card"><div style="display:flex;gap:12px"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted)">${p.job_title}</div></div></div></div>` })
+      document.getElementById('povaraList').innerHTML = html || 'Поваров нет';
       
     } catch(e) { 
       console.error(e); 
-      showError('ОШИБКА:\n' + e.message + '\n\nПроверь в Supabase:\n1. Есть ли таблица restaurants\n2. Есть ли у шефа restaurant_id\n3. RLS политики') 
+      showError('ОШИБКА:\n' + e.message) 
+      document.getElementById('povaraList').innerHTML = ''
     } 
   }
   
