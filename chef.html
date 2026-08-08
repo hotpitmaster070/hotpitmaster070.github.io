@@ -72,14 +72,26 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <div data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
 <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
 <div data-tab-content="grafik" style="display:none">
-  <div class="brush-bar">
-    <button class="brush-btn active" data-status="work" style="background:var(--work);color:#000">🟢 Смена</button>
-    <button class="brush-btn" data-status="sick" style="background:var(--sick);color:#000">🟡 Б</button>
-    <button class="brush-btn" data-status="vac" style="background:var(--vac)">🔵 О</button>
-    <button class="brush-btn" data-status="off" style="background:var(--off)">⚪ В</button>
+  <div style="display:flex;gap:10px;margin-bottom:16px">
+    <button class="btn-outline" id="prevMonthG" style="width:auto"><</button>
+    <div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div>
+    <button class="btn-outline" id="nextMonthG" style="width:auto">></button>
   </div>
-  <div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthG" style="width:auto"><</button><div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthG" style="width:auto">></button></div>
-  <div id="grafikList">Загрузка...</div>
+  <div style="display:flex;gap:16px">
+    <!-- СПИСОК ПОВАРОВ СЛЕВА -->
+    <div id="grafikPovarList" style="width:40%;overflow-y:auto;max-height:70vh"></div>
+    <!-- КАЛЕНДАРЬ СПРАВА -->
+    <div id="grafikCalendar" style="width:60%">
+      <div class="brush-bar">
+        <button class="brush-btn active" data-status="work" style="background:var(--work);color:#000">🟢 Смена</button>
+        <button class="brush-btn" data-status="sick" style="background:var(--sick);color:#000">🟡 Б</button>
+        <button class="brush-btn" data-status="vac" style="background:var(--vac)">🔵 О</button>
+        <button class="brush-btn" data-status="off" style="background:var(--off)">⚪ В</button>
+      </div>
+      <div id="selectedPovarName" style="font-weight:700;margin-bottom:8px">Выбери повара</div>
+      <div id="grafikSingleCalendar"></div>
+    </div>
+  </div>
 </div>
 <div data-tab-content="salary" style="display:none"><h3>Ведомость за <span id="monthYearS"></span></h3><button class="btn" style="margin-bottom:16px" id="exportBtn">📄 Экспорт PDF</button><div id="salaryList">Загрузка...</div></div>
 </div></main></div>
