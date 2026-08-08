@@ -20,14 +20,15 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600;user-select:none}
 .day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}.day.off{background:var(--off);color:#fff}
 .total{margin-top:12px;padding-top:12px;border-top:1px solid #333;font-weight:700}
-.grafik-wrapper{overflow-x:auto}.grafik-grid{display:grid;gap:4px;width:max-content}
-.grafik-header,.grafik-name{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px}
-.grafik-name{position:sticky;left:0;z-index:2;text-align:left;min-width:140px;background:var(--card);cursor:pointer}
-.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;font-weight:700;user-select:none}
+/* НОВЫЙ ГРАФИК */
+.grafik-povar-card{background:var(--card);padding:16px;border-radius:16px;margin-bottom:16px}
+.grafik-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.grafik-day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;font-weight:700}
+.grafik-day.work{background:var(--work);color:#000}.grafik-day.sick{background:var(--sick);color:#000}.grafik-day.vac{background:var(--vac);color:#fff}.grafik-day.off{background:var(--off);color:#fff}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:480px;z-index:101}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
-.brush-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:8px}
+.brush-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:8px;position:sticky;top:0;background:var(--bg);z-index:10;padding-top:10px}
 .brush-btn{padding:10px 16px;border-radius:12px;border:2px solid #333;background:var(--card-2);color:var(--text);font-weight:700;cursor:pointer;white-space:nowrap}
 .brush-btn.active{border-color:var(--accent);background:var(--accent);color:#000}
 .err{color:var(--danger);padding:20px}
@@ -42,6 +43,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px}
 .povar-actions{display:flex;gap:8px;margin-top:12px}
 .stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #262626}
+.salary-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #262626;align-items:center}
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <div class="app"><div class="overlay" id="overlay"></div>
@@ -51,7 +53,12 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <div id="sidebarChefName" style="font-weight:700"></div>
 </div>
 <div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
-<nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button id="logoutBtn">Выйти</button></nav></aside>
+<nav class="menu">
+<button class="tab-btn active" data-tab="personal">👨‍🍳 Команда</button>
+<button class="tab-btn" data-tab="tabel">📋 Табель</button>
+<button class="tab-btn" data-tab="grafik">📅 График</button>
+<button class="tab-btn" data-tab="salary">💰 Зарплата</button>
+<button id="logoutBtn">Выйти</button></nav></aside>
 <main class="content"><div class="topbar"><button class="burger" id="burgerBtn">☰</button>
 <div style="flex:1">
   <div class="brand">HotPit KITCHEN</div>
@@ -72,8 +79,9 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
     <button class="brush-btn" data-status="off" style="background:var(--off)">⚪ В</button>
   </div>
   <div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthG" style="width:auto"><</button><div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthG" style="width:auto">></button></div>
-  <div class="grafik-wrapper" id="grafikList">Загрузка...</div>
+  <div id="grafikList">Загрузка...</div>
 </div>
+<div data-tab-content="salary" style="display:none"><h3>Ведомость за <span id="monthYearS"></span></h3><button class="btn" style="margin-bottom:16px" id="exportBtn">📄 Экспорт PDF</button><div id="salaryList">Загрузка...</div></div>
 </div></main></div>
 
 <div class="modal" id="addModal"><div class="modal-card">
@@ -113,8 +121,10 @@ document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()
 document.querySelectorAll('.brush-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.brush-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');brushStatus=btn.dataset.status});
 
 function updateMonthLabels(){
-  document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});
-  document.getElementById('monthYearG').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});
+  const month = currentDate.toLocaleString('ru',{month:'long',year:'numeric'});
+  document.getElementById('monthYearT').textContent=month;
+  document.getElementById('monthYearG').textContent=month;
+  document.getElementById('monthYearS').textContent=month;
 }
 document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
 document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
@@ -191,37 +201,49 @@ function openPovarCard(cookId){
 }
 
 function renderGrafik(){
-  const year=currentDate.getFullYear(),
-  month=currentDate.getMonth(),
-  days=new Date(year,month+1,0).getDate();
-  let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;
-  for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;
+  const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();
+  let html='';
   povaraCache.forEach(p=>{
-    html+=`<div class="grafik-name" data-id="${p.id}">${p.full_name}</div>`;
+    html+=`<div class="grafik-povar-card">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+        <div class="avatar">${p.full_name[0]}</div>
+        <div><b>${p.full_name}</b><div class="muted">${p.job_title || 'Повар'}</div></div>
+      </div>
+      <div class="grafik-days">`;
     for(let i=1;i<=days;i++){
       const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
       const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
-      const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'В';
-      html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`
+      html+=`<div class="grafik-day ${status}" data-id="${p.id}" data-date="${dateStr}">${i}</div>`
     }
+    html+=`</div></div>`
   });
-  html+='</div>';
   document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';
-  setTimeout(()=>{
-    document.querySelectorAll('.grafik-cell').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)));
-    document.querySelectorAll('.grafik-name').forEach(n=>n.addEventListener('click',()=>openPovarCard(n.dataset.id)))
-  },100)
+  setTimeout(()=>{document.querySelectorAll('.grafik-day').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)))},100)
+}
+
+function renderSalary(){
+  let html='';
+  povaraCache.forEach(p=>{
+    const data=attendanceCache[p.id];
+    const workDays=data?.days.filter(d=>d.status==='work').length || 0;
+    const salary = Number(p.salary) || 0;
+    const total=workDays*8*salary;
+    html+=`<div class="salary-row">
+      <div>
+        <b>${p.full_name}</b>
+        <div class="muted">${workDays} смен • ${salary}₽/ч</div>
+      </div>
+      <div style="font-weight:700;font-size:18px;color:var(--work)">${total.toLocaleString()}₽</div>
+    </div>`
+  });
+  html+=`<div style="margin-top:20px;font-size:20px;font-weight:700">Итого: ${povaraCache.reduce((sum,p)=>{const workDays=attendanceCache[p.id]?.days.filter(d=>d.status==='work').length||0;return sum+workDays*8*Number(p.salary||0)},0).toLocaleString()}₽</div>`;
+  document.getElementById('salaryList').innerHTML=html;
 }
 
 async function setStatusDirect(cookId,dateStr){
   const status = brushStatus;
   const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
-  try{
-    if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);
-    else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);
-    else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})
-  }catch(e){alert('Ошибка: '+e.message)}
-  loadData()
+  try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()
 }
 
 async function loadData(){
@@ -229,65 +251,4 @@ async function loadData(){
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
     let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-    if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
-    me = prof; myRestaurantId=prof.restaurant_id;
-    document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
-
-    const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
-    headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
-    document.getElementById('pageSubtitle').innerText = prof.restaurants?.name;
-    document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
-    document.getElementById('pageRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
-    document.getElementById('sidebarChef').style.display = 'block';
-    document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
-    document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
-
-    const year=currentDate.getFullYear(),
-    month=currentDate.getMonth(),
-    days=new Date(year,month+1,0).getDate(),
-    start=`${year}-${String(month+1).padStart(2,'0')}-01`,
-    end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
-    updateMonthLabels();
-    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
-    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
-    povaraCache=povara||[];
-    attendanceCache={};
-    povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
-
-    let povaraHTML = '';
-    povaraCache.forEach(p=>{
-      const job = p.job_title || 'Повар';
-      const salary = Number(p.salary) || 0;
-      povaraHTML += `<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`
-    });
-    document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Нажмите + Пригласить</div>';
-    setTimeout(()=>{
-      document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)));
-      document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name))
-    },100);
-
-    let tabelHTML = '';
-    povaraCache.forEach(p=>{
-      let daysHtml='';
-      for(let i=0;i<days;i++){
-        const day=i+1;
-        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
-        daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
-      }
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-    });
-    document.getElementById('tabelList').innerHTML=tabelHTML;
-    setTimeout(()=>{
-      document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)));
-      document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))
-    },100);
-    povaraCache.forEach(p=>renderTotal(p.id));
-    renderGrafik()
-  }catch(e){
-    console.error(e);
-    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
-  }
-}
-loadData();
-</script></body></html>
+    if(!prof ||!prof.restaura
