@@ -54,6 +54,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .salary-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #262626;align-items:center}
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2>
@@ -86,7 +87,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
     <div id="monthYearG" style="flex:1;text-align:center;font-weight:700;font-size:18px"></div>
     <button class="btn-outline" id="nextMonthG" style="width:auto">></button>
   </div>
-  
+
   <!-- ЧИПЫ ПОВАРОВ ГОРИЗОНТАЛЬНО -->
   <div id="grafikPovarScroll" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px"></div>
 
@@ -98,7 +99,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
     <button class="brush-btn" data-status="off" style="background:var(--off)">⚪ В</button>
   </div>
 
-  <!-- КАЛЕНДАРЬ -->
+  <!-- КАЛЕНДАРЬ НА 7 ДНЕЙ -->
   <div id="grafikSingleCalendar"></div>
 </div>
 <div data-tab-content="salary" style="display:none"><h3>Ведомость за <span id="monthYearS"></span></h3><button class="btn" style="margin-bottom:16px" id="exportBtn">📄 Экспорт PDF</button><div id="salaryList">Загрузка...</div></div>
@@ -131,7 +132,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null,headChef=null,brushStatus='work';
+let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null,headChef=null,brushStatus='work',selectedPovarId = null;
 
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
@@ -162,7 +163,6 @@ async function genInvite(){
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
   if(!salary) return msgBox.innerHTML = `<div class="err">Укажи ставку</div>`;
-
   const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;
   msgBox.innerHTML = `Должность: <b>${job}</b> • Ставка: <b>${salary}₽/ч</b><br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
   navigator.clipboard.writeText(link);
@@ -220,28 +220,23 @@ function openPovarCard(cookId){
   document.getElementById('povarModal').classList.add('show');
 }
 
-let selectedPovarId = null;
 function renderGrafik(){
   // 1. РИСУЕМ ЧИПЫ ПОВАРОВ ВВЕРХУ
   let listHTML = '';
   povaraCache.forEach(p=>{
-    const isActive = selectedPovarId === p.id? 'border:2px solid var(--accent)' : 'border:2px solid transparent';
-    listHTML += `<div class="grafik-povar-chip" data-id="${p.id}" style="${isActive};padding:8px 14px;border-radius:20px;background:var(--card-2);cursor:pointer;white-space:nowrap;font-weight:600">
-      ${p.full_name}
-    </div>`
+    const isActive = selectedPovarId === p.id? 'active' : '';
+    listHTML += `<div class="grafik-povar-chip ${isActive}" data-id="${p.id}">${p.full_name}</div>`
   });
   document.getElementById('grafikPovarScroll').innerHTML = listHTML;
-  
-  // 2. КЛИК НА ПОВАРА
+
   document.querySelectorAll('.grafik-povar-chip').forEach(item=>{
     item.onclick = () => {
       selectedPovarId = item.dataset.id;
-      renderGrafik(); 
+      renderGrafik();
       renderSingleCalendar(selectedPovarId);
     }
   });
 
-  // 3. ЕСЛИ НИКТО НЕ ВЫБРАН - ВЫБИРАЕМ ПЕРВОГО
   if(!selectedPovarId && povaraCache.length > 0) selectedPovarId = povaraCache[0].id;
   if(selectedPovarId) renderSingleCalendar(selectedPovarId);
 }
@@ -249,7 +244,7 @@ function renderGrafik(){
 function renderSingleCalendar(cookId){
   const p = povaraCache.find(x=>x.id===cookId);
   if(!p) return;
-  
+
   const year=currentDate.getFullYear(),month=currentDate.getMonth();
   const days=new Date(year,month+1,0).getDate();
   const firstDay=new Date(year,month,1).getDay();
@@ -258,21 +253,21 @@ function renderSingleCalendar(cookId){
   const weekDays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
   let html = '<div class="calendar-header">';
   weekDays.forEach(d=>html+=`<div>${d}</div>`);
-  html+='</div><div class="calendar-grid" style="grid-template-columns:repeat(7,1fr)">';
+  html+='</div><div class="calendar-grid">';
 
   for(let i=0;i<offset;i++) html+=`<div></div>`;
-  
+
   for(let i=1;i<=days;i++){
     const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
     const status=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr)?.status||'off';
-    const today = new Date().toISOString().slice(0,10) === dateStr? 'border:2px solid var(--accent)' : '';
+    const today = new Date().toISOString().slice(0,10) === dateStr? 'box-shadow:0 0 0 2px var(--accent)' : '';
     html+=`<div class="day ${status}" data-id="${cookId}" data-date="${dateStr}" style="${today}">${i}</div>`
   }
   html+='</div>';
-  
+
   document.getElementById('grafikSingleCalendar').innerHTML = html;
-  setTimeout(()=>{document.querySelectorAll('#grafikSingleCalendar .day').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)))},100)
-  }
+  setTimeout(()=>{document.querySelectorAll('#grafikSingleCalendar.day').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)))},100)
+}
 
 function renderSalary(){
   let html='';
@@ -291,7 +286,7 @@ function renderSalary(){
   });
   html+=`<div style="margin-top:20px;font-size:20px;font-weight:700">Итого: ${povaraCache.reduce((sum,p)=>{const workDays=attendanceCache[p.id]?.days.filter(d=>d.status==='work').length||0;return sum+workDays*8*Number(p.salary||0)},0).toLocaleString()}₽</div>`;
   document.getElementById('salaryList').innerHTML=html;
-  setTimeout(()=>{document.querySelectorAll('#salaryList .povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
+  setTimeout(()=>{document.querySelectorAll('#salaryList.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
 }
 
 async function setStatusDirect(cookId,dateStr){
@@ -305,7 +300,7 @@ async function loadData(){
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
     let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-        if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
+    if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
     me = prof; myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
 
@@ -340,9 +335,9 @@ async function loadData(){
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
-    setTimeout(()=>{document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)));document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
+    setTimeout(()=>{document.querySelectorAll('#tabelList.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)));document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
     povaraCache.forEach(p=>renderTotal(p.id));
-    
+
     if(currentTab==='grafik') renderGrafik();
     if(currentTab==='salary') renderSalary();
   }catch(e){
