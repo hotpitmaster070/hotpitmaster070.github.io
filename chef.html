@@ -190,12 +190,38 @@ function openPovarCard(cookId){
   document.getElementById('povarModal').classList.add('show');
 }
 
-function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name" data-id="${p.id}">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'В';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';setTimeout(()=>{document.querySelectorAll('.grafik-cell').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)));document.querySelectorAll('.grafik-name').forEach(n=>n.addEventListener('click',()=>openPovarCard(n.dataset.id)))},100)}
+function renderGrafik(){
+  const year=currentDate.getFullYear(),
+  month=currentDate.getMonth(),
+  days=new Date(year,month+1,0).getDate();
+  let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;
+  for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;
+  povaraCache.forEach(p=>{
+    html+=`<div class="grafik-name" data-id="${p.id}">${p.full_name}</div>`;
+    for(let i=1;i<=days;i++){
+      const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+      const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
+      const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'В';
+      html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`
+    }
+  });
+  html+='</div>';
+  document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';
+  setTimeout(()=>{
+    document.querySelectorAll('.grafik-cell').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)));
+    document.querySelectorAll('.grafik-name').forEach(n=>n.addEventListener('click',()=>openPovarCard(n.dataset.id)))
+  },100)
+}
 
 async function setStatusDirect(cookId,dateStr){
   const status = brushStatus;
   const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
-  try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()
+  try{
+    if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);
+    else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);
+    else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})
+  }catch(e){alert('Ошибка: '+e.message)}
+  loadData()
 }
 
 async function loadData(){
@@ -216,6 +242,52 @@ async function loadData(){
     document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
     document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
 
-    const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
+    const year=currentDate.getFullYear(),
+    month=currentDate.getMonth(),
+    days=new Date(year,month+1,0).getDate(),
+    start=`${year}-${String(month+1).padStart(2,'0')}-01`,
+    end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonthLabels();
-    const {data:povara}=await supabase.from('profiles').select('*').eq('restaur
+    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    povaraCache=povara||[];
+    attendanceCache={};
+    povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
+
+    let povaraHTML = '';
+    povaraCache.forEach(p=>{
+      const job = p.job_title || 'Повар';
+      const salary = Number(p.salary) || 0;
+      povaraHTML += `<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`
+    });
+    document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Нажмите + Пригласить</div>';
+    setTimeout(()=>{
+      document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)));
+      document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name))
+    },100);
+
+    let tabelHTML = '';
+    povaraCache.forEach(p=>{
+      let daysHtml='';
+      for(let i=0;i<days;i++){
+        const day=i+1;
+        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
+        daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
+      }
+      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+    });
+    document.getElementById('tabelList').innerHTML=tabelHTML;
+    setTimeout(()=>{
+      document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)));
+      document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))
+    },100);
+    povaraCache.forEach(p=>renderTotal(p.id));
+    renderGrafik()
+  }catch(e){
+    console.error(e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
+}
+loadData();
+</script></body></html>
