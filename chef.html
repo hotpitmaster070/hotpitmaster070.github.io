@@ -212,26 +212,47 @@ function openPovarCard(cookId){
   document.getElementById('povarModal').classList.add('show');
 }
 
+let selectedPovarId = null;
 function renderGrafik(){
-  const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();
-  let html='';
+  // 1. РИСУЕМ СПИСОК ПОВАРОВ СЛЕВА
+  let listHTML = '';
   povaraCache.forEach(p=>{
-    html+=`<div class="grafik-povar-card">
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-        <div class="avatar">${p.full_name[0]}</div>
-        <div><b>${p.full_name}</b><div class="muted">${p.job_title || 'Повар'}</div></div>
-      </div>
-      <div class="grafik-days">`;
-    for(let i=1;i<=days;i++){
-      const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-      const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
-      html+=`<div class="grafik-day ${status}" data-id="${p.id}" data-date="${dateStr}">${i}</div>`
-    }
-    html+=`</div></div>`
+    const isActive = selectedPovarId === p.id ? 'style="background:var(--accent);color:#000"' : 'style="background:var(--card-2)"';
+    listHTML += `<div class="grafik-povar-item" data-id="${p.id}" ${isActive} style="padding:12px;border-radius:12px;margin-bottom:8px;cursor:pointer">
+      <b>${p.full_name}</b><div class="muted">${p.job_title || 'Повар'}</div>
+    </div>`
   });
-  document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';
-  setTimeout(()=>{document.querySelectorAll('.grafik-day').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)))},100)
+  document.getElementById('grafikPovarList').innerHTML = listHTML;
+  
+  // 2. ВЕШАЕМ КЛИК НА ВЫБОР ПОВАРА
+  document.querySelectorAll('.grafik-povar-item').forEach(item=>{
+    item.onclick = () => {
+      selectedPovarId = item.dataset.id;
+      renderGrafik(); // перерисовываем чтобы подсветить
+      renderSingleCalendar(selectedPovarId);
+    }
+  });
+
+  // 3. ЕСЛИ ПОВАР ВЫБРАН - РИСУЕМ ЕГО КАЛЕНДАРЬ
+  if(selectedPovarId) renderSingleCalendar(selectedPovarId);
 }
+
+function renderSingleCalendar(cookId){
+  const p = povaraCache.find(x=>x.id===cookId);
+  if(!p) return;
+  document.getElementById('selectedPovarName').innerText = p.full_name;
+  
+  const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();
+  let html = '<div class="calendar-grid">';
+  for(let i=1;i<=days;i++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    const status=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr)?.status||'off';
+    html+=`<div class="day ${status}" data-id="${cookId}" data-date="${dateStr}">${i}</div>`
+  }
+  html+='</div>';
+  document.getElementById('grafikSingleCalendar').innerHTML = html;
+  setTimeout(()=>{document.querySelectorAll('#grafikSingleCalendar .day').forEach(c=>c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date)))},100)
+  }
 
 function renderSalary(){
   let html='';
