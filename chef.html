@@ -271,6 +271,7 @@ function renderSalary(){
   });
   html+=`<div style="margin-top:20px;font-size:20px;font-weight:700">Итого: ${povaraCache.reduce((sum,p)=>{const workDays=attendanceCache[p.id]?.days.filter(d=>d.status==='work').length||0;return sum+workDays*8*Number(p.salary||0)},0).toLocaleString()}₽</div>`;
   document.getElementById('salaryList').innerHTML=html;
+  setTimeout(()=>{document.querySelectorAll('#salaryList .povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
 }
 
 async function setStatusDirect(cookId,dateStr){
