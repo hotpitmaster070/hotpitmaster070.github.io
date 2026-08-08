@@ -267,6 +267,37 @@ async function loadData(){
     document.getElementById('sidebarChef').style.display = 'block';
     document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
     document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
+    
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonthLabels();
-    const {data:povara}=await supabase.from('profiles').select('*').eq('re
+    
+    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    
+    povaraCache=povara||[];
+    attendanceCache={};
+    povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
+
+    let povaraHTML = '';
+    povaraCache.forEach(p=>{
+      const job = p.job_title || 'Повар';
+      const salary = Number(p.salary) || 0;
+      povaraHTML += `<div class="povar-card"><div class="povar-head"><div class="povar-info"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><button class="btn-danger" onclick="if(confirm('Уволить ${p.full_name}?'))supabase.from('profiles').update({is_active:false}).eq('id','${p.id}').then(()=>loadData())">Уволить</button></div></div>`
+    });
+    document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="empty-state">Поваров пока нет. Нажмите + Пригласить</div>';
+
+    if(currentTab==='grafik') renderGrafik();
+    if(currentTab==='tabel') renderTabel();
+    if(currentTab==='salary') renderSalary();
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
+}
+
+document.getElementById('exportBtn').onclick=()=>alert('PDF экспорт в v4.1');
+document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
+
+loadData();
+</script></body></html>
