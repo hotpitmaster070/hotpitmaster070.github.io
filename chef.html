@@ -19,6 +19,7 @@
     .burger { background: var(--card-2); border: 1px solid #333; color: var(--text); padding: 10px 16px; border-radius: 12px; cursor: pointer; font-size: 20px }
     .btn { padding: 10px 16px; border: none; border-radius: 10px; background: var(--accent); color: #000; font-weight: 700; cursor: pointer; font-size: 14px; margin-top: 8px }
     .btn-outline { background: var(--card-2); border: 1px solid #333; color: var(--text); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 700 }
+    .btn-danger { background: var(--danger); color: #fff; padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 12px }
     input, select { width: 100%; padding: 12px; background: var(--card-2); border: 1px solid #333; border-radius: 12px; color: var(--text); margin-top: 8px }
     .povar-card { background: var(--card); padding: 16px; border-radius: 16px; border: 1px solid #262626; margin-bottom: 12px; cursor: pointer }
     .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #000; font-size: 20px }
@@ -46,20 +47,22 @@
     .chef-role { font-size: 14px; color: var(--muted); margin-top: 4px }
     .chef-name { font-size: 20px; font-weight: 700; margin-top: 2px }
     .sidebar-chef { padding: 12px; border-radius: 12px; background: var(--card-2); margin-bottom: 20px }
-    .salary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #262626 }
+    .salary-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #262626; cursor: pointer }
     .hint-bottom { padding-bottom: 90px }
     .header-info { flex: 1 }
+    .error-box { background: var(--danger); padding: 16px; border-radius: 12px; margin: 20px 0; color: #fff }
   </style>
 </head>
 <body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <div class="app">
   <div class="overlay" id="overlay"></div>
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header"><h2 style="color:var(--accent);margin:0">HotPit</h2><button class="close-btn" style="background:var(--card-2);border:none;color:var(--text);width:36px;height:36px;border-radius:10px;font-size:20px" id="closeSidebar">×</button></div>
-    <div id="sidebarChef" class="sidebar-chef"><div style="font-size:12px;color:var(--muted)">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
+    <div id="sidebarChef" class="sidebar-chef"><div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
     <nav class="menu">
       <button class="tab-btn active" data-tab="personal">👨‍🍳 Команда</button>
       <button class="tab-btn" data-tab="tabel">📋 Табель</button>
@@ -83,9 +86,10 @@
         <button class="btn" id="addBtn">+ Пригласить</button>
       </div>
     </div>
+    <div id="errorBox"></div>
     <div id="tab-content">
       <div data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
-      <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700;font-size:18px"></div><button class="btn-outline" id="nextMonthT">></button></div><div id="tabelList"></div></div>
+      <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700;font-size:18px"></div><button class="btn-outline" id="nextMonthT">></button></div><div id="tabelList"></div><div id="tabelSingle" style="display:none"></div></div>
       <div data-tab-content="grafik" style="display:none"><div style="display:flex;gap:10px;margin-bottom:12px;align-items:center"><button class="btn-outline" id="prevMonthG"><</button><div id="monthYearG" style="flex:1;text-align:center;font-weight:700;font-size:18px"></div><button class="btn-outline" id="nextMonthG">></button></div><div id="tinderView"><div class="tinder-actions"><button onclick="prevCook()">←</button><button onclick="nextCook()">→</button></div><div class="tinder-card" id="currentCookCard"></div><div id="currentCookCalendar"></div></div></div>
       <div data-tab-content="salary" style="display:none"><h3>Ведомость за <span id="monthYearS"></span></h3><button class="btn" id="exportBtn">📄 Экспорт PDF</button><div id="salaryList"></div></div>
     </div>
@@ -94,12 +98,16 @@
 
 <div class="brush-bar" id="brushBar" style="display:none"><button class="brush-btn active" data-status="work">🟢 Смена</button><button class="brush-btn" data-status="sick">🟡 Больничный</button><button class="brush-btn" data-status="vac">🔵 Отпуск</button><button class="brush-btn" data-status="off">⚪ Стереть</button></div>
 <div class="modal" id="addModal"><div class="modal-card"><h3>Пригласить повара</h3><input id="cookEmail" placeholder="Email повара"><select id="cookJob"><option>Повар</option><option>Повар-универсал</option></select><input id="cookSalary" type="number" placeholder="Ставка в час"><button class="btn" id="genInviteBtn">Сгенерировать ссылку</button><div id="inviteLink"></div><div id="qrcode"></div><button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button></div></div>
+<div class="modal" id="cookModal"><div class="modal-card" id="cookModalCard"></div></div>
 
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-  const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+<script>
+  const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
   
   let currentTab = 'personal'; let myRestaurantId = null; let currentDate = new Date(); let povaraCache = []; let attendanceCache = {}; let brushStatus = 'work'; let currentCookIndex = 0;
+  
+  function showError(msg){ document.getElementById('errorBox').innerHTML = `<div class="error-box">${msg}</div>` }
   
   document.getElementById('burgerBtn').onclick = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('show') }
   document.getElementById('closeSidebar').onclick = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show') }
@@ -107,31 +115,55 @@
   document.querySelectorAll('.tab-btn').forEach(btn => btn.onclick = () => { currentTab = btn.dataset.tab; document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('[data-tab-content]').forEach(c => c.style.display = c.dataset.tabContent === currentTab? 'block' : 'none'); document.getElementById('brushBar').style.display = currentTab === 'grafik'? 'flex' : 'none'; loadData() });
   document.querySelectorAll('.brush-btn').forEach(btn => btn.onclick = () => { document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); brushStatus = btn.dataset.status });
   function updateMonthLabels() { const month = currentDate.toLocaleString('ru', { month: 'long', year: 'numeric' }); document.getElementById('monthYearT').textContent = month; document.getElementById('monthYearG').textContent = month; document.getElementById('monthYearS').textContent = month; }
-  document.getElementById('prevMonthT').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); updateMonthLabels(); }
-  document.getElementById('nextMonthT').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); updateMonthLabels(); }
-  document.getElementById('prevMonthG').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); updateMonthLabels(); }
-  document.getElementById('nextMonthG').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); updateMonthLabels(); }
+  document.getElementById('prevMonthT').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); updateMonthLabels(); renderTabel() }
+  document.getElementById('nextMonthT').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); updateMonthLabels(); renderTabel() }
+  document.getElementById('prevMonthG').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); updateMonthLabels(); renderGrafik() }
+  document.getElementById('nextMonthG').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); updateMonthLabels(); renderGrafik() }
   document.getElementById('addBtn').onclick = () => document.getElementById('addModal').classList.add('show');
   
   async function loadData() { 
-    const { data: { user } = await supabase.auth.getUser(); 
-    if (!user) return location.href = '/index.html'; 
-    const { data: prof } = await supabase.from('profiles').select('*,restaurants(name)').eq('id', user.id).single(); 
-    myRestaurantId = prof.restaurant_id; 
-    document.getElementById('pageSubtitle').innerText = prof.restaurants.name; 
-    document.getElementById('pageTitle').innerText = prof.full_name; 
-    document.getElementById('pageRole').innerText = 'Шеф-повар'; 
-    document.getElementById('sidebarChefName').innerText = prof.full_name; 
-    updateMonthLabels(); 
-    document.getElementById('povaraList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Готово</div>';
+    try { 
+      const { data: { user } = await supabase.auth.getUser(); 
+      if (!user) return location.href = '/index.html'; 
+      let { data: prof, error } = await supabase.from('profiles').select('*,restaurants(name)').eq('id', user.id).single(); 
+      if(error) throw error; 
+      if(!prof.restaurant_id) throw new Error('У шефа не указан restaurant_id в таблице profiles');
+      
+      myRestaurantId = prof.restaurant_id; 
+      document.getElementById('pageSubtitle').innerText = prof.restaurants?.name || 'Без названия'; 
+      document.getElementById('pageTitle').innerText = prof.full_name; 
+      document.getElementById('pageRole').innerText = 'Шеф-повар'; 
+      document.getElementById('sidebarChefName').innerText = prof.full_name; 
+      updateMonthLabels(); 
+      
+      const year = currentDate.getFullYear(), month = currentDate.getMonth(), days = new Date(year, month + 1, 0).getDate(), start = `${year}-${String(month + 1).padStart(2, '0')}-01`, end = `${year}-${String(month + 1).padStart(2, '0')}-${days}`; 
+      const { data: povara } = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId).eq('is_active', true).eq('role', 'cook'); 
+      const { data: attendance } = await supabase.from('attendance').select('*').eq('restaurant_id', myRestaurantId).gte('work_date', start).lte('work_date', end); 
+      povaraCache = povara || []; 
+      attendanceCache = {}; 
+      povaraCache.forEach(p => attendanceCache[p.id] = { cook: p, days: (attendance || []).filter(a => a.cook_id === p.id) }); 
+      let povaraHTML = ''; 
+      povaraCache.forEach(p => { povaraHTML += `<div class="povar-card" onclick="openCookCard('${p.id}')"><div style="display:flex;gap:12px"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title} • ${p.salary}₽/ч</div></div></div></div>` }); 
+      document.getElementById('povaraList').innerHTML = povaraHTML || '<div style="text-align:center;padding:40px;color:var(--muted)">Поваров пока нет</div>'; 
+      if (currentTab === 'grafik') renderGrafik(); 
+      if (currentTab === 'tabel') renderTabel(); 
+      if (currentTab === 'salary') renderSalary(); 
+    } catch(e) { 
+      console.error(e); 
+      showError('Ошибка: ' + e.message) 
+    } 
   }
   
-  function renderGrafik(){ document.getElementById('tinderView').style.display = 'block'; }
-  function nextCook(){}
-  function prevCook(){}
+  function renderGrafik(){ document.getElementById('tinderView').style.display = 'block'; currentCookIndex = 0; renderTinderCard() }
+  function renderTinderCard(){ if (povaraCache.length === 0) return; const p = povaraCache[currentCookIndex]; document.getElementById('currentCookCard').innerHTML = `<div class="avatar-big">${p.full_name[0]}</div><h2>${p.full_name}</h2><div style="color:var(--muted)">${p.job_title} • ${p.salary}₽/ч</div>`; }
+  function nextCook(){ currentCookIndex = (currentCookIndex + 1) % povaraCache.length; renderTinderCard() }
+  function prevCook(){ currentCookIndex = (currentCookIndex - 1 + povaraCache.length) % povaraCache.length; renderTinderCard() }
+  function renderTabel(){ let html = '<div class="table-grid">'; povaraCache.forEach(p => { html += `<div class="table-name"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div>` }); document.getElementById('tabelList').innerHTML = html; }
+  function renderSalary(){ let html = ''; povaraCache.forEach(p => { html += `<div class="salary-row"><div><b>${p.full_name}</b></div><b>0₽</b></div>` }); document.getElementById('salaryList').innerHTML = html; }
+  function openCookCard(){} function exportPDF(){}
   
   document.getElementById('logoutBtn').onclick = () => supabase.auth.signOut().then(() => location.href = '/index.html');
   loadData();
 </script>
 </body>
-        </html>
+                                                                                                                                                                        </html>
