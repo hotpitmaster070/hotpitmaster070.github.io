@@ -251,4 +251,51 @@ async function loadData(){
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
     let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-    if(!prof ||!prof.restaura
+        if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
+    me = prof; myRestaurantId=prof.restaurant_id;
+    document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
+
+    const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
+    headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
+    document.getElementById('pageSubtitle').innerText = prof.restaurants?.name;
+    document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
+    document.getElementById('pageRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
+    document.getElementById('sidebarChef').style.display = 'block';
+    document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
+    document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
+
+    const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
+    updateMonthLabels();
+    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
+
+    let povaraHTML = '';
+    povaraCache.forEach(p=>{
+      const job = p.job_title || 'Повар';
+      const salary = Number(p.salary) || 0;
+      povaraHTML += `<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`
+    });
+    document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Нажмите + Пригласить</div>';
+    setTimeout(()=>{document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)));document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name))},100);
+
+    let tabelHTML = '';
+    povaraCache.forEach(p=>{
+      let daysHtml='';
+      for(let i=0;i<days;i++){const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`}
+      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+    });
+    document.getElementById('tabelList').innerHTML=tabelHTML;
+    setTimeout(()=>{document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)));document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
+    povaraCache.forEach(p=>renderTotal(p.id));
+    
+    if(currentTab==='grafik') renderGrafik();
+    if(currentTab==='salary') renderSalary();
+  }catch(e){
+    console.error(e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
+}
+document.getElementById('exportBtn').onclick=()=>alert('PDF экспорт в v4.1');
+loadData();
+</script></body></html>
