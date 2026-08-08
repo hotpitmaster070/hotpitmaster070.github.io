@@ -3,8 +3,10 @@
 :root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--off:#64748b;--danger:#ef4444}
 *{box-sizing:border-box; -webkit-tap-highlight-color: transparent}body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;margin:0}
 .app{display:flex;min-height:100vh}.sidebar{width:260px;background:var(--card);padding:20px;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:.3s}
-.sidebar.open{transform:translateX(0)}.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
-.menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-weight:500}
+.sidebar.open{transform:translateX(0)}.sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.close-btn{background:var(--card-2);border:none;color:var(--text);width:36px;height:36px;border-radius:10px;font-size:20px;cursor:pointer}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
+.menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-weight:500;font-size:15px}
 .menu button.active{background:var(--card-2)}.content{flex:1;padding:20px}.topbar{display:flex;align-items:center;gap:16px;margin-bottom:20px}
 .burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-size:20px}
 .btn{padding:12px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;cursor:pointer;width:100%}
@@ -12,16 +14,15 @@
 .btn-danger{background:var(--danger);color:#fff;padding:8px 12px;border:none;border-radius:8px;cursor:pointer;font-size:12px}
 .btn-small{background:var(--card-2);border:1px solid #333;color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px}
 input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:12px;color:var(--text);margin-top:8px}
-.povar-card{background:var(--card);padding:16px;border-radius:16px;border:1px solid #262626;margin-bottom:12px}
+.povar-card{background:var(--card);padding:16px;border-radius:16px;border:1px solid #262626;margin-bottom:12px;cursor:pointer;transition:.2s}
+.povar-card:hover{transform:translateX(4px)}
+.povar-card.active{border:2px solid var(--accent)}
 .povar-head{display:flex;align-items:center;justify-content:space-between}
-.povar-info{cursor:pointer}
-.avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:20px;cursor:pointer}
+.povar-info{display:flex;gap:12px;align-items:center}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:20px}
 .total{margin-top:12px;padding-top:12px;border-top:1px solid #333;font-weight:700}
 
-/* НОВЫЙ ГРАФИК НА 7 ДНЕЙ */
-#grafikPovarScroll::-webkit-scrollbar{display:none}
-.grafik-povar-chip{padding:10px 16px;border-radius:12px;background:var(--card-2);border:2px solid #333;cursor:pointer;font-weight:700;white-space:nowrap;flex-shrink:0}
-.grafik-povar-chip.active{border-color:var(--accent);background:var(--accent);color:#000}
+#grafikPovarScroll,#tabelPovarScroll{display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:65vh}
 
 .calendar-header{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px}
 .calendar-header div{text-align:center;font-size:12px;color:var(--muted);font-weight:600}
@@ -30,7 +31,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .day:hover{transform:scale(1.05)}
 .day.work{background:var(--work);color:#000;border-color:var(--work)}
 .day.sick{background:var(--sick);color:#000;border-color:var(--sick)}
-.day.vac{background:var(--vac);border-color:var(--vac)}
+.day.vac{background:var(--vac);color:#000;border-color:var(--vac)}
 .day.off{background:#222;color:#666;border-color:#333}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
@@ -39,8 +40,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .brush-bar{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;padding-bottom:8px;position:sticky;top:0;background:var(--bg);z-index:10;padding-top:10px}
 .brush-btn{padding:10px 16px;border-radius:12px;border:2px solid #333;background:var(--card-2);color:var(--text);font-weight:700;cursor:pointer;white-space:nowrap}
 .brush-btn.active{border-color:var(--accent);background:var(--accent);color:#000}
-#grafikPovarScroll{display:flex;flex-direction:column;gap:10px;overflow-y:auto;max-height:70vh}
-  .err{color:var(--danger);padding:20px}
+ .err{color:var(--danger);padding:20px}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
 .muted{color:var(--muted);font-size:12px;margin-top:8px}
 .ok{color:#22c55e}
@@ -53,12 +53,16 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .povar-actions{display:flex;gap:8px;margin-top:12px}
 .stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #262626}
 .salary-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #262626;align-items:center}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<body>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 <div class="app"><div class="overlay" id="overlay"></div>
-<aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2 style="color:var(--accent);margin:0">HotPit</h2>
+    <button class="close-btn" id="closeSidebar">×</button>
+  </div>
 <div id="sidebarChef" class="sidebar-chef" style="display:none">
   <div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div>
   <div id="sidebarChefName" style="font-weight:700"></div>
@@ -69,7 +73,9 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <button class="tab-btn" data-tab="tabel">📋 Табель</button>
 <button class="tab-btn" data-tab="grafik">📅 График</button>
 <button class="tab-btn" data-tab="salary">💰 Зарплата</button>
+<button class="tab-btn" data-tab="mission">💛 Миссия</button>
 <button id="logoutBtn">Выйти</button></nav></aside>
+
 <main class="content"><div class="topbar"><button class="burger" id="burgerBtn">☰</button>
 <div style="flex:1">
   <div class="brand">HotPit KITCHEN</div>
@@ -81,29 +87,48 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 
 <div id="tab-content">
 <div data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
-<div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
+
+<div data-tab-content="tabel" style="display:none">
+  <div style="display:flex;gap:10px;margin-bottom:20px">
+    <button class="btn-outline" id="prevMonthT" style="width:auto"><</button>
+    <div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div>
+    <button class="btn-outline" id="nextMonthT" style="width:auto">></button>
+  </div>
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:16px">
+    <div id="tabelPovarScroll"></div>
+    <div id="tabelSingleCalendar"></div>
+  </div>
+</div>
+
 <div data-tab-content="grafik" style="display:none">
   <div style="display:flex;gap:10px;margin-bottom:12px;align-items:center">
     <button class="btn-outline" id="prevMonthG" style="width:auto"><</button>
     <div id="monthYearG" style="flex:1;text-align:center;font-weight:700;font-size:18px"></div>
     <button class="btn-outline" id="nextMonthG" style="width:auto">></button>
   </div>
-
-  <!-- ЧИПЫ ПОВАРОВ ГОРИЗОНТАЛЬНО -->
-  <div id="grafikPovarScroll" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;margin-bottom:12px"></div>
-
-  <!-- КИСТЬ -->
   <div class="brush-bar">
     <button class="brush-btn active" data-status="work" style="background:var(--work);color:#000">🟢 Смена</button>
     <button class="brush-btn" data-status="sick" style="background:var(--sick);color:#000">🟡 Б</button>
     <button class="brush-btn" data-status="vac" style="background:var(--vac)">🔵 О</button>
     <button class="brush-btn" data-status="off" style="background:var(--off)">⚪ В</button>
   </div>
-
-  <!-- КАЛЕНДАРЬ НА 7 ДНЕЙ -->
-  <div id="grafikSingleCalendar"></div>
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:16px">
+    <div id="grafikPovarScroll"></div>
+    <div id="grafikSingleCalendar"></div>
+  </div>
 </div>
+
 <div data-tab-content="salary" style="display:none"><h3>Ведомость за <span id="monthYearS"></span></h3><button class="btn" style="margin-bottom:16px" id="exportBtn">📄 Экспорт PDF</button><div id="salaryList">Загрузка...</div></div>
+
+<div data-tab-content="mission" style="display:none">
+  <h3>💛 Миссия HotPit</h3>
+  <div class="povar-card">
+    <p>С каждого часа работы мы отчисляем 1% в фонд помощи детям.</p>
+    <div class="stat-row"><span>Собрано в этом месяце</span><b id="missionTotal">0₽</b></div>
+    <div class="stat-row"><span>Помогли детям</span><b>3</b></div>
+  </div>
+</div>
+
 </div></main></div>
 
 <div class="modal" id="addModal"><div class="modal-card">
@@ -121,24 +146,17 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
 </div></div>
 
-<div class="modal" id="statusModal"><div class="modal-card"><h3>Статус на <span id="statusDate"></span></h3>
-<button class="status-btn" style="background:var(--work)" id="btnWork">🟢 Смена</button>
-<button class="status-btn" style="background:var(--sick)" id="btnSick">🟡 Больничный</button>
-<button class="status-btn" style="background:var(--vac)" id="btnVac">🔵 Отпуск</button>
-<button class="status-btn" style="background:var(--off)" id="btnOffStatus">⚪ Выходной</button>
-<button class="btn-outline" style="margin-top:12px;width:100%" id="btnCancel">Отмена</button></div></div>
-
-<div class="modal" id="povarModal"><div class="modal-card" id="povarModalCard"></div></div>
-
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null,headChef=null,brushStatus='work',selectedPovarId = null;
+let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},me=null,headChef=null,brushStatus='work',selectedPovarId = null;
 
+const closeSidebar = ()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');loadData()});
-document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
+document.getElementById('closeSidebar').onclick=closeSidebar;
+document.getElementById('overlay').onclick=closeSidebar;
+
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');selectedPovarId=null;loadData();closeSidebar()});
 
 document.querySelectorAll('.brush-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.brush-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');brushStatus=btn.dataset.status});
 
@@ -148,14 +166,12 @@ function updateMonthLabels(){
   document.getElementById('monthYearG').textContent=month;
   document.getElementById('monthYearS').textContent=month;
 }
-document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
-document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
-document.getElementById('prevMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
-document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
+document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();renderTabel()}
+document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();renderTabel()}
+document.getElementById('prevMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();renderGrafik()}
+document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();renderGrafik()}
 
 document.getElementById('addBtn').onclick=()=>document.getElementById('addModal').classList.add('show');
-
-function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
 
 async function genInvite(){
   const email = document.getElementById('cookEmail').value.trim();
@@ -173,113 +189,69 @@ async function genInvite(){
 }
 document.getElementById('genInviteBtn').onclick=genInvite;
 
-function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
-
-document.getElementById('btnWork').onclick=()=>setStatus('work');
-document.getElementById('btnSick').onclick=()=>setStatus('sick');
-document.getElementById('btnVac').onclick=()=>setStatus('vac');
-document.getElementById('btnOffStatus').onclick=()=>setStatus('off');
-document.getElementById('btnCancel').onclick=()=>document.getElementById('statusModal').classList.remove('show');
-
-async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
-
-function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const salary = Number(data.cook.salary) || 0; const total=workDays*8*salary;const el=document.getElementById(`total-${cookId}`);if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`}
-
-function openPovarCard(cookId){
-  const data = attendanceCache[cookId];
-  if(!data) return;
-  const p = data.cook;
-  const workDays = data.days.filter(d=>d.status==='work').length;
-  const sickDays = data.days.filter(d=>d.status==='sick').length;
-  const vacDays = data.days.filter(d=>d.status==='vac').length;
-  const offDays = data.days.filter(d=>d.status==='off').length;
-  const salary = Number(p.salary) || 0;
-  const total = workDays * 8 * salary;
-
-  document.getElementById('povarModalCard').innerHTML = `
-    <div style="display:flex;gap:16px;align-items:center;margin-bottom:20px">
-      <div class="avatar" style="width:60px;height:60px;font-size:28px">${p.full_name[0]}</div>
-      <div>
-        <h3 style="margin:0">${p.full_name}</h3>
-        <div class="muted">${p.job_title || 'Повар'}</div>
-        <div class="muted">Ставка: ${salary}₽/ч</div>
-      </div>
-    </div>
-    <h4>Статистика за ${currentDate.toLocaleString('ru',{month:'long'})}</h4>
-    <div class="stat-row"><span>Смен</span><span><b>${workDays}</b></span></div>
-    <div class="stat-row"><span>Больничных</span><span><b>${sickDays}</b></span></div>
-    <div class="stat-row"><span>Отпусков</span><span><b>${vacDays}</b></span></div>
-    <div class="stat-row"><span>Выходных</span><span><b>${offDays}</b></span></div>
-    <div class="stat-row" style="border:none"><span>ЗП за месяц</span><span style="color:var(--work);font-size:18px"><b>${total.toLocaleString()}₽</b></span></div>
-    <div class="povar-actions">
-      <button class="btn-small" onclick="document.getElementById('povarModal').classList.remove('show');document.querySelector('[data-tab=\\'tabel\\']').click()">📋 Табель</button>
-      <button class="btn-small" onclick="document.getElementById('povarModal').classList.remove('show');document.querySelector('[data-tab=\\'grafik\\']').click()">📅 График</button>
-    </div>
-    <button class="btn-danger" style="width:100%;margin-top:12px" onclick="fireCook('${p.id}','${p.full_name}');document.getElementById('povarModal').classList.remove('show')">🔴 Уволить</button>
-    <button class="btn-outline" style="width:100%;margin-top:8px" onclick="document.getElementById('povarModal').classList.remove('show')">Закрыть</button>
-  `;
-  document.getElementById('povarModal').classList.add('show');
-}
-
-function renderGrafik(){
+function renderPovarList(containerId, clickCallback){
   let listHTML = '';
+  if(povaraCache.length===0) return document.getElementById(containerId).innerHTML = '<div class="empty-state">Поваров нет</div>';
   povaraCache.forEach(p=>{
-    const isActive = selectedPovarId === p.id? 'style="border:2px solid var(--accent);background:var(--accent);color:#000"' : 'style="border:2px solid #333"';
-    listHTML += `<div class="povar-card grafik-povar-chip" data-id="${p.id}" ${isActive}>
-      <div style="display:flex;gap:12px;align-items:center">
+    const isActive = selectedPovarId === p.id? 'active' : '';
+    listHTML += `<div class="povar-card ${isActive}" data-id="${p.id}">
+      <div class="povar-info">
         <div class="avatar">${p.full_name[0]}</div>
-        <div>
-          <b>${p.full_name}</b>
-          <div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'}</div>
-        </div>
+        <div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'}</div></div>
       </div>
     </div>`
   });
-  document.getElementById('grafikPovarScroll').innerHTML = listHTML;
-
-  document.querySelectorAll('.grafik-povar-chip').forEach(item=>{
+  document.getElementById(containerId).innerHTML = listHTML;
+  document.querySelectorAll(`#${containerId}.povar-card`).forEach(item=>{
     item.onclick = () => {
       selectedPovarId = item.dataset.id;
-      renderGrafik();
-      renderSingleCalendar(selectedPovarId);
+      document.querySelectorAll(`#${containerId}.povar-card`).forEach(x=>x.classList.remove('active'));
+      item.classList.add('active');
+      clickCallback(selectedPovarId);
     }
   });
-
-  if(!selectedPovarId && povaraCache.length > 0) selectedPovarId = povaraCache[0].id;
-  if(selectedPovarId) renderSingleCalendar(selectedPovarId);
 }
 
-function renderSingleCalendar(cookId){
-  const p = povaraCache.find(x=>x.id===cookId);
-  if(!p) return;
-
+function renderSingleCalendar(containerId, cookId){
   const year=currentDate.getFullYear(),month=currentDate.getMonth();
   const days=new Date(year,month+1,0).getDate();
   const firstDay=new Date(year,month,1).getDay();
   const offset = firstDay === 0? 6 : firstDay - 1;
-
   const weekDays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
   let html = '<div class="calendar-header">';
   weekDays.forEach(d=>html+=`<div>${d}</div>`);
   html+='</div><div class="calendar-grid">';
-
   for(let i=0;i<offset;i++) html+=`<div></div>`;
-
   for(let i=1;i<=days;i++){
     const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
     const status=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr)?.status||'off';
     const today = new Date().toISOString().slice(0,10) === dateStr? 'box-shadow:0 0 0 2px var(--accent)' : '';
-    html+=`<div class="day ${status}" data-id="${cookId}" data-date="${dateStr}" style="${today}">${i}</div>`
+    html+=`<div class="day ${status}" data-date="${dateStr}" style="${today}">${i}</div>`
   }
   html+='</div>';
+  document.getElementById(containerId).innerHTML = html;
 
-  document.getElementById('grafikSingleCalendar').innerHTML = html;
+  // ВЕШАЕМ КЛИКИ
+  document.querySelectorAll(`#${containerId}.day`).forEach(c=>{
+    c.onclick = ()=>setStatusDirect(cookId,c.dataset.date)
+  })
+}
 
-  setTimeout(()=>{
-    document.querySelectorAll('#grafikSingleCalendar.day').forEach(c=>{
-      c.addEventListener('click',()=>setStatusDirect(c.dataset.id,c.dataset.date))
-    })
-  },100)
+function renderGrafik(){
+  renderPovarList('grafikPovarScroll', (id)=>renderSingleCalendar('grafikSingleCalendar', id));
+  if(!selectedPovarId && povaraCache.length > 0) selectedPovarId = povaraCache[0].id;
+  if(selectedPovarId) document.querySelector(`#grafikPovarScroll.povar-card[data-id="${selectedPovarId}"]`)?.classList.add('active');
+  if(selectedPovarId) renderSingleCalendar('grafikSingleCalendar', selectedPovarId);
+  else document.getElementById('grafikSingleCalendar').innerHTML = '<div class="empty-state">Выберите повара</div>';
+}
+
+function renderTabel(){
+  renderPovarList('tabelPovarScroll', (id)=>renderSingleCalendar('tabelSingleCalendar', id));
+  if(!selectedPovarId && povaraCache.length > 0) selectedPovarId = povaraCache[0].id;
+  if(selectedPovarId) document.querySelector(`#tabelPovarScroll.povar-card[data-id="${selectedPovarId}"]`)?.classList.add('active');
+  if(selectedPovarId) renderSingleCalendar('tabelSingleCalendar', selectedPovarId);
+  else document.getElementById('tabelSingleCalendar').innerHTML = '<div class="empty-state">Выберите повара</div>';
 }
 
 async function setStatusDirect(cookId,dateStr){
@@ -291,7 +263,21 @@ async function setStatusDirect(cookId,dateStr){
     else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);
     else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})
   }catch(e){alert('Ошибка: '+e.message)}
-  loadData()
+  await loadData();
+  if(currentTab==='grafik') renderSingleCalendar('grafikSingleCalendar', cookId);
+  if(currentTab==='tabel') renderSingleCalendar('tabelSingleCalendar', cookId);
+}
+
+function renderSalary(){
+  let html='';
+  povaraCache.forEach(p=>{
+    const workDays=attendanceCache[p.id]?.days.filter(d=>d.status==='work').length||0;
+    const salary = Number(p.salary) || 0;
+    const total=workDays*8*salary;
+    html+=`<div class="salary-row"><div><b>${p.full_name}</b><div style="font-size:12px;color:var(--muted)">${workDays} смен</div></div><b>${total.toLocaleString()}₽</b></div>`
+  });
+  document.getElementById('salaryList').innerHTML=html||'<div class="empty-state">Нет данных</div>';
+  document.getElementById('missionTotal').innerText = Math.round(povaraCache.reduce((sum,p)=>sum+((attendanceCache[p.id]?.days.filter(d=>d.status==='work').length||0)*8*(Number(p.salary)||0)),0)*0.01).toLocaleString()+'₽';
 }
 
 async function loadData(){
@@ -303,7 +289,7 @@ async function loadData(){
     me = prof; myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
 
-    const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
+    const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true);
     headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
     document.getElementById('pageSubtitle').innerText = prof.restaurants?.name;
     document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
@@ -314,36 +300,4 @@ async function loadData(){
 
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonthLabels();
-    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
-    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
-    povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
-
-    let povaraHTML = '';
-    povaraCache.forEach(p=>{
-      const job = p.job_title || 'Повар';
-      const salary = Number(p.salary) || 0;
-      povaraHTML += `<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`
-    });
-    document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Нажмите + Пригласить</div>';
-    setTimeout(()=>{document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)));document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name))},100);
-
-    let tabelHTML = '';
-    povaraCache.forEach(p=>{
-      let daysHtml='';
-      for(let i=0;i<days;i++){const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`}
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div class="povar-info" data-id="${p.id}" style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-    });
-    document.getElementById('tabelList').innerHTML=tabelHTML;
-    setTimeout(()=>{document.querySelectorAll('#tabelList.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)));document.querySelectorAll('.povar-info').forEach(el=>el.addEventListener('click',()=>openPovarCard(el.dataset.id)))},100);
-    povaraCache.forEach(p=>renderTotal(p.id));
-
-    if(currentTab==='grafik') renderGrafik();
-    if(currentTab==='salary') renderSalary();
-  }catch(e){
-    console.error(e);
-    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
-  }
-}
-document.getElementById('exportBtn').onclick=()=>alert('PDF экспорт в v4.1');
-loadData();
-</script></body></html>
+    const {data:povara}=a
