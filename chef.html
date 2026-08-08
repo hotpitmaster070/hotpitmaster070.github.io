@@ -263,7 +263,7 @@ function renderSalary(){
     const total=workDays*8*salary;
     html+=`<div class="salary-row">
       <div>
-        <b>${p.full_name}</b>
+        <b class="povar-info" data-id="${p.id}" style="cursor:pointer">${p.full_name}</b>
         <div class="muted">${workDays} смен • ${salary}₽/ч</div>
       </div>
       <div style="font-weight:700;font-size:18px;color:var(--work)">${total.toLocaleString()}₽</div>
