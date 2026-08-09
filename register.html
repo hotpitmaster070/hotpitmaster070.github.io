@@ -2,69 +2,142 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Регистрация</title>
-<link rel="stylesheet" href="./css/style.css">
+<title id="pageTitle">HotPit Регистрация</title>
+<style>
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
+h1{font-size:22px;margin-bottom:8px}
+.muted{color:var(--muted);font-size:14px;margin-bottom:16px}
+.info-box{background:var(--card-2);padding:12px;border-radius:10px;margin-bottom:16px;font-size:14px}
+.info-box b{color:var(--accent)}
+input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-size:15px}
+button{width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;font-size:15px;cursor:pointer;margin-top:12px}
+button[disabled]{opacity:.6;cursor:not-allowed}
+.err{color:#f87171;font-size:14px;margin-top:8px}
+.ok{color:#22c55e;font-size:14px;margin-top:8px}
+</style>
 </head>
-<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px">
-<div class="card" style="width:100%;max-width:420px">
+<body>
+<div class="card">
   <h1 id="title">Регистрация</h1>
-  <div class="sub" id="restInfo">Загрузка ресторана...</div>
-  <input id="name" placeholder="Ваше имя">
+  <div class="muted" id="restInfo">Загрузка ресторана...</div>
+  <div class="info-box" id="jobInfo" style="display:none"></div>
+
+  <input id="fullName" type="text" placeholder="Ваше ФИО">
   <input id="email" type="email" placeholder="Email" readonly>
-  <input id="password" type="password" placeholder="Пароль">
-  <button class="btn-primary" id="regBtn" style="width:100%">Создать аккаунт Шефа</button>
-  <div id="msg" class="sub"></div>
+  <input id="password" type="password" placeholder="Придумайте пароль 6+ символов">
+  <button id="regBtn">Создать аккаунт</button>
+  <div id="msg"></div>
 </div>
+
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-import {SUPABASE_URL, SUPABASE_ANON_KEY} from './js/config.js'
+const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const params = new URLSearchParams(location.search);
-const role = params.get('role');
+const role = params.get('role'); // chef или cook
 const restaurant_id = params.get('restaurant_id');
 const email = params.get('email');
-const job = params.get('job');
-const salary = params.get('salary');
+// ВОТ ЭТО НОВОЕ - читаем из ссылки
+const job = params.get('job') || 'Повар';
+const salary = Number(params.get('salary')) || 0;
 
-const title = document.getElementById('title');
+document.getElementById('email').value = email || '';
+const msgBox = document.getElementById('msg');
 const restInfo = document.getElementById('restInfo');
-const emailInput = document.getElementById('email');
+const jobInfo = document.getElementById('jobInfo');
+const title = document.getElementById('title');
+const pageTitle = document.getElementById('pageTitle');
 const regBtn = document.getElementById('regBtn');
-const msg = document.getElementById('msg');
 
-// 1. Меняем заголовок и кнопку
-if(role==='chef'){
-  title.innerText='Регистрация Шефа';
-  regBtn.innerText='Создать аккаунт Шефа';
-} else if(role==='cook'){
-  title.innerText='Регистрация Повара';
-  regBtn.innerText='Создать аккаунт Повара';
+// Настраиваем текст в зависимости от роли
+if(role === 'chef'){
+  title.textContent = 'Регистрация Шефа';
+  pageTitle.textContent = 'HotPit Регистрация Шефа';
+  regBtn.textContent = 'Создать аккаунт Шефа';
+} else if(role === 'cook'){
+  title.textContent = 'Регистрация Повара';
+  pageTitle.textContent = 'HotPit Регистрация Повара';
+  regBtn.textContent = 'Создать аккаунт Повара';
+  // Покажем должность и ставку если они есть в ссылке
+  if(job && salary){
+    jobInfo.style.display = 'block';
+    jobInfo.innerHTML = `Вас приглашают на должность: <b>${job}</b><br>Ставка: <b>${salary}₽/час</b>`;
+  }
+} else {
+  restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
+  regBtn.disabled = true;
 }
 
-// 2. Подставляем email
-if(email){emailInput.value = email}
-
-// 3. Грузим название ресторана
-async function loadRest(){
-  if(!restaurant_id){restInfo.innerHTML=`<span style="color:#f87171">Ошибка в ссылке</span>`;return}
-  const {data} = await supabase.from('restaurants').select('name').eq('id',restaurant_id).single();
-  if(data){restInfo.innerText = `Вас пригласили в ресторан: ${data.name}`}
+async function init(){
+  if(!role ||!restaurant_id ||!email){
+    restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
+    regBtn.disabled = true;
+    return;
+  }
+  const {data: rest, error} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).maybeSingle();
+  if(error ||!rest){
+    restInfo.innerHTML = `<div class="err">Ресторан не найден</div>`;
+    regBtn.disabled = true;
+    return;
+  }
+  restInfo.textContent = `Вас пригласили в ресторан: ${rest.name}`;
 }
-loadRest();
+init();
 
-// 4. Регистрация
-regBtn.onclick=async()=>{
-  regBtn.disabled=true;
-  const {data,error}=await supabase.auth.signUp({email:emailInput.value,password:document.getElementById('password').value});
-  if(error){msg.innerHTML=`<span style="color:#f87171">${error.message}</span>`;regBtn.disabled=false;return}
-  
-  await supabase.from('profiles').insert({
-    id:data.user.id,full_name:document.getElementById('name').value,
-    role, restaurant_id, job_title:job||'Повар',
-    salary:Number(salary)||0, is_active:true
+document.getElementById('regBtn').onclick = async ()=>{
+  const fullName = document.getElementById('fullName').value.trim();
+  const password = document.getElementById('password').value;
+  msgBox.innerHTML = '';
+
+  if(!fullName || password.length < 6) return msgBox.innerHTML = `<div class="err">Заполни ФИО и пароль 6+ символов</div>`;
+
+  regBtn.disabled = true;
+  msgBox.innerHTML = `<div class="muted">Создаем аккаунт...</div>`;
+
+  const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: undefined }
   });
-  msg.innerHTML=`<span style="color:#22c55e">Готово! Войдите в аккаунт</span>`;
-  setTimeout(()=>location.href='./index.html',2000)
+  if(signUpErr) {
+    regBtn.disabled = false;
+    return msgBox.innerHTML = `<div class="err">${signUpErr.message}</div>`;
+  }
+
+  if(!signUpData.session){
+    regBtn.disabled = false;
+    return msgBox.innerHTML = `<div class="err">В Supabase -> Auth -> Providers -> Email -> выключи "Confirm email"</div>`;
+  }
+  const user = signUpData.user;
+
+  // Создаем профиль. ВОТ ТУТ ГЛАВНЫЙ ФИКС
+  const {error: profErr} = await supabase.from('profiles').insert({
+    id: user.id,
+    full_name: fullName,
+    email: email,
+    role: role,
+    restaurant_id: restaurant_id,
+    job_title: role === 'cook'? job : null, // <-- Берем из ссылки
+    salary: role === 'cook'? salary : null, // <-- Берем из ссылки
+    salary_type: 'hourly',
+    is_active: true
+  });
+
+  if(profErr) {
+    regBtn.disabled = false;
+    return msgBox.innerHTML = `<div class="err">${profErr.message}</div>`;
+  }
+
+  msgBox.innerHTML = `<div class="ok">Готово! Заходим в кабинет...</div>`;
+
+  setTimeout(()=>{
+    if(role === 'chef') location.href='/chef.html';
+    if(role === 'cook') location.href='/cook.html';
+  }, 800)
 }
 </script></body></html>
