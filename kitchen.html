@@ -1,20 +1,12 @@
-<!doctype html><html lang="ru"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Кухня</title>
-<link rel="stylesheet" href="/css/style.css">
-<style>
-  .tab-content{display:none} .tab-content.active{display:block}
-  .menu button.active{background:var(--card-2)}
-  .cook-card{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #262626}
-  .btn-danger{background:#ef4444;color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:100}
-  .modal-overlay.show{display:flex}
-  .modal{background:var(--card);padding:24px;border-radius:16px;width:100%;max-width:420px;border:1px solid #262626}
-  .modal textarea{width:100%;min-height:80px;padding:12px;margin:12px 0;background:var(--card-2);border:1px solid #333;border-radius:8px;color:var(--text)}
-  .row{display:flex;gap:8px;margin-top:12px}
-  .row button{flex:1}
-</style>
-</head><body>
+<link rel="stylesheet" href="./css/style.css"> <!-- Подключили общий CSS -->
+</head>
+<body>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head"><h2>Кухня</h2><button class="close-btn" onclick="sidebar.classList.remove('open');overlay.classList.remove('show')">×</button></div>
@@ -39,16 +31,15 @@
         <button onclick="addMove('out')">- Расход</button>
         <button onclick="addMove('inventory')">Инвентаризация</button>
       </div>
-      <div class="modal" style="max-width:100%;margin-top:24px"><div id="feed">Загрузка...</div></div>
+      <div class="card" style="margin-top:24px"><div id="feed">Загрузка...</div></div>
     </div>
 
     <div class="tab-content" data-tab-content="personal">
-      <div class="modal" style="max-width:100%">
+      <div class="card">
         <h3>Команда</h3>
         <div id="cookList">Загрузка...</div>
       </div>
     </div>
-
   </main>
 </div>
 
@@ -58,7 +49,7 @@
     <textarea id="dismissReason" placeholder="Причина: Брак, прогулы, конфликт..."></textarea>
     <label style="font-size:14px;color:var(--muted)"><input type="checkbox" id="hasDebt"> У повара есть задолженность по зарплате</label>
     <div class="row">
-      <button onclick="sendDismiss()" id="sendBtn">Отправить Овнеру</button>
+      <button class="btn-primary" onclick="sendDismiss()" id="sendBtn">Отправить Овнеру</button>
       <button onclick="closeDismiss()" style="background:var(--card-2);color:var(--text)">Отмена</button>
     </div>
     <div id="dismissErr" style="color:#f87171;margin-top:8px"></div>
@@ -67,7 +58,7 @@
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-import {SUPABASE_URL, SUPABASE_ANON_KEY} from '/js/config.js'
+import {SUPABASE_URL, SUPABASE_ANON_KEY} from './js/config.js' // <-- Подключили конфиг
 const supabase=createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const sidebar=document.getElementById('sidebar');
@@ -145,10 +136,10 @@ window.addMove=async(type)=>{
   await supabase.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:item.id,type,qty,created_by:myUserId});
   loadFeed();
 }
-window.logout=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
+window.logout=()=>supabase.auth.signOut().then(()=>location.href='./index.html'); // <-- Поправили путь
 
 const init=async()=>{
-  const {data:{user}}=await supabase.auth.getUser(); if(!user) return location.href='/index.html';
+  const {data:{user}}=await supabase.auth.getUser(); if(!user) return location.href='./index.html';
   myUserId=user.id;
   const {data:prof}=await supabase.from('profiles').select('restaurant_id,restaurants(name)').eq('id',user.id).single();
   myRestaurantId=prof.restaurant_id;
