@@ -2,22 +2,19 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title id="pageTitle">HotPit Регистрация</title>
+<title>Регистрация</title>
 <link rel="stylesheet" href="./css/style.css">
 </head>
-<body>
-<div class="card" style="max-width:420px;margin:80px auto">
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px">
+<div class="card" style="width:100%;max-width:420px">
   <h1 id="title">Регистрация</h1>
   <div class="sub" id="restInfo">Загрузка ресторана...</div>
-  <div class="card" id="jobInfo" style="display:none;margin-top:16px"></div>
-
-  <input id="fullName" type="text" placeholder="Ваше ФИО">
+  <input id="name" placeholder="Ваше имя">
   <input id="email" type="email" placeholder="Email" readonly>
-  <input id="password" type="password" placeholder="Придумайте пароль 6+ символов">
-  <button id="regBtn" class="btn-primary">Создать аккаунт</button>
-  <div id="msg"></div>
+  <input id="password" type="password" placeholder="Пароль">
+  <button class="btn-primary" id="regBtn" style="width:100%">Создать аккаунт Шефа</button>
+  <div id="msg" class="sub"></div>
 </div>
-
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 import {SUPABASE_URL, SUPABASE_ANON_KEY} from './js/config.js'
@@ -27,63 +24,47 @@ const params = new URLSearchParams(location.search);
 const role = params.get('role');
 const restaurant_id = params.get('restaurant_id');
 const email = params.get('email');
-const job = params.get('job') || 'Повар';
-const salary = Number(params.get('salary')) || 0;
+const job = params.get('job');
+const salary = params.get('salary');
 
-document.getElementById('email').value = email || '';
-const msgBox = document.getElementById('msg');
-const restInfo = document.getElementById('restInfo');
-const jobInfo = document.getElementById('jobInfo');
 const title = document.getElementById('title');
+const restInfo = document.getElementById('restInfo');
+const emailInput = document.getElementById('email');
 const regBtn = document.getElementById('regBtn');
+const msg = document.getElementById('msg');
 
-if(role === 'chef'){
-  title.textContent = 'Регистрация Шефа';
-} else if(role === 'cook'){
-  title.textContent = 'Регистрация Повара';
-  if(job && salary){
-    jobInfo.style.display = 'block';
-    jobInfo.innerHTML = `Вас приглашают на должность: <b style="color:var(--accent)">${job}</b><br>Ставка: <b style="color:var(--accent)">${salary}₽/час</b>`;
-  }
-} else {
-  restInfo.innerHTML = `<div style="color:#f87171">Неверная ссылка приглашения</div>`;
-  regBtn.disabled = true;
+// 1. Меняем заголовок и кнопку
+if(role==='chef'){
+  title.innerText='Регистрация Шефа';
+  regBtn.innerText='Создать аккаунт Шефа';
+} else if(role==='cook'){
+  title.innerText='Регистрация Повара';
+  regBtn.innerText='Создать аккаунт Повара';
 }
 
-async function init(){
-  if(!role ||!restaurant_id ||!email){
-    restInfo.innerHTML = `<div style="color:#f87171">Неверная ссылка приглашения</div>`;
-    regBtn.disabled = true;
-    return;
-  }
-  const {data: rest, error} = await supabase.from('restaurants').select('name').eq('id', restaurant_id).maybeSingle();
-  if(error ||!rest){
-    restInfo.innerHTML = `<div style="color:#f87171">Ресторан не найден</div>`;
-    regBtn.disabled = true;
-    return;
-  }
-  restInfo.textContent = `Вас пригласили в ресторан: ${rest.name}`;
-}
-init();
+// 2. Подставляем email
+if(email){emailInput.value = email}
 
-document.getElementById('regBtn').onclick = async ()=>{
-  const fullName = document.getElementById('fullName').value.trim();
-  const password = document.getElementById('password').value;
-  msgBox.innerHTML = '';
-  if(!fullName || password.length < 6) return msgBox.innerHTML = `<div style="color:#f87171">Заполни ФИО и пароль 6+ символов</div>`;
-  regBtn.disabled = true;
-  msgBox.innerHTML = `<div class="sub">Создаем аккаунт...</div>`;
-  const {data: signUpData, error: signUpErr} = await supabase.auth.signUp({email, password});
-  if(signUpErr) { regBtn.disabled = false; return msgBox.innerHTML = `<div style="color:#f87171">${signUpErr.message}</div>`; }
-  if(!signUpData.session){ regBtn.disabled = false; return msgBox.innerHTML = `<div style="color:#f87171">Выключи "Confirm email" в Supabase</div>`; }
-  const user = signUpData.user;
-  const {error: profErr} = await supabase.from('profiles').insert({
-    id: user.id, full_name: fullName, email: email, role: role, restaurant_id: restaurant_id,
-    job_title: role === 'cook'? job : null, salary: role === 'cook'? salary : null,
-    salary_type: 'hourly', is_active: true
+// 3. Грузим название ресторана
+async function loadRest(){
+  if(!restaurant_id){restInfo.innerHTML=`<span style="color:#f87171">Ошибка в ссылке</span>`;return}
+  const {data} = await supabase.from('restaurants').select('name').eq('id',restaurant_id).single();
+  if(data){restInfo.innerText = `Вас пригласили в ресторан: ${data.name}`}
+}
+loadRest();
+
+// 4. Регистрация
+regBtn.onclick=async()=>{
+  regBtn.disabled=true;
+  const {data,error}=await supabase.auth.signUp({email:emailInput.value,password:document.getElementById('password').value});
+  if(error){msg.innerHTML=`<span style="color:#f87171">${error.message}</span>`;regBtn.disabled=false;return}
+  
+  await supabase.from('profiles').insert({
+    id:data.user.id,full_name:document.getElementById('name').value,
+    role, restaurant_id, job_title:job||'Повар',
+    salary:Number(salary)||0, is_active:true
   });
-  if(profErr) { regBtn.disabled = false; return msgBox.innerHTML = `<div style="color:#f87171">${profErr.message}</div>`; }
-  msgBox.innerHTML = `<div style="color:#22c55e">Готово! Заходим в кабинет...</div>`;
-  setTimeout(()=>{ if(role === 'chef') location.href='./chef.html'; if(role === 'cook') location.href='./cook.html'; }, 800)
+  msg.innerHTML=`<span style="color:#22c55e">Готово! Войдите в аккаунт</span>`;
+  setTimeout(()=>location.href='./index.html',2000)
 }
 </script></body></html>
