@@ -2,48 +2,49 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Шеф Панель - HotPit KITCHEN</title>
-<link rel="stylesheet" href="./css/style.css">
+<title>HotPit KITCHEN</title>
 <style>
-body{background:#0a0a0a;color:#fff;font-family:sans-serif}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.brand{font-size:22px;font-weight:800}
-.brand span{color:#f97316}
-.brand .sep{color:#555;margin:0 6px}
-.rest{color:#fff}
-.sub-text{color:#888;font-size:14px}
-.name{font-size:20px;font-weight:700;margin-top:4px}
-.btn-primary{background:#f97316;color:#fff;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:700;font-size:15px}
-.card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:10px}
-h2{font-size:20px;margin-bottom:8px}
+body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px}
+.top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:24px}
+.burger{background:#1a1a1a;border:none;width:100%;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#666;cursor:pointer}
+.brand{color:#f97316;font-size:20px;font-weight:800;line-height:1.2}
+.rest{color:#f97316;font-size:20px;font-weight:800}
+.role{color:#888;font-size:14px;margin-top:4px}
+.name{color:#fff;font-size:22px;font-weight:700;margin-top:2px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.section-head h2{font-size:20px;margin:0}
+.btn-invite{background:#f97316;color:#000;border:none;width:100%;padding:14px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:16px}
+.card{background:#111;border:1px solid #222;border-radius:10px;padding:14px 16px;margin-bottom:10px;font-size:16px}
+.card b{font-weight:700}
 </style>
 </head>
-<body style="padding:20px;max-width:900px;margin:0 auto">
-  
-  <!-- ШАПКА КАК НА СКРИНЕ -->
-  <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:20px">
-    <button onclick="openSidebar()" style="background:#222;border:none;padding:10px 14px;border-radius:10px;font-size:20px;cursor:pointer;margin-top:4px">☰</button>
-    <div style="flex:1">
-      <div class="brand"><span>HotPit KITCHEN</span> <span class="sep">|</span> <span class="rest" id="restName">Загрузка...</span></div>
-      <div class="sub-text">Шеф-повар</div>
+<body>
+
+  <!-- ВЕРХ -->
+  <div class="top-row">
+    <button class="burger" onclick="openSidebar()">☰</button>
+    <div>
+      <div class="brand">HotPit<br>KITCHEN</div>
+      <div class="rest">| <span id="restName">Загрузка...</span></div>
+      <div class="role">Шеф-повар</div>
       <div class="name" id="shefName">Загрузка...</div>
     </div>
   </div>
 
-  <!-- ЗАГОЛОВОК КОМАНДА + КНОПКА В ОДНУ ЛИНИЮ -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <!-- КОМАНДА -->
+  <div class="section-head">
     <h2>Команда</h2>
-    <button class="btn-primary" onclick="openInviteModal()">+ Пригласить</button>
   </div>
-
-  <div id="teamLoad" class="sub-text">Загрузка...</div>
+  <button class="btn-invite" onclick="openInviteModal()">+ Пригласить</button>
+  
+  <div id="teamLoad" style="color:#888;font-size:14px">Загрузка...</div>
   <div id="teamList"></div>
 
   <!-- БОКОВОЕ МЕНЮ -->
-  <div id="sidebarOverlay" onclick="closeSidebar()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:998"></div>
+  <div id="sidebarOverlay" onclick="closeSidebar()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:998"></div>
   <div id="sidebar" style="position:fixed;top:0;left:-280px;width:280px;height:100%;background:#111;z-index:999;transition:0.3s;padding:20px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h3 style="color:#f97316">Меню</h3>
+      <h3 style="color:#f97316;margin:0">Меню</h3>
       <button onclick="closeSidebar()" style="font-size:28px;background:none;border:none;color:#fff;cursor:pointer">×</button>
     </div>
     <a href="./chef.html" onclick="closeSidebar()" style="display:block;padding:12px 0;color:#fff;text-decoration:none;border-bottom:1px solid #222">Главная</a>
@@ -52,17 +53,17 @@ h2{font-size:20px;margin-bottom:8px}
     <a href="#" onclick="logout()" style="display:block;padding:12px 0;color:#fff;text-decoration:none;border-bottom:1px solid #222">Выйти</a>
   </div>
 
-  <!-- МОДАЛКА ПРИГЛАСИТЬ -->
-  <div id="inviteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;z-index:1000">
-    <div class="card" style="width:90%;max-width:400px">
+  <!-- МОДАЛКА -->
+  <div id="inviteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;z-index:1000;padding:20px">
+    <div style="background:#111;border-radius:12px;padding:20px;width:100%;max-width:400px">
       <h3>Пригласить сотрудника</h3>
-      <input id="inviteEmail" type="email" placeholder="Email сотрудника" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:10px;color:#fff">
-      <select id="inviteRole" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:10px;color:#fff"><option value="cook">Повар</option><option value="chef">Шеф</option></select>
-      <input id="inviteJob" placeholder="Должность: Су-шеф" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:10px;color:#fff">
-      <input id="inviteSalary" type="number" placeholder="Зарплата" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:10px;color:#fff">
-      <button class="btn-primary" onclick="generateLink()" style="width:100%">Сгенерировать ссылку</button>
-      <input id="inviteLink" readonly style="margin-top:10px;width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;color:#fff">
-      <button onclick="closeInviteModal()" style="margin-top:10px;width:100%;background:#333;color:#fff;border:none;padding:10px;border-radius:8px">Закрыть</button>
+      <input id="inviteEmail" type="email" placeholder="Email" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
+      <select id="inviteRole" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff"><option value="cook">Повар</option><option value="chef">Шеф</option></select>
+      <input id="inviteJob" placeholder="Должность" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
+      <input id="inviteSalary" type="number" placeholder="Зарплата" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
+      <button class="btn-invite" onclick="generateLink()">Сгенерировать ссылку</button>
+      <input id="inviteLink" readonly style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
+      <button onclick="closeInviteModal()" style="width:100%;background:#222;color:#fff;border:none;padding:12px;border-radius:8px">Закрыть</button>
     </div>
   </div>
 
@@ -77,35 +78,21 @@ async function loadChefData(){
   const { data: { user } } = await supabase.auth.getUser();
   if(!user){ location.href='./index.html'; return; }
 
-  const {data: profile} = await supabase
-    .from('profiles')
-    .select('full_name, restaurant_id, restaurants(name)')
-    .eq('id', user.id).single();
-  
-  if(!profile){ alert('Профиль не найден'); return; }
+  const {data: profile} = await supabase.from('profiles').select('full_name, restaurant_id, restaurants(name)').eq('id', user.id).single();
+  if(!profile){ return; }
   
   myRestaurantId = profile.restaurant_id;
   document.getElementById('restName').innerText = profile.restaurants?.name || '...';
   document.getElementById('shefName').innerText = profile.full_name;
   document.getElementById('teamLoad').innerText = '';
 
-  // Грузим только поваров и шефов, без owner
-  const {data: team} = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('restaurant_id', myRestaurantId)
-    .neq('role', 'owner');
-
+  const {data: team} = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId).neq('role', 'owner');
   const teamDiv = document.getElementById('teamList');
-  if(team.length === 0){ 
-    teamDiv.innerHTML = '<div class="sub-text">Поваров пока нет. Нажмите + Пригласить</div>' 
-  } else {
-    teamDiv.innerHTML = '';
-    team.forEach(p=>{
-      const job = p.job_title || 'Повар';
-      teamDiv.innerHTML += `<div class="card"><b>${p.full_name}</b> - ${job}</div>`
-    })
-  }
+  teamDiv.innerHTML = '';
+  team.forEach(p=>{
+    const job = p.job_title || 'Повар';
+    teamDiv.innerHTML += `<div class="card"><b>${p.full_name}</b> - ${job}</div>`
+  })
 }
 loadChefData();
 
