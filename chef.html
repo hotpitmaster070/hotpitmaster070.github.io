@@ -1,153 +1,141 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit KITCHEN</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Шеф Панель - HotPit KITCHEN</title>
 <link rel="stylesheet" href="./css/style.css">
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
-/* Тут только уникальные стили для шефа. Общий дизайн в style.css */
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
-.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600}
-.day.work{background:#22c55e;color:#000}.day.sick{background:#f59e0b;color:#000}.day.vac{background:#3b82f6;color:#fff}
-.grafik-wrapper{overflow-x:auto}.grafik-grid{display:grid;gap:4px;width:max-content}
-.grafik-header,.grafik-name{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px}
-.grafik-name{position:sticky;left:0;z-index:2;text-align:left;min-width:140px;background:var(--card)}
-.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;font-weight:700}
-.povar-card{background:var(--card);padding:16px;border-radius:16px;border:1px solid #262626;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
-.avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:20px;flex-shrink:0}
-.sidebar-chef{padding:12px;border-radius:12px;background:var(--card-2);margin-bottom:20px}
-.link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px}
-.stat-row{display:flex;justify-content:space-between;padding:8px 0}
-.salary-big{color:#22c55e;font-size:24px;font-weight:800}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal-overlay.show{display:flex}
+body{background:#0a0a0a;color:#fff}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px}
+.brand{font-size:24px;font-weight:800;color:#f97316}
+.rest-info{font-size:14px;color:#aaa}
+.shef-info{font-size:16px;font-weight:600;margin-bottom:20px}
+.btn-primary{background:#f97316;color:#fff;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+.btn-primary:hover{opacity:0.9}
+.card{background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:10px}
+.sub{color:#888;font-size:14px}
+input,select{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:10px;color:#fff}
+
+/* БОКОВОЕ МЕНЮ */
+.menu-link{display:block;padding:12px 0;color:#fff;text-decoration:none;border-bottom:1px solid #222;font-size:16px}
+.menu-link:hover{color:#f97316}
+#sidebar.open{left:0}
 </style>
 </head>
-<body>
-<div class="app">
-  <div class="overlay" id="overlay"></div>
-  <aside class="sidebar" id="sidebar">
-    <h2 style="color:var(--accent)">HotPit</h2>
-    <div id="sidebarChef" class="sidebar-chef" style="display:none">
-      <div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div>
-      <div id="sidebarChefName" style="font-weight:700;font-size:18px"></div>
+<body style="padding:20px;max-width:900px;margin:0 auto">
+  
+  <!-- КНОПКА БУРГЕРА -->
+  <button onclick="openSidebar()" style="background:#222;border:none;padding:10px 14px;border-radius:8px;font-size:20px;margin-bottom:20px;cursor:pointer">☰</button>
+
+  <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+  <div class="topbar">
+    <div>
+      <div class="brand">HotPit KITCHEN</div>
+      <div class="rest-info" id="restName">Загрузка ресторана...</div>
+      <div class="shef-info" id="shefName">Загрузка шефа...</div>
     </div>
-    <div class="sub" id="restName">Загрузка...</div>
-    <nav class="menu">
-      <button class="tab-btn active" data-tab="personal">👨‍🍳 Команда</button>
-      <button class="tab-btn" data-tab="tabel">📋 Табель</button>
-      <button class="tab-btn" data-tab="grafik">📅 График</button>
-      <button class="tab-btn" data-tab="salary">💰 Зарплата</button>
-      <button class="tab-btn" data-tab="mission">❤️ Миссия</button>
-      <button id="logoutBtn">Выйти</button>
-    </nav>
-  </aside>
+    <button class="btn-primary" onclick="openInviteModal()">+ Пригласить</button>
+  </div>
 
-  <main class="content">
-    <div class="topbar">
-      <div>
-        <button class="burger" id="burgerBtn">☰</button>
-        <div style="margin-top:8px">
-          <div style="color:var(--accent);font-size:28px;font-weight:800">HotPit KITCHEN</div>
-          <div class="sub" id="pageSubtitle">Загрузка...</div>
-        </div>
-      </div>
-      <button class="btn-primary" id="addBtn">+ Пригласить</button>
+  <h2>Команда</h2>
+  <div id="teamLoad" class="sub">Загрузка...</div>
+  <div id="teamList"></div>
+
+  <!-- ФОН ЗАТЕМНЕНИЕ ДЛЯ МЕНЮ -->
+  <div id="sidebarOverlay" onclick="closeSidebar()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:998"></div>
+
+  <!-- БОКОВОЕ МЕНЮ -->
+  <div id="sidebar" style="position:fixed;top:0;left:-280px;width:280px;height:100%;background:#111;z-index:999;transition:0.3s;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="color:#f97316">Меню</h3>
+      <button onclick="closeSidebar()" style="font-size:28px;background:none;border:none;color:#fff;cursor:pointer">×</button>
     </div>
+    <a href="./chef.html" onclick="closeSidebar()" class="menu-link">Главная</a>
+    <a href="./orders.html" onclick="closeSidebar()" class="menu-link">Заказы</a>
+    <a href="./menu.html" onclick="closeSidebar()" class="menu-link">Меню ресторана</a>
+    <a href="#" onclick="logout()" class="menu-link">Выйти</a>
+  </div>
 
-    <h1 id="pageTitle">Команда</h1>
-
-    <div id="tab-content">
-      <div data-tab-content="personal"><div id="povaraList">Загрузка...</div></div>
-      <div data-tab-content="tabel" style="display:none">
-        <div class="row" style="margin-bottom:20px"><button class="btn-outline" id="prevMonthT"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT">></button></div>
-        <div id="tabelList">Загрузка...</div>
-      </div>
-      <div data-tab-content="grafik" style="display:none">
-        <div class="row" style="margin-bottom:20px"><button class="btn-outline" id="prevMonthG"><</button><div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthG">></button></div>
-        <div class="grafik-wrapper" id="grafikList">Загрузка...</div>
-      </div>
-      <div data-tab-content="salary" style="display:none"><div id="salaryList">Загрузка...</div></div>
-      <div data-tab-content="mission" style="display:none"><div class="card"><h3>Наша миссия</h3><p class="sub">Кормить людей вкусно и вовремя. Заботиться о команде.</p></div></div>
+  <!-- МОДАЛКА ПРИГЛАСИТЬ -->
+  <div id="inviteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;z-index:1000">
+    <div class="card" style="width:90%;max-width:400px">
+      <h3>Пригласить сотрудника</h3>
+      <input id="inviteEmail" type="email" placeholder="Email сотрудника">
+      <select id="inviteRole"><option value="cook">Повар</option><option value="chef">Шеф</option></select>
+      <input id="inviteJob" placeholder="Должность: Су-шеф">
+      <input id="inviteSalary" type="number" placeholder="Зарплата">
+      <button class="btn-primary" onclick="generateLink()" style="width:100%">Сгенерировать ссылку</button>
+      <input id="inviteLink" readonly style="margin-top:10px">
+      <button onclick="closeInviteModal()" style="margin-top:10px;width:100%;background:#333">Закрыть</button>
     </div>
-  </main>
-</div>
-
-<div class="modal-overlay" id="addModal"><div class="modal">
-  <h3 style="margin-top:0">Пригласить повара</h3>
-  <input id="cookEmail" type="email" placeholder="Email повара">
-  <select id="cookJob"><option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option><option>Повар холодного цеха</option><option>Повар-универсал</option><option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option></select>
-  <input id="cookSalary" type="number" placeholder="Ставка в час">
-  <button class="btn-primary" id="genInviteBtn">Сгенерировать ссылку</button>
-  <div id="inviteLink" class="sub"></div><div id="qrcode"></div>
-  <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
-</div></div>
-
-<div class="modal-overlay" id="cookModal"><div class="modal" id="cookModalContent"></div></div>
-<div class="modal-overlay" id="statusModal"><div class="modal"><h3>Статус на <span id="statusDate"></span></h3>
-<button class="btn-primary" style="background:#22c55e" id="btnWork">Смена</button>
-<button class="btn-primary" style="background:#f59e0b" id="btnSick">Больничный</button>
-<button class="btn-primary" style="background:#3b82f6" id="btnVac">Отпуск</button>
-<button class="btn-outline" style="background:var(--card-2)" id="btnOff">Выходной</button>
-<button class="btn-outline" style="margin-top:12px;width:100%" id="btnCancel">Отмена</button></div></div>
+  </div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 import {SUPABASE_URL, SUPABASE_ANON_KEY} from './js/config.js'
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null;
+let myRestaurantId = null;
 
-document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
-document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
-document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('pageTitle').innerText=btn.innerText.split(' ')[1];document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');loadData(); document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')});
-document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='./index.html');
+async function loadChefData(){
+  const { data: { user } } = await supabase.auth.getUser();
+  if(!user){ location.href='./index.html'; return; }
 
-function updateMonthLabels(){document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});document.getElementById('monthYearG').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'})}
-document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
-document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
-document.getElementById('prevMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
-document.getElementById('nextMonthG').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
-document.getElementById('addBtn').onclick=()=>document.getElementById('addModal').classList.add('show');
+  // 1. Грузим профиль шефа + название ресторана
+  const {data: profile} = await supabase
+    .from('profiles')
+    .select('full_name, restaurant_id, restaurants(name)')
+    .eq('id', user.id).single();
+  
+  if(!profile){ alert('Профиль не найден'); return; }
+  
+  myRestaurantId = profile.restaurant_id;
+  document.getElementById('restName').innerText = `Ресторан: ${profile.restaurants?.name || '...'}`;
+  document.getElementById('shefName').innerText = `Шеф: ${profile.full_name}`;
+  document.getElementById('teamLoad').innerText = '';
 
-window.fireCook=(cookId,name)=>{if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>{document.getElementById('cookModal').classList.remove('show');loadData()})}}
+  // 2. Грузим команду
+  const {data: team} = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId);
+  const teamDiv = document.getElementById('teamList');
+  teamDiv.innerHTML = '';
+  if(team.length === 0){ teamDiv.innerHTML = '<div class="sub">Команда пуста</div>' }
+  team.forEach(p=>{
+    teamDiv.innerHTML += `<div class="card"><b>${p.full_name}</b> - ${p.job_title} <span style="color:#888">(${p.role})</span></div>`
+  })
+}
+loadChefData();
 
-window.openCookModal=(p)=>{const stats=attendanceCache[p.id];const work=stats.days.filter(d=>d.status==='work').length;const sick=stats.days.filter(d=>d.status==='sick').length;const vac=stats.days.filter(d=>d.status==='vac').length;const off=stats.days.filter(d=>d.status==='off').length;const salary=Number(p.salary)||0;const total=work*8*salary;document.getElementById('cookModalContent').innerHTML=`<div style="display:flex;gap:16px;align-items:center;margin-bottom:20px"><div class="avatar" style="width:60px;height:60px;font-size:28px">${p.full_name[0]}</div><div><div style="font-size:22px;font-weight:700">${p.full_name}</div><div class="sub">${p.job_title||'Повар'}</div><div class="sub">Ставка: ${salary}₽/ч</div></div></div><h4>Статистика за ${currentDate.toLocaleString('ru',{month:'long'})}</h4><div class="stat-row"><span>Смен</span><span>${work}</span></div><div class="stat-row"><span>Больничных</span><span>${sick}</span></div><div class="stat-row"><span>Отпусков</span><span>${vac}</span></div><div class="stat-row"><span>Выходных</span><span>${off}</span></div><div class="stat-row"><span>ЗП за месяц</span><span class="salary-big">${total.toLocaleString()}₽</span></div><div style="display:flex;gap:10px;margin:16px 0"><button class="btn-outline" onclick="document.querySelector('[data-tab=tabel]').click();document.getElementById('cookModal').classList.remove('show')">📋 Табель</button><button class="btn-outline" onclick="document.querySelector('[data-tab=grafik]').click();document.getElementById('cookModal').classList.remove('show')">📅 График</button></div><button class="btn-danger" style="width:100%" onclick="fireCook('${p.id}','${p.full_name}')">🗑️ Уволить</button><button class="btn-outline" style="width:100%;margin-top:8px" onclick="document.getElementById('cookModal').classList.remove('show')">Закрыть</button>`;document.getElementById('cookModal').classList.add('show')}
+// ФУНКЦИИ МЕНЮ
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').style.display='block';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').style.display='none';
+}
+window.openSidebar=openSidebar; 
+window.closeSidebar=closeSidebar;
 
-async function genInvite(){const email=document.getElementById('cookEmail').value.trim();const job=document.getElementById('cookJob').value;const salary=Number(document.getElementById('cookSalary').value)||0;const msgBox=document.getElementById('inviteLink');if(!email||!email.includes('@'))return msgBox.innerHTML=`<div style="color:#f87171">Введи email</div>`;if(!salary)return msgBox.innerHTML=`<div style="color:#f87171">Укажи ставку</div>`;const link=`${location.origin}${location.pathname.replace('chef.html','')}register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;msgBox.innerHTML=`<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;navigator.clipboard.writeText(link);document.getElementById('qrcode').innerHTML='';new QRCode(document.getElementById("qrcode"),{text:link,width:200,height:200});msgBox.innerHTML+=`<div style="color:#22c55e">✓ Скопировано</div>`}
-document.getElementById('genInviteBtn').onclick=genInvite;
+// ФУНКЦИИ МОДАЛКИ
+function openInviteModal(){document.getElementById('inviteModal').style.display='flex'}
+function closeInviteModal(){document.getElementById('inviteModal').style.display='none'}
+window.openInviteModal=openInviteModal; 
+window.closeInviteModal=closeInviteModal;
 
-window.openStatusModal=(cookId,dateStr)=>{if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
-document.getElementById('btnWork').onclick=()=>setStatus('work');document.getElementById('btnSick').onclick=()=>setStatus('sick');document.getElementById('btnVac').onclick=()=>setStatus('vac');document.getElementById('btnOff').onclick=()=>setStatus('off');document.getElementById('btnCancel').onclick=()=>document.getElementById('statusModal').classList.remove('show');
-async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
+async function generateLink(){
+  const email=document.getElementById('inviteEmail').value;
+  const role=document.getElementById('inviteRole').value;
+  const job=document.getElementById('inviteJob').value;
+  const salary=document.getElementById('inviteSalary').value;
+  const link = `register.html?role=${role}&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${job}&salary=${salary}`;
+  document.getElementById('inviteLink').value = location.origin + '/' + link;
+}
+window.generateLink=generateLink;
 
-function renderSalary(){let html='';povaraCache.forEach(p=>{const stats=attendanceCache[p.id];const work=stats.days.filter(d=>d.status==='work').length;const salary=Number(p.salary)||0;const total=work*8*salary;html+=`<div class="povar-card"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div class="sub">${work} смен</div></div></div><div class="salary-big">${total.toLocaleString()}₽</div></div>`});document.getElementById('salaryList').innerHTML=html||'<div class="sub">Нет данных</div>'}
-
-function renderGrafik(){if(!povaraCache.length){document.getElementById('grafikList').innerHTML='<div class="sub">Нет поваров</div>';return}const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=html;setTimeout(()=>{document.querySelectorAll('.grafik-cell').forEach(c=>c.addEventListener('click',()=>openStatusModal(c.dataset.id,c.dataset.date)))},100)}
-
-async function loadData(){
-  try{
-    const {data:{user}}=await supabase.auth.getUser();if(!user)return location.href='./index.html';
-    let {data:prof}=await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();if(!prof||!prof.restaurant_id)throw new Error('Профиль не найден');
-    me=prof;myRestaurantId=prof.restaurant_id;
-    document.getElementById('restName').textContent=prof.restaurants?.name;document.getElementById('pageSubtitle').innerText=prof.restaurants?.name;
-    document.getElementById('sidebarChef').style.display='block';document.getElementById('sidebarRole').innerText=prof.role==='owner'?'Владелец':'Шеф-повар';document.getElementById('sidebarChefName').innerText=prof.full_name;
-
-    const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
-    updateMonthLabels();
-    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
-    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
-    povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
-
-    let povaraHTML='';povaraCache.forEach(p=>{povaraHTML+=`<div class="povar-card" data-id="${p.id}"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div class="sub">${p.job_title||'Повар'} • ${Number(p.salary)||0}₽/ч</div></div></div></div>`});
-    document.getElementById('povaraList').innerHTML=povaraHTML||'<div class="sub">Поваров пока нет</div>';document.querySelectorAll('.povar-card').forEach(c=>c.onclick=()=>openCookModal(povaraCache.find(p=>p.id===c.dataset.id)));
-
-    let tabelHTML='';povaraCache.forEach(p=>{let daysHtml='';for(let i=0;i<days;i++){const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`}tabelHTML+=`<div class="card" style="display:block"><div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div class="sub">${p.job_title||'Повар'}</div></div></div><div class="calendar-grid">${daysHtml}</div></div>`});
-    document.getElementById('tabelList').innerHTML=tabelHTML||'<div class="sub">Нет поваров</div>';setTimeout(()=>{document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)))},100);
-
-    if(currentTab==='salary')renderSalary();if(currentTab==='grafik')renderGrafik();
-  }catch(e){console.error(e);document.getElementById('povaraList').innerHTML=`<div style="color:#f87171">${e.message}</div>`}
-loadData();
-</script></body></html>
+async function logout(){
+  await supabase.auth.signOut();
+  location.href='./index.html';
+}
+window.logout=logout;
+</script></body></html> 
