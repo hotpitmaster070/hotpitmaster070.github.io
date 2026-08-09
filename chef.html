@@ -6,7 +6,7 @@
 <style>
 body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:16px}
 .top-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:24px}
-.burger{background:#1a1a1a;border:none;width:100%;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#666;cursor:pointer}
+.burger{background:#1a1a1a;border:none;width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#666;cursor:pointer}
 .brand{color:#f97316;font-size:20px;font-weight:800;line-height:1.2}
 .rest{color:#f97316;font-size:20px;font-weight:800}
 .role{color:#888;font-size:14px;margin-top:4px}
@@ -15,12 +15,11 @@ body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,san
 .section-head h2{font-size:20px;margin:0}
 .btn-invite{background:#f97316;color:#000;border:none;width:100%;padding:14px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:16px}
 .card{background:#111;border:1px solid #222;border-radius:10px;padding:14px 16px;margin-bottom:10px;font-size:16px}
-.card b{font-weight:700}
+input,select{width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff;font-size:15px}
 </style>
 </head>
 <body>
 
-  <!-- ВЕРХ -->
   <div class="top-row">
     <button class="burger" onclick="openSidebar()">☰</button>
     <div>
@@ -31,16 +30,12 @@ body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,san
     </div>
   </div>
 
-  <!-- КОМАНДА -->
-  <div class="section-head">
-    <h2>Команда</h2>
-  </div>
+  <div class="section-head"><h2>Команда</h2></div>
   <button class="btn-invite" onclick="openInviteModal()">+ Пригласить</button>
   
   <div id="teamLoad" style="color:#888;font-size:14px">Загрузка...</div>
   <div id="teamList"></div>
 
-  <!-- БОКОВОЕ МЕНЮ -->
   <div id="sidebarOverlay" onclick="closeSidebar()" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:998"></div>
   <div id="sidebar" style="position:fixed;top:0;left:-280px;width:280px;height:100%;background:#111;z-index:999;transition:0.3s;padding:20px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
@@ -53,17 +48,16 @@ body{background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,san
     <a href="#" onclick="logout()" style="display:block;padding:12px 0;color:#fff;text-decoration:none;border-bottom:1px solid #222">Выйти</a>
   </div>
 
-  <!-- МОДАЛКА -->
   <div id="inviteModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;z-index:1000;padding:20px">
     <div style="background:#111;border-radius:12px;padding:20px;width:100%;max-width:400px">
       <h3>Пригласить сотрудника</h3>
-      <input id="inviteEmail" type="email" placeholder="Email" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
-      <select id="inviteRole" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff"><option value="cook">Повар</option><option value="chef">Шеф</option></select>
-      <input id="inviteJob" placeholder="Должность" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
-      <input id="inviteSalary" type="number" placeholder="Зарплата" style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
+      <input id="inviteEmail" type="email" placeholder="Email повара">
+      <select id="inviteRole"><option value="cook">Повар</option><option value="chef">Су-Шеф</option></select>
+      <input id="inviteJob" placeholder="Должность: Повар горячего цеха">
+      <input id="inviteSalary" type="number" placeholder="Ставка в час: 700">
       <button class="btn-invite" onclick="generateLink()">Сгенерировать ссылку</button>
-      <input id="inviteLink" readonly style="width:100%;background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;color:#fff">
-      <button onclick="closeInviteModal()" style="width:100%;background:#222;color:#fff;border:none;padding:12px;border-radius:8px">Закрыть</button>
+      <input id="inviteLink" readonly placeholder="Тут появится ссылка">
+      <button onclick="closeInviteModal()" style="width:100%;background:#222;color:#fff;border:none;padding:12px;border-radius:8px;margin-top:8px">Закрыть</button>
     </div>
   </div>
 
@@ -89,9 +83,12 @@ async function loadChefData(){
   const {data: team} = await supabase.from('profiles').select('*').eq('restaurant_id', myRestaurantId).neq('role', 'owner');
   const teamDiv = document.getElementById('teamList');
   teamDiv.innerHTML = '';
+  if(team.length === 0) teamDiv.innerHTML = '<div style="color:#888">Поваров пока нет</div>';
+  
   team.forEach(p=>{
     const job = p.job_title || 'Повар';
-    teamDiv.innerHTML += `<div class="card"><b>${p.full_name}</b> - ${job}</div>`
+    const salary = p.salary ? ` - ${p.salary}₽/ч` : '';
+    teamDiv.innerHTML += `<div class="card"><b>${p.full_name}</b><br><span style="color:#888;font-size:14px">${job}${salary}</span></div>`
   })
 }
 loadChefData();
@@ -104,12 +101,12 @@ function openInviteModal(){document.getElementById('inviteModal').style.display=
 function closeInviteModal(){document.getElementById('inviteModal').style.display='none'}
 window.openInviteModal=openInviteModal; window.closeInviteModal=closeInviteModal;
 
-async function generateLink(){
+function generateLink(){
   const email=document.getElementById('inviteEmail').value;
   const role=document.getElementById('inviteRole').value;
-  const job=document.getElementById('inviteJob').value;
-  const salary=document.getElementById('inviteSalary').value;
-  const link = `register.html?role=${role}&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${job}&salary=${salary}`;
+  const job=document.getElementById('inviteJob').value || 'Повар';
+  const salary=document.getElementById('inviteSalary').value || 0;
+  const link = `register.html?role=${role}&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;
   document.getElementById('inviteLink').value = location.origin + '/' + link;
 }
 window.generateLink=generateLink;
