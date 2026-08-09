@@ -120,7 +120,7 @@ async function genInvite(){
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
   if(!salary) return msgBox.innerHTML = `<div class="err">Укажи ставку</div>`;
-  
+
   const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;
   msgBox.innerHTML = `Должность: <b>${job}</b> • Ставка: <b>${salary}₽/ч</b><br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
   navigator.clipboard.writeText(link);
