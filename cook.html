@@ -1,70 +1,35 @@
 <!doctype html>
-<html lang="ru"><head>
+<html lang="ru">
+<head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit | Повар</title>
-<style>
-body{margin:0;background:#0a0a0a;color:#fff;font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.wrap{background:#111;padding:32px 24px;border-radius:20px;width:100%;max-width:360px;text-align:center;border:1px solid #262626}
-h1{font-size:24px;margin-bottom:8px;color:#ff6b00}
-p{color:#888;margin-bottom:20px}
-.btn{width:100%;padding:16px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:700;font-size:16px;cursor:pointer}
-.btn-danger{background:#ef4444;color:#fff}
-.btn:disabled{opacity:.5}
-.err{color:#f87171}
-.ok{color:#22c55e}
-</style>
-</head><body>
-<div class="wrap">
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+<div class="auth-wrap">
   <h1 id="name">Загрузка...</h1>
   <p id="status">Проверяем авторизацию...</p>
-  <button id="btn" class="btn" style="display:none" onclick="toggleShift()">...</button>
+  <button id="btn" class="btn-primary" style="display:none" onclick="toggleShift()">...</button>
   <div id="msg" style="margin-top:12px;font-size:13px"></div>
 </div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+import {SUPABASE_URL, SUPABASE_ANON_KEY} from './js/config.js'
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let cookId=null, restaurantId=null, today=new Date().toISOString().split('T')[0];
 
 async function init(){
   const {data:{user}} = await supabase.auth.getUser();
-
-  // Если не залогинен - выкидываем на вход
-  if(!user) return location.href='/index.html';
-
+  if(!user) return location.href='./index.html';
   cookId = user.id;
-
-  // 1. Берем повара из profiles
-  const {data:cook, error} = await supabase.from('profiles')
-  .select('full_name, restaurant_id, role')
-  .eq('id', cookId)
-  .eq('is_active', true)
-  .single();
-
-  if(error ||!cook){
-    document.getElementById('name').innerHTML='<div class="err">Профиль не найден</div>';
-    document.getElementById('msg').textContent = error?.message;
-    return
-  }
-
-  // Проверка что это реально повар
-  if(cook.role!== 'cook'){
-    document.getElementById('name').innerHTML='<div class="err">У вас нет доступа</div>';
-    return
-  }
-
+  const {data:cook, error} = await supabase.from('profiles').select('full_name, restaurant_id, role').eq('id', cookId).eq('is_active', true).single();
+  if(error ||!cook){ document.getElementById('name').innerHTML='<div style="color:#f87171">Профиль не найден</div>'; return }
+  if(cook.role!== 'cook'){ document.getElementById('name').innerHTML='<div style="color:#f87171">У вас нет доступа</div>'; return }
   restaurantId = cook.restaurant_id;
   document.getElementById('name').textContent = cook.full_name;
-
-  // 2. Проверяем есть ли смена сегодня в attendance
-  const {data:shift} = await supabase.from('attendance')
-  .select('id')
-  .eq('cook_id', cookId)
-  .eq('work_date', today)
-  .eq('status', 'work')
-  .maybeSingle();
-
+  const {data:shift} = await supabase.from('attendance').select('id').eq('cook_id', cookId).eq('work_date', today).eq('status', 'work').maybeSingle();
   updateBtn(!!shift);
 }
 
@@ -72,14 +37,13 @@ function updateBtn(onShift){
   const btn = document.getElementById('btn');
   const status = document.getElementById('status');
   btn.style.display='block';
-
   if(onShift){
     btn.textContent='Уйти со смены';
-    btn.className='btn btn-danger';
-    status.innerHTML='<div class="ok">Вы на смене</div>';
+    btn.className='btn-danger';
+    status.innerHTML='<div style="color:#22c55e">Вы на смене</div>';
   } else {
     btn.textContent='Прийти на смену';
-    btn.className='btn';
+    btn.className='btn-primary';
     status.textContent='Не на смене';
   }
 }
@@ -88,34 +52,17 @@ window.toggleShift = async()=>{
   const btn = document.getElementById('btn');
   const msg = document.getElementById('msg');
   btn.disabled=true; msg.textContent = 'Сохраняю...';
-
   const onShift = btn.textContent.includes('Уйти');
-
   try{
     if(!onShift){
-      // Пришли на смену = пишем в attendance
-      const {error} = await supabase.from('attendance').insert({
-        cook_id: cookId,
-        restaurant_id: restaurantId,
-        work_date: today,
-        status: 'work'
-      })
-      if(error) throw error;
+      await supabase.from('attendance').insert({ cook_id: cookId, restaurant_id: restaurantId, work_date: today, status: 'work' })
     }else{
-      // Ушли = удаляем запись за сегодня
-      const {error} = await supabase.from('attendance').delete()
-      .eq('cook_id', cookId)
-      .eq('work_date', today)
-      if(error) throw error;
+      await supabase.from('attendance').delete().eq('cook_id', cookId).eq('work_date', today)
     }
-
     updateBtn(!onShift);
     msg.textContent = '';
-  }catch(e){
-    msg.innerHTML = `<div class="err">${e.message}</div>`;
-  }
+  }catch(e){ msg.innerHTML = `<div style="color:#f87171">${e.message}</div>`; }
   btn.disabled=false;
 }
-
 init()
 </script></body></html>
