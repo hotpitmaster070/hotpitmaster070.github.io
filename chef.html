@@ -1,98 +1,86 @@
-<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit KITCHEN</title>
-<link rel="stylesheet" href="./css/style.css">
-</head>
-<body>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit KITCHEN</title><style>
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--danger:#ef4444}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;margin:0}
+.app{display:flex;min-height:100vh}.sidebar{width:260px;background:var(--card);padding:20px;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:.3s}
+.sidebar.open{transform:translateX(0)}.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
+.menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-weight:500}
+.menu button.active{background:var(--card-2)}.content{flex:1;padding:20px}.topbar{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-size:20px}
+.btn{padding:12px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;cursor:pointer;width:100%}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px}
+.btn-danger{background:var(--danger);color:#fff;padding:8px 12px;border:none;border-radius:8px;cursor:pointer;font-size:12px}
+input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:12px;color:var(--text);margin-top:8px}
+.povar-card{background:var(--card);padding:16px;border-radius:16px;border:1px solid #262626;margin-bottom:12px}
+.povar-head{display:flex;align-items:center;justify-content:space-between}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#000;font-size:20px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600}
+.day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}
+.total{margin-top:12px;padding-top:12px;border-top:1px solid #333;font-weight:700}
+.grafik-wrapper{overflow-x:auto}.grafik-grid{display:grid;gap:4px;width:max-content}
+.grafik-header,.grafik-name{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px}
+.grafik-name{position:sticky;left:0;z-index:2;text-align:left;min-width:140px;background:var(--card)}
+.grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;font-weight:700}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px}
+.status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
+.err{color:var(--danger);padding:20px}
+#qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
+.muted{color:var(--muted);font-size:12px;margin-top:8px}
+.ok{color:#22c55e}
+.brand{color:var(--accent);font-size:22px;font-weight:800;margin-bottom:4px}
+.restaurant-name{color:var(--muted);font-size:14px;margin-bottom:20px}
+.chef-name{font-size:20px;font-weight:700}
+.chef-role{font-size:14px;color:var(--muted)}
+.sidebar-chef{padding:12px;border-radius:12px;background:var(--card-2);margin-bottom:20px}
+.link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px}
+</style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-
-<div class="app">
-  <div class="overlay" id="overlay"></div>
-
-  <aside class="sidebar" id="sidebar">
-    <h2 style="color:var(--accent)">HotPit KITCHEN</h2>
-    <div id="sidebarChef" class="sidebar-chef" style="display:none">
-      <div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div>
-      <div id="sidebarChefName" style="font-weight:700"></div>
-    </div>
-    <div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
-    <nav class="menu">
-      <button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button>
-      <button class="tab-btn" data-tab="tabel">📋 Табель</button>
-      <button class="tab-btn" data-tab="grafik">📅 График</button>
-      <button id="logoutBtn">Выйти</button>
-    </nav>
-  </aside>
-
-  <main class="content">
-    <div class="topbar">
-      <button class="burger" id="burgerBtn">☰</button>
-      <div style="flex:1">
-        <div class="brand">HotPit KITCHEN</div>
-        <div class="restaurant-name" id="pageSubtitle">Загрузка ресторана...</div>
-        <div class="chef-name" id="pageTitle">Загрузка...</div>
-        <div class="chef-role" id="pageRole">Загрузка...</div>
-      </div>
-      <button class="btn" id="addBtn" style="width:auto">+ Пригласить</button>
-    </div>
-
-    <div id="tab-content">
-      <div data-tab-content="personal">
-        <h3>Команда</h3>
-        <div id="povaraList">Загрузка...</div>
-      </div>
-
-      <div data-tab-content="tabel" style="display:none">
-        <div style="display:flex;gap:10px;margin-bottom:20px">
-          <button class="btn-outline" id="prevMonthT" style="width:auto"><</button>
-          <div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div>
-          <button class="btn-outline" id="nextMonthT" style="width:auto">></button>
-        </div>
-        <div id="tabelList">Загрузка...</div>
-      </div>
-
-      <div data-tab-content="grafik" style="display:none">
-        <div style="display:flex;gap:10px;margin-bottom:20px">
-          <button class="btn-outline" id="prevMonthG" style="width:auto"><</button>
-          <div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div>
-          <button class="btn-outline" id="nextMonthG" style="width:auto">></button>
-        </div>
-        <div class="grafik-wrapper" id="grafikList">Загрузка...</div>
-      </div>
-    </div>
-  </main>
+<div class="app"><div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2>
+<div id="sidebarChef" class="sidebar-chef" style="display:none">
+  <div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div>
+  <div id="sidebarChefName" style="font-weight:700"></div>
 </div>
-
-<div class="modal" id="addModal">
-  <div class="modal-card">
-    <h3 style="margin-top:0">Пригласить повара</h3>
-    <input id="cookEmail" type="email" placeholder="Email повара">
-    <select id="cookJob">
-      <option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option>
-      <option>Повар холодного цеха</option><option>Повар-универсал</option>
-      <option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option>
-    </select>
-    <input id="cookSalary" type="number" placeholder="Ставка в час">
-    <button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
-    <div id="inviteLink" class="muted"></div>
-    <div id="qrcode"></div>
-    <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
-  </div>
+<div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
+<nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button id="logoutBtn">Выйти</button></nav></aside>
+<main class="content"><div class="topbar"><button class="burger" id="burgerBtn">☰</button>
+<div style="flex:1">
+  <div class="brand">HotPit KITCHEN</div>
+  <div class="restaurant-name" id="pageSubtitle">Загрузка ресторана...</div>
+  <div class="chef-name" id="pageTitle">Загрузка...</div>
+  <div class="chef-role" id="pageRole">Загрузка...</div>
 </div>
+<button class="btn" id="addBtn" style="width:auto">+ Пригласить</button></div>
 
-<div class="modal" id="statusModal">
-  <div class="modal-card">
-    <h3>Статус на <span id="statusDate"></span></h3>
-    <button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Смена</button>
-    <button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>
-    <button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>
-    <button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button>
-    <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button>
-  </div>
-</div>
+<div id="tab-content">
+<div data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
+<div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
+<div data-tab-content="grafik" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthG" style="width:auto"><</button><div id="monthYearG" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthG" style="width:auto">></button></div><div class="grafik-wrapper" id="grafikList">Загрузка...</div></div>
+</div></main></div>
+
+<div class="modal" id="addModal"><div class="modal-card">
+  <h3 style="margin-top:0">Пригласить повара</h3>
+  <input id="cookEmail" type="email" placeholder="Email повара">
+  <select id="cookJob">
+    <option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option>
+    <option>Повар холодного цеха</option><option>Повар-универсал</option>
+    <option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option>
+  </select>
+  <input id="cookSalary" type="number" placeholder="Ставка в час">
+  <button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
+  <div id="inviteLink" class="muted"></div>
+  <div id="qrcode"></div>
+  <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
+</div></div>
+
+<div class="modal" id="statusModal"><div class="modal-card"><h3>Статус на <span id="statusDate"></span></h3>
+<button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Смена</button>
+<button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>
+<button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>
+<button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button>
+<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
@@ -124,7 +112,7 @@ async function genInvite(){
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
   if(!salary) return msgBox.innerHTML = `<div class="err">Укажи ставку</div>`;
-
+  
   const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;
   msgBox.innerHTML = `Должность: <b>${job}</b> • Ставка: <b>${salary}₽/ч</b><br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
   navigator.clipboard.writeText(link);
@@ -188,3 +176,4 @@ async function loadData(){
 }
 loadData();
 </script></body></html>
+    
