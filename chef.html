@@ -25,7 +25,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;z-index:101}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
-.err{color:var(--danger);padding:20px}
+.err{color:var(--danger);padding:16px;background:var(--danger);border-radius:12px;margin:20px 0;white-space:pre-wrap;font-size:12px}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
 .muted{color:var(--muted);font-size:12px;margin-top:8px}
 .ok{color:#22c55e}
@@ -59,7 +59,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <div class="chef-name" id="pageTitle">Загрузка...</div>
   <button class="btn" id="addBtn">+ Пригласить</button>
 </div></div>
-
+<div id="errorBox"></div>
 <div id="tab-content">
 <div data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
 <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
@@ -93,6 +93,8 @@ const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
+function showError(msg){ document.getElementById('errorBox').innerHTML = `<div class="err">${msg}</div>` }
+
 let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null,headChef=null;
 
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
@@ -120,7 +122,6 @@ async function genInvite(){
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
   if(!salary) return msgBox.innerHTML = `<div class="err">Укажи ставку</div>`;
-
   const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;
   msgBox.innerHTML = `Должность: <b>${job}</b> • Ставка: <b>${salary}₽/ч</b><br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
   navigator.clipboard.writeText(link);
@@ -146,20 +147,28 @@ function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.g
 
 async function loadData(){
   try{
-    const {data:{user}} = await supabase.auth.getUser();
+    showError('Шаг 1: Проверяю вход...')
+    const {data:{user}, error:err0} = await supabase.auth.getUser();
+    if(err0) throw err0;
     if(!user) return location.href='/index.html';
-    let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-    if(!prof ||!prof.restaurant_id) throw new Error('Профиль не найден');
-    me = prof; myRestaurantId=prof.restaurant_id;
+    
+    showError('Шаг 2: Гружу профиль ID: ' + user.id)
+    let {data:prof, error:err1} = await supabase.from('profiles').select('*').eq('id',user.id).single();
+    if(err1) throw err1;
+    if(!prof) throw new Error('Профиль не найден в таблице profiles');
+    if(!prof.restaurant_id) throw new Error('У профиля нет restaurant_id');
+    
+    showError('Шаг 3: Гружу ресторан ID: ' + prof.restaurant_id)
+    let {data:rest, error:err2} = await supabase.from('restaurants').select('name').eq('id',prof.restaurant_id).single();
+    if(err2) throw err2;
 
-    const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
-    headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
-    document.getElementById('pageSubtitle').innerText = prof.restaurants?.name || 'Ресторан';
-    document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
-    document.getElementById('pageRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
+    me = prof; myRestaurantId=prof.restaurant_id;
+    document.getElementById('pageSubtitle').innerText = rest.name;
+    document.getElementById('pageTitle').innerText = prof.full_name;
+    document.getElementById('pageRole').innerText = 'Шеф-повар';
     document.getElementById('sidebarChef').style.display = 'block';
-    document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
-    document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
+    document.getElementById('sidebarChefName').innerText = prof.full_name;
+    document.getElementById('errorBox').innerHTML = '<div style="color:#22c55e;padding:16px">Успех! Данные загружены</div>';
 
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     updateMonthLabels();
@@ -176,18 +185,10 @@ async function loadData(){
     document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Нажмите + Пригласить</div>';
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
 
-    let tabelHTML = '';
-    povaraCache.forEach(p=>{
-      let daysHtml='';
-      for(let i=0;i<days;i++){const day=i+1;const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';daysHtml+=`<div class="day ${status}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`}
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-    });
-    document.getElementById('tabelList').innerHTML=tabelHTML;
-    setTimeout(()=>{document.querySelectorAll('.day').forEach(d=>d.addEventListener('click',()=>openStatusModal(d.dataset.id,d.dataset.date)))},100);
-    povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){
     console.error(e);
-    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+    showError('ОШИБКА:\n' + e.message + '\n\nИди в Supabase и проверь:\n1. Есть таблица restaurants\n2. У шефа в profiles есть restaurant_id\n3. RLS разрешает читать')
+    document.getElementById('povaraList').innerHTML = ''
   }
 }
 loadData();
