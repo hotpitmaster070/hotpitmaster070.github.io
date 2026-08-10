@@ -42,9 +42,9 @@ const params = new URLSearchParams(location.search);
 const role = params.get('role'); // chef или cook
 const restaurant_id = params.get('restaurant_id');
 const email = params.get('email');
-// ВОТ ЭТО НОВОЕ - читаем из ссылки
 const job = params.get('job') || 'Повар';
 const salary = Number(params.get('salary')) || 0;
+const salary_type = params.get('salary_type') || 'hourly'; // НОВОЕ
 
 document.getElementById('email').value = email || '';
 const msgBox = document.getElementById('msg');
@@ -53,6 +53,8 @@ const jobInfo = document.getElementById('jobInfo');
 const title = document.getElementById('title');
 const pageTitle = document.getElementById('pageTitle');
 const regBtn = document.getElementById('regBtn');
+
+const typeText = salary_type==='hourly'?'₽/час':salary_type==='daily'?'₽/день':'₽/смена'; // НОВОЕ
 
 // Настраиваем текст в зависимости от роли
 if(role === 'chef'){
@@ -66,7 +68,7 @@ if(role === 'chef'){
   // Покажем должность и ставку если они есть в ссылке
   if(job && salary){
     jobInfo.style.display = 'block';
-    jobInfo.innerHTML = `Вас приглашают на должность: <b>${job}</b><br>Ставка: <b>${salary}₽/час</b>`;
+    jobInfo.innerHTML = `Вас приглашают на должность: <b>${job}</b><br>Оплата: <b>${salary}${typeText}</b>`;
   }
 } else {
   restInfo.innerHTML = `<div class="err">Неверная ссылка приглашения</div>`;
@@ -115,16 +117,16 @@ document.getElementById('regBtn').onclick = async ()=>{
   }
   const user = signUpData.user;
 
-  // Создаем профиль. ВОТ ТУТ ГЛАВНЫЙ ФИКС
+  // Создаем профиль. ГЛАВНЫЙ ФИКС: добавили salary_type
   const {error: profErr} = await supabase.from('profiles').insert({
     id: user.id,
     full_name: fullName,
     email: email,
     role: role,
     restaurant_id: restaurant_id,
-    job_title: role === 'cook'? job : null, // <-- Берем из ссылки
-    salary: role === 'cook'? salary : null, // <-- Берем из ссылки
-    salary_type: 'hourly',
+    job_title: role === 'cook'? job : null,
+    salary: role === 'cook'? salary : null,
+    salary_type: role === 'cook'? salary_type : null, // ВОТ ЭТО
     is_active: true
   });
 
