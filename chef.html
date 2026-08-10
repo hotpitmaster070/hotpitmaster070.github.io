@@ -181,12 +181,26 @@ function renderTotal(cookId){
 
 function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';
 
-  document.querySelectorAll('.grafik-cell').forEach(cell=>{
-    cell.onmousedown=(e)=>{isDragging=true; dragStatus = cell.classList.contains('work')?'off':'work'; toggleCell(cell)};
-    cell.onmouseenter=(e)=>{if(isDragging) toggleCell(cell)};
-  });
+function handleStart(cell){
+  isDragging=true; 
+  dragStatus = cell.classList.contains('work')?'off':'work'; 
+  toggleCell(cell)
 }
-document.onmouseup=()=>{isDragging=false; document.querySelectorAll('.grafik-cell.dragging').forEach(c=>c.classList.remove('dragging')); loadData()};
+function handleMove(cell){
+  if(isDragging) toggleCell(cell)
+}
+
+document.querySelectorAll('.grafik-cell').forEach(cell=>{
+  // Для ПК
+  cell.onmousedown=(e)=>handleStart(cell);
+  cell.onmouseenter=(e)=>handleMove(cell);
+  // Для Телефона
+  cell.ontouchstart=(e)=>{e.preventDefault(); handleStart(cell)};
+  cell.ontouchmove=(e)=>{e.preventDefault(); const touch = e.touches[0]; const el = document.elementFromPoint(touch.clientX, touch.clientY); if(el && el.classList.contains('grafik-cell')) handleMove(el)};
+});
+}
+document.onmouseup=()=>{isDragging=false; document.querySelectorAll('.grafik-cell.dragging').forEach(c=>c.classList.remove('dragging')); loadData()}
+document.ontouchend=()=>{isDragging=false; document.querySelectorAll('.grafik-cell.dragging').forEach(c=>c.classList.remove('dragging')); loadData()}
 
 async function toggleCell(cell){
   const cookId=cell.dataset.id, dateStr=cell.dataset.date;
