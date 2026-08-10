@@ -4,6 +4,8 @@
 *{box-sizing:border-box}body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;margin:0}
 .app{display:flex;min-height:100vh}.sidebar{width:260px;background:var(--card);padding:20px;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:.3s}
 .sidebar.open{transform:translateX(0)}.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
+.sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px} /* НОВОЕ */
+.close-sidebar{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0 4px} /* НОВОЕ */
 .menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px;border-radius:12px;cursor:pointer;font-weight:500}
 .menu button.active{background:var(--card-2)}.content{flex:1;padding:20px}.topbar{display:flex;align-items:center;gap:16px;margin-bottom:20px}
 .burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:12px;cursor:pointer;font-size:20px}
@@ -22,6 +24,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .grafik-header,.grafik-name{background:var(--card-2);padding:10px 8px;border-radius:8px;font-weight:700;text-align:center;font-size:12px}
 .grafik-name{position:sticky;left:0;z-index:2;text-align:left;min-width:140px;background:var(--card)}
 .grafik-cell{background:var(--card-2);border-radius:8px;text-align:center;padding:10px 8px;font-size:14px;min-width:40px;cursor:pointer;font-weight:700}
+.grafik-cell.off{color:#555} /* ЧТОБЫ ВИДНО БЫЛО */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
@@ -38,7 +41,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 </style></head><body>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <div class="app"><div class="overlay" id="overlay"></div>
-<aside class="sidebar" id="sidebar"><h2 style="color:var(--accent)">HotPit KITCHEN</h2>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"> <!-- НОВОЕ -->
+    <h2 style="color:var(--accent)">HotPit KITCHEN</h2>
+    <button class="close-sidebar" id="closeSidebarBtn">✕</button> <!-- НОВОЕ -->
+  </div>
 <div id="sidebarChef" class="sidebar-chef" style="display:none">
   <div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div>
   <div id="sidebarChefName" style="font-weight:700"></div>
@@ -80,19 +87,13 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
 </div></div>
 
-<div class="modal" id="statusModal"><div class="modal-card"><h3>Статус на <span id="statusDate"></span></h3>
-<button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Смена</button>
-<button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>
-<button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>
-<button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button>
-<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
-
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null,headChef=null;
 
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+document.getElementById('closeSidebarBtn').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')} // НОВОЕ
 document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');loadData()});
 document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html');
@@ -118,9 +119,7 @@ async function genInvite(){
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
   if(!salary) return msgBox.innerHTML = `<div class="err">Укажи сумму</div>`;
-
   const typeText = salaryType==='hourly'?'₽/ч':salaryType==='daily'?'₽/день':'₽/смена';
-
   const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}&salary_type=${salaryType}`;
   msgBox.innerHTML = `Должность: <b>${job}</b> • ${salary}${typeText}<br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
   navigator.clipboard.writeText(link);
@@ -130,22 +129,36 @@ async function genInvite(){
 }
 document.getElementById('genInviteBtn').onclick=genInvite;
 
-function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
-async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
+async function setStatus(cookId, dateStr, status){ // ИЗМЕНИЛИ ФУНКЦИЮ
+  const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
+  try{
+    if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);
+    else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);
+    else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})
+  }catch(e){alert('Ошибка: '+e.message)}
+  loadData()
+}
+
+// НОВАЯ ФУНКЦИЯ ДЛЯ БЫСТРОГО КЛИКА В ГРАФИКЕ
+async function toggleGrafikStatus(cookId, dateStr){
+  if(dateStr<new Date().toISOString().split('T')[0])return;
+  const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
+  const currentStatus = existing?.status || 'off';
+  const nextStatus = currentStatus === 'work'? 'off' : 'work'; // по кругу: off -> work -> off
+  await setStatus(cookId, dateStr, nextStatus);
+}
 
 function renderTotal(cookId){
   const data=attendanceCache[cookId];if(!data)return;
   const workDays=data.days.filter(d=>d.status==='work').length;
   const salary = Number(data.cook.salary) || 0;
   const salaryType = data.cook.salary_type || 'hourly';
-
-  let total = workDays * salary; // убрали *8
-
+  let total = workDays * salary;
   const el=document.getElementById(`total-${cookId}`);
   if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`
 }
 
-function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';document.querySelectorAll('.grafik-cell').forEach(c=>c.onclick=()=>openStatusModal(c.dataset.id,c.dataset.date))}
+function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';document.querySelectorAll('.grafik-cell').forEach(c=>c.onclick=()=>toggleGrafikStatus(c.dataset.id,c.dataset.date))} // ИЗМЕНИЛИ ТУТ
 
 async function loadData(){
   try{
@@ -189,12 +202,13 @@ async function loadData(){
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
-    document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
+    document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date)); // В ТАБЕЛЕ ОСТАВИЛИ ОКНО
     povaraCache.forEach(p=>renderTotal(p.id));renderGrafik()
   }catch(e){
     console.error(e);
     document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
   }
 }
+function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
 loadData();
 </script></body></html>
