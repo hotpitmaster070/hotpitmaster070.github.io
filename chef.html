@@ -68,7 +68,12 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
     <option>Повар холодного цеха</option><option>Повар-универсал</option>
     <option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option>
   </select>
-  <input id="cookSalary" type="number" placeholder="Ставка в час">
+  <select id="salaryType">
+    <option value="hourly">Ставка в час</option>
+    <option value="daily">Фикс за день</option>
+    <option value="shift">Подработка</option>
+  </select>
+  <input id="cookSalary" type="number" placeholder="Сумма">
   <button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
   <div id="inviteLink" class="muted"></div>
   <div id="qrcode"></div>
@@ -109,12 +114,15 @@ async function genInvite(){
   const email = document.getElementById('cookEmail').value.trim();
   const job = document.getElementById('cookJob').value;
   const salary = Number(document.getElementById('cookSalary').value)||0;
+  const salaryType = document.getElementById('salaryType').value;
   const msgBox = document.getElementById('inviteLink');
   if(!email ||!email.includes('@')) return msgBox.innerHTML = `<div class="err">Введи email повара</div>`;
-  if(!salary) return msgBox.innerHTML = `<div class="err">Укажи ставку</div>`;
-  
-  const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}`;
-  msgBox.innerHTML = `Должность: <b>${job}</b> • Ставка: <b>${salary}₽/ч</b><br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
+  if(!salary) return msgBox.innerHTML = `<div class="err">Укажи сумму</div>`;
+
+  const typeText = salaryType==='hourly'?'₽/ч':salaryType==='daily'?'₽/день':'₽/смена';
+
+  const link = `${location.origin}/register.html?role=cook&restaurant_id=${myRestaurantId}&email=${encodeURIComponent(email)}&job=${encodeURIComponent(job)}&salary=${salary}&salary_type=${salaryType}`;
+  msgBox.innerHTML = `Должность: <b>${job}</b> • ${salary}${typeText}<br>Скинь повару ссылку:<div class="link-box"><a href="${link}" target="_blank" style="color:var(--accent)">${link}</a></div>`;
   navigator.clipboard.writeText(link);
   document.getElementById('qrcode').innerHTML = '';
   new QRCode(document.getElementById("qrcode"), { text: link, width: 200, height: 200 });
@@ -124,7 +132,19 @@ document.getElementById('genInviteBtn').onclick=genInvite;
 
 function openStatusModal(cookId,dateStr){if(dateStr<new Date().toISOString().split('T')[0])return;tempStatusData={cookId,dateStr};document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');document.getElementById('statusModal').classList.add('show')}
 async function setStatus(status){document.getElementById('statusModal').classList.remove('show');const {cookId,dateStr}=tempStatusData;const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);try{if(status==='off'&&existing)await supabase.from('attendance').delete().eq('id',existing.id);else if(existing)await supabase.from('attendance').update({status}).eq('id',existing.id);else await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status})}catch(e){alert('Ошибка: '+e.message)}loadData()}
-function renderTotal(cookId){const data=attendanceCache[cookId];if(!data)return;const workDays=data.days.filter(d=>d.status==='work').length;const salary = Number(data.cook.salary) || 0; const total=workDays*8*salary;const el=document.getElementById(`total-${cookId}`);if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`}
+
+function renderTotal(cookId){
+  const data=attendanceCache[cookId];if(!data)return;
+  const workDays=data.days.filter(d=>d.status==='work').length;
+  const salary = Number(data.cook.salary) || 0;
+  const salaryType = data.cook.salary_type || 'hourly';
+
+  let total = workDays * salary; // убрали *8
+
+  const el=document.getElementById(`total-${cookId}`);
+  if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`
+}
+
 function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';document.querySelectorAll('.grafik-cell').forEach(c=>c.onclick=()=>openStatusModal(c.dataset.id,c.dataset.date))}
 
 async function loadData(){
@@ -155,7 +175,9 @@ async function loadData(){
     povaraCache.forEach(p=>{
       const job = p.job_title || 'Повар';
       const salary = Number(p.salary) || 0;
-      povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}₽/ч</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`
+      const salaryType = p.salary_type || 'hourly';
+      const typeText = salaryType==='hourly'?'₽/ч':salaryType==='daily'?'₽/день':'₽/смена';
+      povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${job} • ${salary}${typeText}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`
     });
     document.getElementById('povaraList').innerHTML = povaraHTML || '<div class="muted">Поваров пока нет. Нажмите + Пригласить</div>';
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
@@ -176,4 +198,3 @@ async function loadData(){
 }
 loadData();
 </script></body></html>
-    
