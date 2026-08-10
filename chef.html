@@ -244,19 +244,25 @@ async function loadData(){
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
 
     let tabelHTML = '';
-    const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-    povaraCache.forEach(p=>{
-      let daysHtml='';
-      daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
-      for(let i=0;i<days;i++){
-        const day=i+1;
-        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
-        const isToday = dateStr === todayStr? 'today' : '';
-        daysHtml+=`<div class="day ${status} ${isToday}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
-      }
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-    });
+const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+povaraCache.forEach(p=>{
+  let daysHtml='';
+  daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
+  
+  // ВОТ ЭТО НОВОЕ - считаем сдвиг
+  const firstDay = new Date(year, month, 1).getDay(); // 0=Вс, 1=Пн ... 6=Сб
+  const offset = firstDay === 0 ? 6 : firstDay - 1; // Если Вс то 6 пустых, если Пн то 0
+  for(let k=0;k<offset;k++) daysHtml+=`<div></div>`; // пустые клетки в начале
+
+  for(let i=0;i<days;i++){
+    const day=i+1;
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
+    const isToday = dateStr === todayStr? 'today' : '';
+    daysHtml+=`<div class="day ${status} ${isToday}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
+  }
+  tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+});
     document.getElementById('tabelList').innerHTML=tabelHTML;
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
     povaraCache.forEach(p=>renderTotal(p.id));
