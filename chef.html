@@ -128,6 +128,18 @@ document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sideb
 document.getElementById('closeSidebarBtn').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.getElementById('sidebar').classList.remove('open');
+document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html')
+
+// ПЕРЕКЛЮЧЕНИЕ ТАБОВ + ЗАКРЫТИЕ САЙДБАРА
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{
+  currentTab=btn.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  loadData()
+});
 
 function updateMonthLabels(){
   document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});
@@ -171,7 +183,7 @@ async function setStatus(status){
   }catch(e){alert('Ошибка: '+e.message)}
   loadData()
 }
-window.setStatus = setStatus; // ВАЖНО для onclick в html
+window.setStatus = setStatus;
 
 function renderTodayOnShift(){
   const todayStr = new Date().toISOString().split('T')[0];
@@ -193,26 +205,39 @@ function renderTotal(cookId){
   if(el)el.textContent=`${workDays} смен = ${total.toLocaleString()}₽`
 }
 
-function renderGrafik(){const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;povaraCache.forEach(p=>{html+=`<div class="grafik-name">${p.full_name}</div>`;for(let i=1;i<=days;i++){const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`}});html+='</div>';document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';
+function renderGrafik(){
+  const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate();
+  let html=`<div class="grafik-grid" style="grid-template-columns:140px repeat(${days},40px)"><div class="grafik-header">Сотрудник</div>`;
+  for(let i=1;i<=days;i++)html+=`<div class="grafik-header">${i}</div>`;
+  povaraCache.forEach(p=>{
+    html+=`<div class="grafik-name">${p.full_name}</div>`;
+    for(let i=1;i<=days;i++){
+      const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+      const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
+      const symbol=status==='work'?'С':status==='sick'?'Б':status==='vac'?'О':'-';
+      html+=`<div class="grafik-cell ${status}" data-id="${p.id}" data-date="${dateStr}">${symbol}</div>`
+    }
+  });
+  html+='</div>';
+  document.getElementById('grafikList').innerHTML=povaraCache.length?html:'<div>Нет данных</div>';
 
-function handleStart(cell){
-  isDragging=true; 
-  dragStatus = cell.classList.contains('work')?'off':'work'; 
-  toggleCell(cell)
-}
-function handleMove(cell){
-  if(isDragging) toggleCell(cell)
-}
+  function handleStart(cell){
+    isDragging=true;
+    dragStatus = cell.classList.contains('work')?'off':'work';
+    toggleCell(cell)
+  }
+  function handleMove(cell){
+    if(isDragging) toggleCell(cell)
+  }
 
-document.querySelectorAll('.grafik-cell').forEach(cell=>{
-  // Для ПК
-  cell.onmousedown=(e)=>handleStart(cell);
-  cell.onmouseenter=(e)=>handleMove(cell);
-  // Для Телефона
-  cell.ontouchstart=(e)=>{e.preventDefault(); handleStart(cell)};
-  cell.ontouchmove=(e)=>{e.preventDefault(); const touch = e.touches[0]; const el = document.elementFromPoint(touch.clientX, touch.clientY); if(el && el.classList.contains('grafik-cell')) handleMove(el)};
-});
-}
+  document.querySelectorAll('.grafik-cell').forEach(cell=>{
+    cell.onmousedown=(e)=>handleStart(cell);
+    cell.onmouseenter=(e)=>handleMove(cell);
+    cell.ontouchstart=(e)=>{e.preventDefault(); handleStart(cell)};
+    cell.ontouchmove=(e)=>{e.preventDefault(); const touch = e.touches[0]; const el = document.elementFromPoint(touch.clientX, touch.clientY); if(el && el.classList.contains('grafik-cell')) handleMove(el)};
+  });
+} // <-- ВОТ ТУТ БЫЛА ПРОБЛЕМА, НЕ ХВАТАЛО ЭТОЙ СКОБКИ
+
 document.onmouseup=()=>{isDragging=false; document.querySelectorAll('.grafik-cell.dragging').forEach(c=>c.classList.remove('dragging')); loadData()}
 document.ontouchend=()=>{isDragging=false; document.querySelectorAll('.grafik-cell.dragging').forEach(c=>c.classList.remove('dragging')); loadData()}
 
@@ -233,6 +258,13 @@ async function setStatusDirect(cookId, dateStr, status){
   }catch(e){console.error(e)}
 }
 
+function openStatusModal(cookId,dateStr){
+  if(dateStr<new Date().toISOString().split('T')[0])return;
+  tempStatusData={cookId,dateStr};
+  document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
+  document.getElementById('statusModal').classList.add('show')
+}
+
 async function loadData(){
   try{
     const {data:{user}} = await supabase.auth.getUser();
@@ -244,10 +276,14 @@ async function loadData(){
 
     const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
     headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
+
+    // ВЕРХНЯЯ ШАПКА: только название ресторана, без имени шефа
     document.getElementById('pageSubtitle').innerText = prof.restaurants?.name || 'Ресторан';
-document.getElementById('pageTitle').innerText = prof.restaurants?.name || 'HotPit KITCHEN';
-document.getElementById('pageRole').innerText = '';
-document.getElementById('chefNameTop').innerText = ''; 
+    document.getElementById('pageTitle').innerText = prof.restaurants?.name || 'HotPit KITCHEN';
+    document.getElementById('pageRole').innerText = '';
+    document.getElementById('chefNameTop').innerText = '';
+
+    // БОКОВАЯ ПАНЕЛЬ: имя шефа есть
     document.getElementById('sidebarChef').style.display = 'block';
     document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
     document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
@@ -273,25 +309,24 @@ document.getElementById('chefNameTop').innerText = '';
     document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
 
     let tabelHTML = '';
-const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-povaraCache.forEach(p=>{
-  let daysHtml='';
-  daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
-  
-  // ВОТ ЭТО НОВОЕ - считаем сдвиг
-  const firstDay = new Date(year, month, 1).getDay(); // 0=Вс, 1=Пн ... 6=Сб
-  const offset = firstDay === 0 ? 6 : firstDay - 1; // Если Вс то 6 пустых, если Пн то 0
-  for(let k=0;k<offset;k++) daysHtml+=`<div></div>`; // пустые клетки в начале
+    const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    povaraCache.forEach(p=>{
+      let daysHtml='';
+      daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
 
-  for(let i=0;i<days;i++){
-    const day=i+1;
-    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-    const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
-    const isToday = dateStr === todayStr? 'today' : '';
-    daysHtml+=`<div class="day ${status} ${isToday}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
-  }
-  tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-});
+      const firstDay = new Date(year, month, 1).getDay();
+      const offset = firstDay === 0? 6 : firstDay - 1;
+      for(let k=0;k<offset;k++) daysHtml+=`<div></div>`;
+
+      for(let i=0;i<days;i++){
+        const day=i+1;
+        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const status=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr)?.status||'off';
+        const isToday = dateStr === todayStr? 'today' : '';
+        daysHtml+=`<div class="day ${status} ${isToday}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
+      }
+      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:14px">${p.job_title || 'Повар'}</div></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+    });
     document.getElementById('tabelList').innerHTML=tabelHTML;
     document.querySelectorAll('.day').forEach(d=>d.onclick=()=>openStatusModal(d.dataset.id,d.dataset.date));
     povaraCache.forEach(p=>renderTotal(p.id));
@@ -301,11 +336,5 @@ povaraCache.forEach(p=>{
     document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
   }
 }
-function openStatusModal(cookId,dateStr){
-  if(dateStr<new Date().toISOString().split('T')[0])return;
-  tempStatusData={cookId,dateStr};
-  document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
-  document.getElementById('statusModal').classList.add('show')
-}
-loadData();
+loadData(); // запускаем при старте
 </script></body></html>
