@@ -62,9 +62,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
 <nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button class="tab-btn" data-tab="grafik">📅 График</button><button id="logoutBtn">Выйти</button></nav></aside>
 <main class="content"><div class="topbar"><button class="burger" id="burgerBtn">☰</button>
-<div style="flex:1">
-  <div class="brand">HotPit KITCHEN</div>
-  <div class="restaurant-name" id="pageSubtitle">Загрузка ресторана...</div>
+<div class="brand-line">
+  <span class="brand">HotPit KITCHEN</span>
+  <span class="sep">/</span>
+  <span class="rest" id="pageSubtitle"></span>
+</div>
   <div class="chef-name" id="pageTitle">Загрузка...</div>
   <div class="chef-role" id="pageRole">Загрузка...</div>
 </div>
