@@ -244,10 +244,10 @@ async function loadData(){
 
     const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
     headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
-    document.getElementById('pageSubtitle').innerText = prof.restaurants?.name;
-    document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
-    document.getElementById('pageRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
-    document.getElementById('chefNameTop').innerText = headChef.full_name || ''; 
+    document.getElementById('pageSubtitle').innerText = prof.restaurants?.name || 'Ресторан';
+document.getElementById('pageTitle').innerText = prof.restaurants?.name || 'HotPit KITCHEN';
+document.getElementById('pageRole').innerText = '';
+document.getElementById('chefNameTop').innerText = ''; 
     document.getElementById('sidebarChef').style.display = 'block';
     document.getElementById('sidebarRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
     document.getElementById('sidebarChefName').innerText = headChef.full_name || 'Шеф';
