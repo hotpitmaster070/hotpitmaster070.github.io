@@ -244,7 +244,7 @@ async function loadData(){
 
     const {data:allStaff} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).order('created_at',{ascending:true});
     headChef = allStaff.find(p => p.role === 'chef') || allStaff.find(p => p.role === 'owner') || me;
-    ddocument.getElementById('pageSubtitle').innerText = prof.restaurants?.name;
+    document.getElementById('pageSubtitle').innerText = prof.restaurants?.name;
     document.getElementById('pageTitle').innerText = headChef.full_name || 'Шеф';
     document.getElementById('pageRole').innerText = headChef.role === 'owner'? 'Владелец' : 'Шеф-повар';
     document.getElementById('chefNameTop').innerText = headChef.full_name || ''; 
