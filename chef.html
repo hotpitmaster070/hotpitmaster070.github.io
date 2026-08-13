@@ -74,7 +74,6 @@ import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 let currentTab='personal',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null;
 
-// ФИКС 1: Локальная дата для Будвы +02:00
 function getLocalDateStr(d=new Date()){
   const tzOffset = d.getTimezoneOffset() * 60000;
   const localDate = new Date(d.getTime() - tzOffset);
@@ -107,26 +106,23 @@ async function genInvite(){
 }
 document.getElementById('genInviteBtn').onclick=genInvite;
 
-// ФИКС 2: UPSERT - 1 день = 1 запись
 async function setStatus(status){
   const {cookId, dateStr} = tempStatusData;
   if(!cookId) return alert('Ошибка: не выбран повар');
   document.getElementById('statusModal').classList.remove('show');
-  const time = new Date().toTimeString().slice(0,5);
+  const check_time = new Date().toTimeString().slice(0,5);
 
   try{
     if(status === 'off'){
-      // Удаляем запись если ставим выходной
       const {error} = await supabase.from('attendance').delete().match({cook_id:cookId, work_date:dateStr});
       if(error) throw error;
     } else {
-      // Upsert: если есть запись - обновит, если нет - создаст
       const {error} = await supabase.from('attendance').upsert({
         cook_id:cookId,
         restaurant_id:myRestaurantId,
         work_date:dateStr,
         status,
-        time
+        check_time
       }, {onConflict: 'cook_id,work_date'})
       if(error) throw error;
     }
@@ -137,8 +133,8 @@ async function setStatus(status){
 }
 
 function calcHours(dayRecords){
-  const ins = dayRecords.filter(d=>d.status==='in').map(d=>d.time).sort();
-  const outs = dayRecords.filter(d=>d.status==='out').map(d=>d.time).sort();
+  const ins = dayRecords.filter(d=>d.status==='in').map(d=>d.check_time).sort();
+  const outs = dayRecords.filter(d=>d.status==='out').map(d=>d.check_time).sort();
   if(ins.length===0 || outs.length===0) return 0;
   const inTime = new Date(`2000-01-01T${ins[0]}:00`);
   const outTime = new Date(`2000-01-01T${outs[outs.length-1]}:00`);
