@@ -34,13 +34,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
-.status-btn:disabled{opacity:0.3;cursor:not-allowed}
 .sidebar-chef{padding:12px;border-radius:12px;background:var(--card-2);margin-bottom:20px}
 .muted{color:var(--muted);font-size:12px;margin-top:8px}
 .ok{color:#22c55e}.err{color:var(--danger);padding:20px}
 .link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
-.badge{font-size:9px;padding:2px 4px;border-radius:4px;margin-top:2px}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-sidebar{display:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -68,8 +66,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 
 <div class="modal" id="statusModal"><div class="modal-card"><h3>На <span id="statusDate"></span></h3>
 <div id="statusHint" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
-<div id="futureBtns"></div>
-<div id="todayBtns"></div>
+<div id="modalButtons"></div>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
 
 <script type="module">
@@ -109,7 +106,6 @@ async function setStatus(status){
   document.getElementById('statusModal').classList.remove('show');
   const time = new Date().toTimeString().slice(0,5);
 
-  // Для прошлых дней удаляем запись если ставим выходной
   if(status==='off'){
     const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
     if(existing) await supabase.from('attendance').delete().eq('id',existing.id);
@@ -118,7 +114,6 @@ async function setStatus(status){
   }
   loadData()
 }
-window.setStatus = setStatus;
 
 function calcHours(dayRecords){
   const ins = dayRecords.filter(d=>d.status==='in').map(d=>d.time).sort();
@@ -138,7 +133,7 @@ function renderTotal(cookId){
   for(let i=1;i<=daysInMonth;i++){
     const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
     const dayRecords = data.days.filter(d=>d.work_date===dateStr);
-    if(dateStr <= TODAY) totalHours += calcHours(dayRecords); // считаем только факт
+    if(dateStr <= TODAY) totalHours += calcHours(dayRecords);
   }
   const salary = Number(data.cook.salary) || 0;
   const total = totalHours * salary;
@@ -156,32 +151,37 @@ function getDayStatus(dayRecords){
   return 'off';
 }
 
-function openStatusModal(cookId,dateStr,dayRecords){
+function openStatusModal(cookId,dateStr){
   tempStatusData={cookId,dateStr};
   document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
-
-  const futureBtns = document.getElementById('futureBtns');
-  const todayBtns = document.getElementById('todayBtns');
-  futureBtns.innerHTML = ''; todayBtns.innerHTML = '';
+  const btnContainer = document.getElementById('modalButtons');
+  btnContainer.innerHTML = '';
 
   if(dateStr < TODAY){
     document.getElementById('statusHint').innerText = 'Прошлый день. Только просмотр. Изменить нельзя.';
   }
   else if(dateStr === TODAY){
     document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
-    todayBtns.innerHTML = `
-      <button class="status-btn" style="background:var(--in)" onclick="setStatus('in')">Приход</button>
-      <button class="status-btn" style="background:var(--out)" onclick="setStatus('out')">Уход</button>
-      <button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>`;
+    createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
+    createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
+    createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick'));
   }
-  else { // БУДУЩЕЕ
+  else {
     document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
-    futureBtns.innerHTML = `
-      <button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Рабочий день</button>
-      <button class="status-btn" style="background:var(--off)" onclick="setStatus('off')">Выходной</button>
-      <button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>`;
+    createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
+    createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off'));
+    createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
   }
   document.getElementById('statusModal').classList.add('show')
+}
+
+function createBtn(container, text, color, onClick){
+  const btn = document.createElement('button');
+  btn.className = 'status-btn';
+  btn.style.background = color;
+  btn.innerText = text;
+  btn.onclick = onClick; // теперь точно сработает
+  container.appendChild(btn);
 }
 
 async function loadData(){
