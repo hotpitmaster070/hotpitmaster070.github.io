@@ -1,6 +1,6 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit KITCHEN - Шеф</title><style>
-:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--in:#06b6d4;--out:#ec4899;--danger:#ef4444;--radius:20px}
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--in:#06b6d4;--out:#ec4899;--off:#555;--danger:#ef4444}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh}
 .app{display:flex;min-height:100vh}
@@ -27,9 +27,9 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .day-header{font-size:11px;color:var(--muted);text-align:center;font-weight:600;padding-bottom:4px}
 .day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600;pointer-events:auto; touch-action:manipulation}
 .day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}
-.day.in{background:var(--in);color:#000}.day.out{background:var(--out);color:#fff}
+.day.in{background:var(--in);color:#000}.day.out{background:var(--out);color:#fff}.day.off{background:var(--off);color:#aaa}
 .day.today{border:2px solid var(--accent)}
-.day.locked{background:#111;color:#444;cursor:not-allowed}
+.day.past{opacity:0.4;cursor:not-allowed}
 .total{margin-top:16px;padding-top:16px;border-top:1px solid #333;font-weight:700;font-size:15px;color:var(--accent)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
 .modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
@@ -40,6 +40,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 .ok{color:#22c55e}.err{color:var(--danger);padding:20px}
 .link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
+.badge{font-size:9px;padding:2px 4px;border-radius:4px;margin-top:2px}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-sidebar{display:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -65,13 +66,10 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
 </div></div>
 
-<div class="modal" id="statusModal"><div class="modal-card"><h3>Отметка на <span id="statusDate"></span></h3>
+<div class="modal" id="statusModal"><div class="modal-card"><h3>На <span id="statusDate"></span></h3>
 <div id="statusHint" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
-<button class="status-btn" id="btnIn" style="background:var(--in)" onclick="setStatus('in')">Приход</button>
-<button class="status-btn" id="btnOut" style="background:var(--out)" onclick="setStatus('out')">Уход</button>
-<button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>
-<button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>
-<button class="status-btn" style="background:var(--card-2)" onclick="setStatus('off')">Выходной</button>
+<div id="futureBtns"></div>
+<div id="todayBtns"></div>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
 
 <script type="module">
@@ -106,21 +104,18 @@ async function genInvite(){
 document.getElementById('genInviteBtn').onclick=genInvite;
 
 async function setStatus(status){
-  const {cookId, dateStr, dayRecords} = tempStatusData;
+  const {cookId, dateStr} = tempStatusData;
   if(!cookId) return alert('Ошибка: не выбран повар');
-  
-  // ПРОВЕРКА ЛОГИКИ
-  const hasIn = dayRecords.find(d=>d.status==='in');
-  const hasOut = dayRecords.find(d=>d.status==='out');
-  
-  if(status==='out' &&!hasIn) return alert('Сначала поставь Приход');
-  if(status==='in' && hasIn &&!hasOut) return alert('Сначала поставь Уход');
-  
   document.getElementById('statusModal').classList.remove('show');
   const time = new Date().toTimeString().slice(0,5);
-  try{
+
+  // Для прошлых дней удаляем запись если ставим выходной
+  if(status==='off'){
+    const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
+    if(existing) await supabase.from('attendance').delete().eq('id',existing.id);
+  } else {
     await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status,time})
-  }catch(e){alert('Ошибка: '+e.message)}
+  }
   loadData()
 }
 window.setStatus = setStatus;
@@ -143,7 +138,7 @@ function renderTotal(cookId){
   for(let i=1;i<=daysInMonth;i++){
     const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
     const dayRecords = data.days.filter(d=>d.work_date===dateStr);
-    totalHours += calcHours(dayRecords);
+    if(dateStr <= TODAY) totalHours += calcHours(dayRecords); // считаем только факт
   }
   const salary = Number(data.cook.salary) || 0;
   const total = totalHours * salary;
@@ -152,36 +147,40 @@ function renderTotal(cookId){
 }
 
 function getDayStatus(dayRecords){
-  if(dayRecords.find(d=>d.status==='sick')) return 'sick';
-  if(dayRecords.find(d=>d.status==='vac')) return 'vac';
   if(dayRecords.find(d=>d.status==='in')) return 'in';
   if(dayRecords.find(d=>d.status==='out')) return 'out';
+  if(dayRecords.find(d=>d.status==='sick')) return 'sick';
+  if(dayRecords.find(d=>d.status==='vac')) return 'vac';
+  if(dayRecords.find(d=>d.status==='work')) return 'work';
+  if(dayRecords.find(d=>d.status==='off')) return 'off';
   return 'off';
 }
 
 function openStatusModal(cookId,dateStr,dayRecords){
-  // БЛОКИРУЕМ ПРОШЛОЕ И БУДУЩЕЕ
-  if(dateStr!== TODAY){
-    alert('Редактировать можно только сегодня. Прошлые дни закрыты.');
-    return;
-  }
-  
-  tempStatusData={cookId,dateStr,dayRecords};
+  tempStatusData={cookId,dateStr};
   document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
-  
-  // УМНЫЕ КНОПКИ
-  const hasIn = dayRecords.find(d=>d.status==='in');
-  const hasOut = dayRecords.find(d=>d.status==='out');
-  
-  document.getElementById('btnIn').disabled = hasIn &&!hasOut;
-  document.getElementById('btnOut').disabled =!hasIn || hasOut;
-  
-  let hint = '';
-  if(!hasIn) hint = 'Нажми "Приход" когда повар зашел';
-  else if(!hasOut) hint = `Пришел в ${hasIn.time}. Нажми "Уход" когда уйдет`;
-  else hint = `Отработал: ${calcHours(dayRecords).toFixed(1)} ч`;
-  document.getElementById('statusHint').innerText = hint;
-  
+
+  const futureBtns = document.getElementById('futureBtns');
+  const todayBtns = document.getElementById('todayBtns');
+  futureBtns.innerHTML = ''; todayBtns.innerHTML = '';
+
+  if(dateStr < TODAY){
+    document.getElementById('statusHint').innerText = 'Прошлый день. Только просмотр. Изменить нельзя.';
+  }
+  else if(dateStr === TODAY){
+    document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
+    todayBtns.innerHTML = `
+      <button class="status-btn" style="background:var(--in)" onclick="setStatus('in')">Приход</button>
+      <button class="status-btn" style="background:var(--out)" onclick="setStatus('out')">Уход</button>
+      <button class="status-btn" style="background:var(--sick)" onclick="setStatus('sick')">Больничный</button>`;
+  }
+  else { // БУДУЩЕЕ
+    document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
+    futureBtns.innerHTML = `
+      <button class="status-btn" style="background:var(--work)" onclick="setStatus('work')">Рабочий день</button>
+      <button class="status-btn" style="background:var(--off)" onclick="setStatus('off')">Выходной</button>
+      <button class="status-btn" style="background:var(--vac)" onclick="setStatus('vac')">Отпуск</button>`;
+  }
   document.getElementById('statusModal').classList.add('show')
 }
 
@@ -194,14 +193,14 @@ async function loadData(){
     if(!prof ||!prof.restaurant_id) throw new Error('У профиля нет restaurant_id');
     me = prof; myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
-    
+
     const {data:povara, error:povErr}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
     if(povErr) throw povErr;
 
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
     const {data:attendance, error:attErr}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
     if(attErr) throw attErr;
-    
+
     povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
 
     if(povaraCache.length === 0){
@@ -229,13 +228,13 @@ async function loadData(){
         const dayRecords=attendanceCache[p.id]?.days.filter(d=>d.work_date===dateStr)||[];
         const status=getDayStatus(dayRecords);
         const isToday = dateStr === TODAY? 'today' : '';
-        const isLocked = dateStr!== TODAY? 'locked' : '';
-        daysHtml+=`<div class="day ${status} ${isToday} ${isLocked}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
+        const isPast = dateStr < TODAY? 'past' : '';
+        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
       }
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
-    document.querySelectorAll('.day:not(.locked)').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.id,d.dataset.date, attendanceCache[d.dataset.id].days.filter(x=>x.work_date===d.dataset.date))));
+    document.querySelectorAll('.day:not(.past)').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.id,d.dataset.date)));
     povaraCache.forEach(p=>renderTotal(p.id));
     updateMonthLabels();
   }catch(e){
