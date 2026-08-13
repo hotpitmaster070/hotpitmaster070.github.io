@@ -106,15 +106,30 @@ async function setStatus(status){
   document.getElementById('statusModal').classList.remove('show');
   const time = new Date().toTimeString().slice(0,5);
 
-  if(status==='off'){
-    const existing=attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
-    if(existing) await supabase.from('attendance').delete().eq('id',existing.id);
-  } else {
-    await supabase.from('attendance').insert({cook_id:cookId,restaurant_id:myRestaurantId,work_date:dateStr,status,time})
+  try{
+    // 1. Сначала удаляем все записи за этот день для этого повара
+    const existing = attendanceCache[cookId]?.days.filter(d=>d.work_date===dateStr);
+    if(existing && existing.length > 0){
+      for(const rec of existing){
+        await supabase.from('attendance').delete().eq('id',rec.id);
+      }
+    }
+
+    // 2. Если это не "Выходной", то создаем новую запись
+    if(status!== 'off'){
+      await supabase.from('attendance').insert({
+        cook_id:cookId,
+        restaurant_id:myRestaurantId,
+        work_date:dateStr,
+        status,
+        time
+      })
+    }
+  }catch(e){
+    alert('Ошибка: '+e.message)
   }
   loadData()
 }
-
 function calcHours(dayRecords){
   const ins = dayRecords.filter(d=>d.status==='in').map(d=>d.time).sort();
   const outs = dayRecords.filter(d=>d.status==='out').map(d=>d.time).sort();
