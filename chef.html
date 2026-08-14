@@ -25,9 +25,10 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),t
 input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
 .day-header{font-size:11px;color:var(--muted);text-align:center;font-weight:600;padding-bottom:4px}
-.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600}
+.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:600;pointer-events:auto; touch-action:manipulation;position:relative}
 .day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}
 .day.in{background:var(--in);color:#000}.day.out{background:var(--out);color:#fff}.day.off{background:var(--off);color:#aaa}
+.day.done{background:linear-gradient(135deg, var(--in) 50%, var(--out) 50%);color:#000}
 .day.today{border:2px solid var(--accent)}
 .day.past{opacity:0.4;cursor:not-allowed}
 .total{margin-top:16px;padding-top:16px;border-top:1px solid #333;font-weight:700;font-size:15px;color:var(--accent)}
@@ -45,10 +46,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 </head><body><div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header"><h2 style="color:var(--accent)">HotPit KITCHEN</h2><button class="close-sidebar" id="closeSidebarBtn">×</button></div>
+<div id="sidebarChef" class="sidebar-chef" style="display:none"><div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
 <div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
 <nav class="menu"><button class="tab-btn active" data-tab="personal">👨‍🍳 Команда Кухни</button><button class="tab-btn" data-tab="tabel">📋 Табель</button><button id="logoutBtn">Выйти</button></nav></aside>
 <main class="content">
-  <div class="topbar"><button class="burger" id="burgerBtn">☰</button><div><div style="color:var(--accent);font-size:20px;font-weight:800">HotPit KITCHEN</div></div><button class="btn" id="addBtn" style="width:auto;padding:12px 16px;flex-shrink:0">+ Пригласить</button></div>
+  <div class="topbar"><button class="burger" id="burgerBtn">☰</button><div><div style="color:var(--accent);font-size:20px;font-weight:800">HotPit KITCHEN</div><div style="font-size:13px"><span id="pageSubtitle"></span></div></div><button class="btn" id="addBtn" style="width:auto;padding:12px 16px;flex-shrink:0">+ Пригласить</button></div>
 <div id="tab-content">
 <div data-tab-content="personal"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
 <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
@@ -56,7 +58,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 
 <div class="modal" id="addModal"><div class="modal-card"><h3>Пригласить повара</h3>
 <input id="cookEmail" type="email" placeholder="Email повара">
-<select id="cookJob"><option>Су-шеф</option><option>Повар</option></select>
+<select id="cookJob"><option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option><option>Повар холодного цеха</option><option>Повар-универсал</option><option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option></select>
 <select id="cookSalaryType"><option value="hourly">Почасовая ₽/час</option><option value="daily">Фикс за день ₽/день</option></select>
 <input id="cookSalary" type="number" placeholder="Ставка">
 <button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
@@ -65,6 +67,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 </div></div>
 
 <div class="modal" id="statusModal"><div class="modal-card"><h3>На <span id="statusDate"></span></h3>
+<div id="statusHint" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
 <div id="modalButtons"></div>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
 
@@ -83,6 +86,7 @@ function updateMonthLabels(){document.getElementById('monthYearT').textContent=c
 document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
 document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
 document.getElementById('addBtn').onclick=()=>document.getElementById('addModal').classList.add('show');
+function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
 
 async function genInvite(){
   const email = document.getElementById('cookEmail').value.trim();
@@ -99,57 +103,114 @@ async function genInvite(){
 }
 document.getElementById('genInviteBtn').onclick=genInvite;
 
-async function setStatus(status){
-  const {cookId, dateStr} = tempStatusData;
+async function setStatus(action){
+  const {cookId, dateStr, record} = tempStatusData;
+  if(!cookId) return alert('Ошибка: не выбран повар');
   document.getElementById('statusModal').classList.remove('show');
-  const check_time = new Date().toTimeString().slice(0,5);
-  await supabase.from('attendance').insert({cook_id:cookId, restaurant_id:myRestaurantId, work_date:dateStr, status, check_time})
+  const now = new Date().toTimeString().slice(0,5);
+
+  const dataToUpsert = {
+    cook_id: cookId,
+    restaurant_id: myRestaurantId,
+    work_date: dateStr,
+   ...record
+  };
+
+  if(action === 'in') dataToUpsert.time_in = now;
+  if(action === 'out') dataToUpsert.time_out = now;
+  if(action === 'sick' || action === 'vac' || action === 'off') dataToUpsert.status = action;
+  if(action === 'work') dataToUpsert.status = 'work';
+
+  try{
+    const {error} = await supabase.from('attendance').upsert(dataToUpsert, {onConflict: 'cook_id,work_date'})
+    if(error) throw error;
+  }catch(e){ alert('Ошибка: '+e.message) }
   loadData()
 }
 
-function calcPay(cook, days){
+function calcHoursAndPay(cook, rec){
+    if(!rec || rec.status === 'off') return {hours: 0, pay: 0};
+    if(rec.status === 'sick' || rec.status === 'vac') return {hours: 0, pay: 0};
+
     const salary = Number(cook.salary) || 0;
+    let hours = 0;
+    if(rec.time_in && rec.time_out){
+        const inTime = new Date(`2000-01-01T${rec.time_in}:00`);
+        const outTime = new Date(`2000-01-01T${rec.time_out}:00`);
+        hours = (outTime - inTime) / 1000 / 60 / 60;
+        hours = hours > 0? hours : 0;
+    }
+
     if(cook.salary_type === 'daily'){
-        return days * salary; // Чистый фикс: 1 день = 1 ставка
+        if(hours === 0) return {hours: 0, pay: 0};
+        const baseHours = 8;
+        const hourlyRate = salary / baseHours;
+        const overtime = hours > baseHours? hours - baseHours : 0;
+        const pay = salary + (overtime * hourlyRate);
+        return {hours, pay};
     } else {
-        return days * 8 * salary; // Почасовая считаем как 8ч день
+        return {hours, pay: hours * salary};
     }
 }
 
 function renderTotal(cookId){
   const data=attendanceCache[cookId];if(!data)return;
-  const workDays = data.days.filter(d=>d.status==='in' || d.status==='work').length;
-  const total = calcPay(data.cook, workDays);
+  const year=currentDate.getFullYear(),month=currentDate.getMonth();
+  const daysInMonth = new Date(year,month+1,0).getDate();
+  let totalHours = 0, totalPay = 0;
+  for(let i=1;i<=daysInMonth;i++){
+    const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    const rec = data.days.find(d=>d.work_date===dateStr);
+    if(dateStr <= TODAY) {
+        const res = calcHoursAndPay(data.cook, rec);
+        totalHours += res.hours;
+        totalPay += res.pay;
+    }
+  }
   const el=document.getElementById(`total-${cookId}`);
-  if(el)el.textContent=`${workDays} дн = ${total.toLocaleString()}₽`
+  if(el)el.textContent=`${totalHours.toFixed(1)} ч = ${totalPay.toLocaleString()}₽`
 }
 
-function getDayStatus(dayRecords){
-  if(dayRecords.find(d=>d.status==='in')) return 'in';
-  if(dayRecords.find(d=>d.status==='out')) return 'out';
-  if(dayRecords.find(d=>d.status==='sick')) return 'sick';
-  if(dayRecords.find(d=>d.status==='vac')) return 'vac';
-  if(dayRecords.find(d=>d.status==='work')) return 'work';
-  return 'off';
+function getDayStatus(rec){
+  if(!rec) return 'off';
+  if(rec.status === 'sick') return 'sick';
+  if(rec.status === 'vac') return 'vac';
+  if(rec.status === 'off') return 'off';
+  if(rec.time_in && rec.time_out) return 'done';
+  if(rec.time_in) return 'in';
+  return 'work';
 }
 
 function openStatusModal(cookId,dateStr){
-  tempStatusData={cookId,dateStr};
+  const record = attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr) || {};
+  tempStatusData={cookId,dateStr, record};
   document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
-  const btnContainer = document.getElementById('modalButtons'); btnContainer.innerHTML = '';
-  if(dateStr === TODAY){
-    createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
-    createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
-  } else {
-    createBtn(btnContainer, 'Рабочий', 'var(--work)', () => setStatus('work'));
+  const btnContainer = document.getElementById('modalButtons');
+  btnContainer.innerHTML = '';
+  if(dateStr < TODAY){
+    document.getElementById('statusHint').innerText = 'Прошлый день. Только просмотр.';
+  }
+  else if(dateStr === TODAY){
+    document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
+    if(!record.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
+    if(record.time_in &&!record.time_out) createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
+    createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick'));
+  }
+  else {
+    document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
+    createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
     createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off'));
+    createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
   }
   document.getElementById('statusModal').classList.add('show')
 }
 
 function createBtn(container, text, color, onClick){
   const btn = document.createElement('button');
-  btn.className = 'status-btn'; btn.style.background = color; btn.innerText = text; btn.onclick = onClick;
+  btn.className = 'status-btn';
+  btn.style.background = color;
+  btn.innerText = text;
+  btn.onclick = onClick;
   container.appendChild(btn);
 }
 
@@ -157,37 +218,59 @@ async function loadData(){
   try{
     const {data:{user}} = await supabase.auth.getUser();
     if(!user) return location.href='/index.html';
-    let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+    let {data:prof, error:profErr} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+    if(profErr) throw profErr;
+    if(!prof ||!prof.restaurant_id) throw new Error('У профиля нет restaurant_id');
     me = prof; myRestaurantId=prof.restaurant_id;
     document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
 
-    const {data:povara}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    const {data:povara, error:povErr}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    if(povErr) throw povErr;
+
     const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
-    const {data:attendance}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    const {data:attendance, error:attErr}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    if(attErr) throw attErr;
 
     povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
 
+    if(povaraCache.length === 0){
+      document.getElementById('povaraList').innerHTML = '<div class="muted">Поваров пока нет. Нажми "+ Пригласить"</div>';
+      document.getElementById('tabelList').innerHTML = '<div class="muted">Добавь поваров чтобы увидеть табель</div>';
+      return;
+    }
+
     let povaraHTML = '';
-    povaraCache.forEach(p=>{povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div></div></div>`});
+    povaraCache.forEach(p=>{povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`});
     document.getElementById('povaraList').innerHTML = povaraHTML;
+    document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
 
     let tabelHTML = '';
     const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
     povaraCache.forEach(p=>{
-      let daysHtml=''; daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
-      const firstDay = new Date(year, month, 1).getDay(); const offset = firstDay === 0? 6 : firstDay - 1;
+      let daysHtml='';
+      daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
+      const firstDay = new Date(year, month, 1).getDay();
+      const offset = firstDay === 0? 6 : firstDay - 1;
       for(let k=0;k<offset;k++) daysHtml+=`<div></div>`;
       for(let i=0;i<days;i++){
-        const day=i+1; const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const dayRecords=attendanceCache[p.id]?.days.filter(d=>d.work_date===dateStr)||[];
-        const status=getDayStatus(dayRecords); const isToday = dateStr === TODAY? 'today' : ''; const isPast = dateStr < TODAY? 'past' : '';
-        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" onclick="openStatusModal('${p.id}','${dateStr}')">${day}</div>`
+        const day=i+1;
+        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const rec=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr);
+        const status=getDayStatus(rec);
+        const isToday = dateStr === TODAY? 'today' : '';
+        const isPast = dateStr < TODAY? 'past' : '';
+        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" data-id="${p.id}" data-date="${dateStr}">${day}</div>`
       }
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
     document.getElementById('tabelList').innerHTML=tabelHTML;
-    povaraCache.forEach(p=>renderTotal(p.id)); updateMonthLabels();
-  }catch(e){ console.error('ОШИБКА:', e); }
+    document.querySelectorAll('.day:not(.past)').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.id,d.dataset.date)));
+    povaraCache.forEach(p=>renderTotal(p.id));
+    updateMonthLabels();
+  }catch(e){
+    console.error('ОШИБКА:', e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
 }
-loadData(); window.openStatusModal = openStatusModal;
+loadData();
 </script></body></html>
