@@ -4,13 +4,38 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit | Повар</title>
 <link rel="stylesheet" href="./css/style.css">
+<style>
+.layout{display:flex;min-height:100vh} 
+.sidebar{width:220px;background:#111;color:#fff;padding:16px} 
+.sidebar button{width:100%;text-align:left;margin:8px 0;padding:10px;background:transparent;border:0;color:#fff;cursor:pointer}
+.sidebar button.active{background:#222;border-radius:8px}
+.content{flex:1;padding:20px} 
+.request-card{border:1px solid #ddd;padding:12px;border-radius:8px;margin-bottom:10px}
+.badge{background:red;color:#fff;border-radius:50%;padding:2px 6px;font-size:12px}
+</style>
 </head>
 <body>
-<div class="auth-wrap">
-  <h1 id="name">Загрузка...</h1>
-  <p id="status">Проверяем авторизацию...</p>
-  <button id="btn" class="btn-primary" style="display:none" onclick="toggleShift()">...</button>
-  <div id="msg" style="margin-top:12px;font-size:13px"></div>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>HotPit</h2>
+    <button id="btn-shifts" class="active" onclick="showTab('shifts')">📅 Мой табель</button>
+    <button id="btn-requests" onclick="showTab('requests')">🔔 Запросы <span id="badge" class="badge" style="display:none">0</span></button>
+    <button onclick="logout()">🚪 Выйти</button>
+  </aside>
+
+  <main class="content">
+    <div id="tab-shifts">
+      <h1 id="name">Загрузка...</h1>
+      <p id="status">Проверяем...</p>
+      <button id="btn" class="btn-primary" style="display:none" onclick="toggleShift()">...</button>
+      <div id="msg" style="margin-top:12px;font-size:13px"></div>
+    </div>
+
+    <div id="tab-requests" style="display:none">
+      <h1>Запросы на исправление</h1>
+      <div id="requests-list">Загрузка...</div>
+    </div>
+  </main>
 </div>
 
 <script type="module">
@@ -24,11 +49,22 @@ async function init(){
   const {data:{user}} = await supabase.auth.getUser();
   if(!user) return location.href='./index.html';
   cookId = user.id;
-  const {data:cook, error} = await supabase.from('profiles').select('full_name, restaurant_id, role').eq('id', cookId).eq('is_active', true).single();
-  if(error ||!cook){ document.getElementById('name').innerHTML='<div style="color:#f87171">Профиль не найден</div>'; return }
-  if(cook.role!== 'cook'){ document.getElementById('name').innerHTML='<div style="color:#f87171">У вас нет доступа</div>'; return }
+  const {data:cook} = await supabase.from('profiles').select('full_name, restaurant_id, role').eq('id', cookId).eq('is_active', true).single();
+  if(!cook || cook.role!== 'cook'){ document.getElementById('name').innerHTML='<div style="color:#f87171">Нет доступа</div>'; return }
   restaurantId = cook.restaurant_id;
   document.getElementById('name').textContent = cook.full_name;
+  loadShift();
+  loadRequests();
+}
+
+function showTab(tab){
+  document.querySelectorAll('.content > div').forEach(d=>d.style.display='none');
+  document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).style.display='block';
+  document.getElementById('btn-'+tab).classList.add('active');
+}
+
+async function loadShift(){
   const {data:shift} = await supabase.from('attendance').select('id').eq('cook_id', cookId).eq('work_date', today).eq('status', 'work').maybeSingle();
   updateBtn(!!shift);
 }
@@ -57,12 +93,37 @@ window.toggleShift = async()=>{
     if(!onShift){
       await supabase.from('attendance').insert({ cook_id: cookId, restaurant_id: restaurantId, work_date: today, status: 'work' })
     }else{
-      await supabase.from('attendance').delete().eq('cook_id', cookId).eq('work_date', today)
+      await supabase.from('attendance').update({time_out: new Date().toTimeString().split(' ')[0]}).eq('cook_id', cookId).eq('work_date', today)
     }
-    updateBtn(!onShift);
+    loadShift();
     msg.textContent = '';
   }catch(e){ msg.innerHTML = `<div style="color:#f87171">${e.message}</div>`; }
   btn.disabled=false;
 }
+
+async function loadRequests(){
+  const {data:reqs} = await supabase.from('attendance_requests').select('*').eq('cook_id', cookId).eq('status','pending');
+  const list = document.getElementById('requests-list');
+  const badge = document.getElementById('badge');
+  if(!reqs || reqs.length===0){ list.innerHTML='Нет новых запросов'; badge.style.display='none'; return }
+  badge.style.display='inline'; badge.textContent=reqs.length;
+  list.innerHTML = reqs.map(r=>`
+    <div class="request-card">
+      <b>Дата:</b> ${r.work_date || '?' }<br>
+      <b>Что хотят:</b> ${r.new_status}<br>
+      <b>Причина:</b> ${r.reason}<br><br>
+      <button onclick="approveRequest('${r.id}','approved')">Одобрить</button>
+      <button onclick="approveRequest('${r.id}','rejected')">Отклонить</button>
+    </div>
+  `).join('');
+}
+
+window.approveRequest = async(id, status)=>{
+  await supabase.from('attendance_requests').update({status}).eq('id',id);
+  loadRequests();
+  alert(status==='approved'? 'Одобрено' : 'Отклонено');
+}
+
+window.logout = async()=>{ await supabase.auth.signOut(); location.href='./index.html'; }
 init()
 </script></body></html>
