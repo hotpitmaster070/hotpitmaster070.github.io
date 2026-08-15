@@ -317,7 +317,7 @@ async function loadData(){
         const status=getDayStatus(rec);
         const isToday = dateStr === TODAY? 'today' : '';
         const isPast = dateStr < TODAY? 'past' : '';
-        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" onclick="openStatusModal(this.dataset.cook, this.dataset.date)" data-cook="${p.id}" data-date="${dateStr}">${day}</div>`
+        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" data-cook="${p.id}" data-date="${dateStr}">${day}</div>`
       }
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
