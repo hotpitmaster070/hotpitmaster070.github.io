@@ -216,7 +216,8 @@ function openStatusModal(cookId,dateStr){
     createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
   }
   else if(status === 'done'){
-    document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
+  document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
+  createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
   }
   else if(status === 'sick' || status === 'vac'){
     document.getElementById('statusHint').innerText = 'Уже отмечен как Больничный/Отпуск.';
