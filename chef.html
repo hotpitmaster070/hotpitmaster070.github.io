@@ -74,9 +74,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <div class="modal" id="requestModal"><div class="modal-card"><h3>Запрос для <span id="requestCookName"></span></h3>
 <p class="muted">Дата: <span id="requestDate"></span></p>
 <select id="reqStatus"><option value="work">Был на работе</option><option value="sick">Больничный</option><option value="vac">Отпуск</option><option value="off">Выходной</option></select>
-<input id="reqTimeIn" type="time" placeholder="Время прихода">
-<input id="reqTimeOut" type="time" placeholder="Время ухода">
-<input id="reqReason" type="text" placeholder="Причина: Ошибка в табеле">
+<label class="muted" style="font-size:12px;margin-top:8px;">Время прихода</label>
+<input id="reqTimeIn" type="time">
+<label class="muted" style="font-size:12px;margin-top:8px;">Время ухода</label>
+<input id="reqTimeOut" type="time">
+<input id="reqReason" type="text" placeholder="Причина: Ошибка в табеле" style="margin-top:8px;">
 <button class="btn" id="sendRequestBtn">Отправить запрос повару</button>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('requestModal').classList.remove('show')">Отмена</button>
 </div></div>
