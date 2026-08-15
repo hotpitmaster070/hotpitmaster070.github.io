@@ -211,7 +211,7 @@ function openStatusModal(cookId,dateStr){
   const status = getDayStatus(record);
 
   if(status === 'off' || status === 'work'){
-    if(!record.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
+    if(!record?.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
     createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick'));
     createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
   }
@@ -219,13 +219,13 @@ function openStatusModal(cookId,dateStr){
     createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
   }
   else if(status === 'done'){
-  document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
-  createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
+    document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
+    createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
   }
   else if(status === 'sick' || status === 'vac'){
     document.getElementById('statusHint').innerText = 'Уже отмечен как Больничный/Отпуск.';
   }
-}
+  }
 else {
   document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
   createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
