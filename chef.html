@@ -227,6 +227,34 @@ function createBtn(container, text, color, onClick){
   container.appendChild(btn);
 }
 
+function openRequestForm(cookId, dateStr, record){
+  document.getElementById('statusModal').classList.remove('show');
+  const cookName = povaraCache.find(p=>p.id===cookId)?.full_name || 'Повару';
+  document.getElementById('requestCookName').textContent = cookName;
+  document.getElementById('requestDate').textContent = new Date(dateStr).toLocaleDateString('ru');
+  tempStatusData = {cookId, dateStr, attendance_id: record.id};
+  document.getElementById('requestModal').classList.add('show');
+}
+
+document.getElementById('sendRequestBtn').onclick = async()=>{
+  const {cookId, dateStr, attendance_id} = tempStatusData;
+  const payload = {
+    attendance_id: attendance_id,
+    cook_id: cookId,
+    restaurant_id: myRestaurantId,
+    requested_by: me.id,
+    work_date: dateStr,
+    new_status: document.getElementById('reqStatus').value,
+    new_time_in: document.getElementById('reqTimeIn').value || null,
+    new_time_out: document.getElementById('reqTimeOut').value || null,
+    reason: document.getElementById('reqReason').value
+  };
+  const {error} = await supabase.from('attendance_requests').insert(payload);
+  if(error) return alert('Ошибка: '+error.message);
+  document.getElementById('requestModal').classList.remove('show');
+  alert('Запрос отправлен повару');
+  }
+  
 async function loadData(){
   try{
     const {data:{user}} = await supabase.auth.getUser();
