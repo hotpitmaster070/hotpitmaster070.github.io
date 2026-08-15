@@ -194,9 +194,10 @@ function getDayStatus(rec){
 }
 
 function openStatusModal(cookId,dateStr){
-  const record = attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr) || {};
-  tempStatusData={cookId,dateStr, record};
-  document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
+  if(!cookId){ alert('Ошибка: не выбран повар'); return; }
+  const record = attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
+  tempStatusData={cookId, dateStr, record};
+  document.getElementById('statusDate').innerText = new Date(dateStr).toLocaleDateString('ru-RU');
   const btnContainer = document.getElementById('modalButtons');
   btnContainer.innerHTML = '';
   const cookName = povaraCache.find(p=>p.id===cookId)?.full_name || 'Повару';
