@@ -187,8 +187,11 @@ function openStatusModal(cookId,dateStr){
   document.getElementById('statusDate').textContent=new Date(dateStr).toLocaleDateString('ru');
   const btnContainer = document.getElementById('modalButtons');
   btnContainer.innerHTML = '';
+  const cookName = povaraCache.find(p=>p.id===cookId)?.full_name || 'Повару';
+
   if(dateStr < TODAY){
-    document.getElementById('statusHint').innerText = 'Прошлый день. Только просмотр.';
+    document.getElementById('statusHint').innerText = 'Прошлый день. Изменение только через запрос повару.';
+    createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
   }
   else if(dateStr === TODAY){
     document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
