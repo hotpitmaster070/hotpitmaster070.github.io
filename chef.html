@@ -225,7 +225,7 @@ function openStatusModal(cookId,dateStr){
   else if(status === 'sick' || status === 'vac'){
   document.getElementById('statusHint').innerText = 'Больничный/Отпуск. Изменить можно через запрос.';
   createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
-            }
+            
   }
   }
 else {
