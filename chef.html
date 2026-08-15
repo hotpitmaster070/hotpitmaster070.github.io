@@ -71,6 +71,16 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <div id="modalButtons"></div>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
 
+  <div class="modal" id="requestModal"><div class="modal-card"><h3>Запрос для <span id="requestCookName"></span></h3>
+<p class="muted">Дата: <span id="requestDate"></span></p>
+<select id="reqStatus"><option value="work">Был на работе</option><option value="sick">Больничный</option><option value="vac">Отпуск</option><option value="off">Выходной</option></select>
+<input id="reqTimeIn" type="time" placeholder="Время прихода">
+<input id="reqTimeOut" type="time" placeholder="Время ухода">
+<input id="reqReason" type="text" placeholder="Причина: Ошибка в табеле">
+<button class="btn" id="sendRequestBtn">Отправить запрос повару</button>
+<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('requestModal').classList.remove('show')">Отмена</button>
+</div></div>
+  
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
