@@ -204,18 +204,31 @@ function openStatusModal(cookId,dateStr){
     createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
   }
   else if(dateStr === TODAY){
-    document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
+  document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
+  const status = getDayStatus(record);
+
+  if(status === 'off' || status === 'work'){
     if(!record.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
-    if(record.time_in &&!record.time_out) createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
     createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick'));
-  }
-  else {
-    document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
-    createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
-    createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off'));
     createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
   }
-  document.getElementById('statusModal').classList.add('show')
+  else if(status === 'in'){
+    createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
+  }
+  else if(status === 'done'){
+    document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
+  }
+  else if(status === 'sick' || status === 'vac'){
+    document.getElementById('statusHint').innerText = 'Уже отмечен как Больничный/Отпуск.';
+  }
+}
+else {
+  document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
+  createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
+  createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off'));
+  createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
+}
+document.getElementById('statusModal').classList.add('show')
 }
 
 function createBtn(container, text, color, onClick){
