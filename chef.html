@@ -206,19 +206,51 @@ function openStatusModal(cookId,dateStr){
   const record = attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
   tempStatusData={cookId, dateStr, record};
   document.getElementById('statusDate').innerText = new Date(dateStr).toLocaleDateString('ru-RU');
-  const btnContainer = document.getElementById('modalButtons'); btnContainer.innerHTML = '';
-  if(dateStr < TODAY){ document.getElementById('statusHint').innerText = 'Прошлый день. Изменение только через запрос повару.'; createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record)); }
-  else if(dateStr === TODAY){ document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.'; const status = getDayStatus(record);
-  if(status === 'off' || status === 'work'){ if(!record?.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in')); createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick')); createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac')); }
-  else if(status === 'in'){ createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out')); }
-  else if(status === 'done'){ document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.'; createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record)); }
-  else if(status === 'sick' || status === 'vac'){ document.getElementById('statusHint').innerText = 'Больничный/Отпуск. Изменить можно через запрос.'; createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record)); } }
-  else { document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.'; createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work')); createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off')); createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac')); }
+  const btnContainer = document.getElementById('modalButtons');
+  btnContainer.innerHTML = '';
+  const cookName = povaraCache.find(p=>p.id===cookId)?.full_name || 'Повару';
+
+  if(dateStr < TODAY){
+    document.getElementById('statusHint').innerText = 'Прошлый день. Изменение только через запрос повару.';
+    createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
+  }
+  else if(dateStr === TODAY){
+    document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
+    const status = getDayStatus(record);
+
+    if(status === 'off' || status === 'work'){
+      if(!record?.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
+      createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick'));
+      createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
+    }
+    else if(status === 'in'){
+      createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
+    }
+    else if(status === 'done'){
+      document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
+      createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
+    }
+    else if(status === 'sick' || status === 'vac'){
+      document.getElementById('statusHint').innerText = 'Больничный/Отпуск. Изменить можно через запрос.';
+      createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
+    }
+  }
+  else {
+    document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
+    createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
+    createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off'));
+    createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
+  }
   document.getElementById('statusModal').classList.add('show')
 }
 
 function createBtn(container, text, color, onClick){
-  const btn = document.createElement('button'); btn.className = 'status-btn'; btn.style.background = color; btn.innerText = text; btn.onclick = onClick; container.appendChild(btn);
+  const btn = document.createElement('button');
+  btn.className = 'status-btn';
+  btn.style.background = color;
+  btn.innerText = text;
+  btn.onclick = onClick;
+  container.appendChild(btn);
 }
 
 function openRequestForm(cookId, dateStr, record){
@@ -232,4 +264,82 @@ function openRequestForm(cookId, dateStr, record){
 
 document.getElementById('sendRequestBtn').onclick = async()=>{
   const {cookId, dateStr, attendance_id} = tempStatusData;
-  const payload = { attendance_id: attendance_id, cook_id: cookId, restaurant_id: myRestaurantId, requested_by: me.id, work_date: dateStr, new_status: document.getElementById('reqStatus').value, new_time_in: document.getElementById('reqTimeIn').value || null, new_time_out: document.getElementById('reqTimeOut').value || null, reason: document.ge
+  const payload = {
+    attendance_id: attendance_id,
+    cook_id: cookId,
+    restaurant_id: myRestaurantId,
+    requested_by: me.id,
+    work_date: dateStr,
+    new_status: document.getElementById('reqStatus').value,
+    new_time_in: document.getElementById('reqTimeIn').value || null,
+    new_time_out: document.getElementById('reqTimeOut').value || null,
+    reason: document.getElementById('reqReason').value
+  };
+  const {error} = await supabase.from('attendance_requests').insert(payload);
+  if(error) return alert('Ошибка: '+error.message);
+  document.getElementById('requestModal').classList.remove('show');
+  alert('Запрос отправлен повару');
+}
+  
+async function loadData(){
+  try{
+    const {data:{user}} = await supabase.auth.getUser();
+    if(!user) return location.href='/index.html';
+    let {data:prof, error:profErr} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+    if(profErr) throw profErr;
+    if(!prof ||!prof.restaurant_id) throw new Error('У профиля нет restaurant_id');
+    me = prof; myRestaurantId=prof.restaurant_id;
+    document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
+
+    await loadDashboard();
+
+    const {data:povara, error:povErr}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    if(povErr) throw povErr;
+
+    const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
+    const {data:attendance, error:attErr}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
+    if(attErr) throw attErr;
+
+    povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
+
+    if(povaraCache.length === 0){
+      document.getElementById('povaraList').innerHTML = '<div class="muted">Поваров пока нет. Нажми "+ Пригласить"</div>';
+      document.getElementById('tabelList').innerHTML = '<div class="muted">Добавь поваров чтобы увидеть табель</div>';
+      return;
+    }
+
+    let povaraHTML = '';
+    povaraCache.forEach(p=>{povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`});
+    document.getElementById('povaraList').innerHTML = povaraHTML;
+    document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
+
+    let tabelHTML = '';
+    const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+    povaraCache.forEach(p=>{
+      let daysHtml='';
+      daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
+      const firstDay = new Date(year, month, 1).getDay();
+      const offset = firstDay === 0? 6 : firstDay - 1;
+      for(let k=0;k<offset;k++) daysHtml+=`<div></div>`;
+      for(let i=0;i<days;i++){
+        const day=i+1;
+        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const rec=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr);
+        const status=getDayStatus(rec);
+        const isToday = dateStr === TODAY? 'today' : '';
+        const isPast = dateStr < TODAY? 'past' : '';
+        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" data-cook="${p.id}" data-date="${dateStr}">${day}</div>`
+      }
+      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
+    });
+    document.getElementById('tabelList').innerHTML=tabelHTML;
+    document.querySelectorAll('.day').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.cook,d.dataset.date)));
+    povaraCache.forEach(p=>renderTotal(p.id));
+    updateMonthLabels();
+  }catch(e){
+    console.error('ОШИБКА:', e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
+}
+loadData();
+</script></body></html>
