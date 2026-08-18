@@ -49,7 +49,7 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <div id="sidebarChef" class="sidebar-chef" style="display:none"><div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
 <div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
 <nav class="menu">
-  <button class="tab-btn active" data-tab="dashboard">🏠 Главная</button> <-- ДОБАВИЛ
+  <button class="tab-btn active" data-tab="dashboard">🏠 Главная</button>
   <button class="tab-btn" data-tab="personal">👨‍🍳 Команда Кухни</button>
   <button class="tab-btn" data-tab="tabel">📋 Табель</button>
   <button id="logoutBtn">Выйти</button>
@@ -58,15 +58,15 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <div class="topbar"><button class="burger" id="burgerBtn">☰</button><div><div style="color:var(--accent);font-size:20px;font-weight:800">HotPit KITCHEN</div><div style="font-size:13px"><span id="pageSubtitle"></span></div></div><button class="btn" id="addBtn" style="width:auto;padding:12px 16px;flex-shrink:0">+ Пригласить</button></div>
 <div id="tab-content">
 
-<div data-tab-content="dashboard"> <-- ДОБАВИЛ ЦЕЛЫЙ БЛОК
+<div data-tab-content="dashboard">
   <h3 style="margin-bottom:20px">Сегодня на кухне</h3>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-    <div class="povar-card" onclick="switchTab('personal')" style="cursor:pointer">
+    <div class="povar-card" onclick="document.querySelector('[data-tab=personal]').click()" style="cursor:pointer">
       <h4>👥 Команда</h4>
       <b style="font-size:28px" id="dTeam">0</b> <span class="muted">человек</span>
       <div class="muted" id="dTeamStatus" style="font-size:12px;margin-top:4px">Загрузка...</div>
     </div>
-    <div class="povar-card" onclick="switchTab('tabel')" style="cursor:pointer">
+    <div class="povar-card" onclick="document.querySelector('[data-tab=tabel]').click()" style="cursor:pointer">
       <h4>📋 Табель</h4>
       <b style="font-size:28px" id="dOpoz">0</b> <span class="muted">опоздали</span>
       <div class="muted" id="dTabelStatus" style="font-size:12px;margin-top:4px">За сегодня</div>
@@ -120,32 +120,21 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
-let currentTab='dashboard',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null; // поменял на dashboard
+let currentTab='dashboard',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null;
 function getLocalDateStr(d=new Date()){const tzOffset = d.getTimezoneOffset() * 60000;const localDate = new Date(d.getTime() - tzOffset);return localDate.toISOString().split('T')[0];}
 const TODAY = getLocalDateStr();
 document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
 document.getElementById('closeSidebarBtn').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
 document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html')
-
-function switchTab(tab){ // ДОБАВИЛ
-  currentTab=tab;
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-  document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');
-  document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');
-  loadData()
-}
-
-document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.tab)); // ПОМЕНЯЛ
-
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{currentTab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');loadData()});
 function updateMonthLabels(){document.getElementById('monthYearT').textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});}
 document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
 document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
 document.getElementById('addBtn').onclick=()=>document.getElementById('addModal').classList.add('show');
 function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
 
-async function genInvite(){ /*... твой код без изменений... */
+async function genInvite(){
   const email = document.getElementById('cookEmail').value.trim();
   const job = document.getElementById('cookJob').value;
   const salaryType = document.getElementById('cookSalaryType').value;
@@ -160,7 +149,7 @@ async function genInvite(){ /*... твой код без изменений... *
 }
 document.getElementById('genInviteBtn').onclick=genInvite;
 
-async function setStatus(action){ /*... твой код без изменений... */
+async function setStatus(action){
   const {cookId, dateStr, record} = tempStatusData;
   if(!cookId) return alert('Ошибка: не выбран повар');
   document.getElementById('statusModal').classList.remove('show');
@@ -175,7 +164,7 @@ async function setStatus(action){ /*... твой код без изменени�
   loadData()
 }
 
-function calcHoursAndPay(cook, rec){ /*... твой код без изменений... */
+function calcHoursAndPay(cook, rec){
     if(!rec || rec.status === 'off') return {hours: 0, pay: 0};
     if(rec.status === 'sick' || rec.status === 'vac') return {hours: 0, pay: 0};
     const salary = Number(cook.salary) || 0; let hours = 0;
@@ -192,7 +181,7 @@ function calcHoursAndPay(cook, rec){ /*... твой код без изменен
     } else { return {hours, pay: hours * salary}; }
 }
 
-function renderTotal(cookId){ /*... твой код без изменений... */
+function renderTotal(cookId){
   const data=attendanceCache[cookId];if(!data)return;
   const year=currentDate.getFullYear(),month=currentDate.getMonth();
   const daysInMonth = new Date(year,month+1,0).getDate();
@@ -206,7 +195,7 @@ function renderTotal(cookId){ /*... твой код без изменений...
   if(el)el.textContent=`${totalHours.toFixed(1)} ч = ${totalPay.toLocaleString()}₽`
 }
 
-function getDayStatus(rec){ /*... твой код без изменений... */
+function getDayStatus(rec){
   if(!rec) return 'off'; if(rec.status === 'sick') return 'sick'; if(rec.status === 'vac') return 'vac';
   if(rec.status === 'off') return 'off'; if(rec.time_in && rec.time_out) return 'done';
   if(rec.time_in) return 'in'; return 'work';
@@ -217,51 +206,19 @@ function openStatusModal(cookId,dateStr){
   const record = attendanceCache[cookId]?.days.find(d=>d.work_date===dateStr);
   tempStatusData={cookId, dateStr, record};
   document.getElementById('statusDate').innerText = new Date(dateStr).toLocaleDateString('ru-RU');
-  const btnContainer = document.getElementById('modalButtons');
-  btnContainer.innerHTML = '';
-  const cookName = povaraCache.find(p=>p.id===cookId)?.full_name || 'Повару';
-
-  if(dateStr < TODAY){
-    document.getElementById('statusHint').innerText = 'Прошлый день. Изменение только через запрос повару.';
-    createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
-  }
-  else if(dateStr === TODAY){
-    document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.';
-    const status = getDayStatus(record);
-
-    if(status === 'off' || status === 'work'){
-      if(!record?.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in'));
-      createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick'));
-      createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
-    }
-    else if(status === 'in'){
-      createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out'));
-    }
-    else if(status === 'done'){
-      document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.';
-      createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
-    }
-    else if(status === 'sick' || status === 'vac'){
-      document.getElementById('statusHint').innerText = 'Больничный/Отпуск. Изменить можно через запрос.';
-      createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record));
-    }
-  }
-  else {
-    document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.';
-    createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work'));
-    createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off'));
-    createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac'));
-  }
+  const btnContainer = document.getElementById('modalButtons'); btnContainer.innerHTML = '';
+  if(dateStr < TODAY){ document.getElementById('statusHint').innerText = 'Прошлый день. Изменение только через запрос повару.'; createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record)); }
+  else if(dateStr === TODAY){ document.getElementById('statusHint').innerText = 'Сегодня. Отметка по факту.'; const status = getDayStatus(record);
+  if(status === 'off' || status === 'work'){ if(!record?.time_in) createBtn(btnContainer, 'Приход', 'var(--in)', () => setStatus('in')); createBtn(btnContainer, 'Больничный', 'var(--sick)', () => setStatus('sick')); createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac')); }
+  else if(status === 'in'){ createBtn(btnContainer, 'Уход', 'var(--out)', () => setStatus('out')); }
+  else if(status === 'done'){ document.getElementById('statusHint').innerText = 'Смена закрыта. Изменить можно только через запрос.'; createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record)); }
+  else if(status === 'sick' || status === 'vac'){ document.getElementById('statusHint').innerText = 'Больничный/Отпуск. Изменить можно через запрос.'; createBtn(btnContainer, 'Запросить исправление', 'var(--accent)', () => openRequestForm(cookId, dateStr, record)); } }
+  else { document.getElementById('statusHint').innerText = 'Будущее. Ставим план-график.'; createBtn(btnContainer, 'Рабочий день', 'var(--work)', () => setStatus('work')); createBtn(btnContainer, 'Выходной', 'var(--off)', () => setStatus('off')); createBtn(btnContainer, 'Отпуск', 'var(--vac)', () => setStatus('vac')); }
   document.getElementById('statusModal').classList.add('show')
 }
 
 function createBtn(container, text, color, onClick){
-  const btn = document.createElement('button');
-  btn.className = 'status-btn';
-  btn.style.background = color;
-  btn.innerText = text;
-  btn.onclick = onClick;
-  container.appendChild(btn);
+  const btn = document.createElement('button'); btn.className = 'status-btn'; btn.style.background = color; btn.innerText = text; btn.onclick = onClick; container.appendChild(btn);
 }
 
 function openRequestForm(cookId, dateStr, record){
@@ -275,82 +232,4 @@ function openRequestForm(cookId, dateStr, record){
 
 document.getElementById('sendRequestBtn').onclick = async()=>{
   const {cookId, dateStr, attendance_id} = tempStatusData;
-  const payload = {
-    attendance_id: attendance_id,
-    cook_id: cookId,
-    restaurant_id: myRestaurantId,
-    requested_by: me.id,
-    work_date: dateStr,
-    new_status: document.getElementById('reqStatus').value,
-    new_time_in: document.getElementById('reqTimeIn').value || null,
-    new_time_out: document.getElementById('reqTimeOut').value || null,
-    reason: document.getElementById('reqReason').value
-  };
-  const {error} = await supabase.from('attendance_requests').insert(payload);
-  if(error) return alert('Ошибка: '+error.message);
-  document.getElementById('requestModal').classList.remove('show');
-  alert('Запрос отправлен повару');
-}
-  
-async function loadData(){
-  try{
-    const {data:{user}} = await supabase.auth.getUser();
-    if(!user) return location.href='/index.html';
-    let {data:prof, error:profErr} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
-    if(profErr) throw profErr;
-    if(!prof ||!prof.restaurant_id) throw new Error('У профиля нет restaurant_id');
-    me = prof; myRestaurantId=prof.restaurant_id;
-    document.getElementById('restName').textContent=prof.restaurants?.name || 'Ресторан';
-
-    await loadDashboard();
-
-    const {data:povara, error:povErr}=await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
-    if(povErr) throw povErr;
-
-    const year=currentDate.getFullYear(),month=currentDate.getMonth(),days=new Date(year,month+1,0).getDate(),start=`${year}-${String(month+1).padStart(2,'0')}-01`,end=`${year}-${String(month+1).padStart(2,'0')}-${days}`;
-    const {data:attendance, error:attErr}=await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
-    if(attErr) throw attErr;
-
-    povaraCache=povara||[];attendanceCache={};povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:(attendance||[]).filter(a=>a.cook_id===p.id)});
-
-    if(povaraCache.length === 0){
-      document.getElementById('povaraList').innerHTML = '<div class="muted">Поваров пока нет. Нажми "+ Пригласить"</div>';
-      document.getElementById('tabelList').innerHTML = '<div class="muted">Добавь поваров чтобы увидеть табель</div>';
-      return;
-    }
-
-    let povaraHTML = '';
-    povaraCache.forEach(p=>{povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`});
-    document.getElementById('povaraList').innerHTML = povaraHTML;
-    document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
-
-    let tabelHTML = '';
-    const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-    povaraCache.forEach(p=>{
-      let daysHtml='';
-      daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
-      const firstDay = new Date(year, month, 1).getDay();
-      const offset = firstDay === 0? 6 : firstDay - 1;
-      for(let k=0;k<offset;k++) daysHtml+=`<div></div>`;
-      for(let i=0;i<days;i++){
-        const day=i+1;
-        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const rec=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr);
-        const status=getDayStatus(rec);
-        const isToday = dateStr === TODAY? 'today' : '';
-        const isPast = dateStr < TODAY? 'past' : '';
-        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" data-cook="${p.id}" data-date="${dateStr}">${day}</div>`
-      }
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-    });
-    document.getElementById('tabelList').innerHTML=tabelHTML;
-    document.querySelectorAll('.day').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.cook,d.dataset.date)));
-    povaraCache.forEach(p=>renderTotal(p.id));
-    updateMonthLabels();
-  }catch(e){
-    console.error('ОШИБКА:', e);
-    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
-  }
-}
-loadData();
-</script></body></html>
+  const payload = { attendance_id: attendance_id, cook_id: cookId, restaurant_id: myRestaurantId, requested_by: me.id, work_date: dateStr, new_status: document.getElementById('reqStatus').value, new_time_in: document.getElementById('reqTimeIn').value || null, new_time_out: document.getElementById('reqTimeOut').value || null, reason: document.ge
