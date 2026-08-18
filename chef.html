@@ -280,6 +280,22 @@ document.getElementById('sendRequestBtn').onclick = async()=>{
   document.getElementById('requestModal').classList.remove('show');
   alert('Запрос отправлен повару');
 }
+
+  async function loadDashboard(){
+  if(!myRestaurantId) return;
+  
+  // 1. Команда
+  const {count: teamCount} = await supabase.from('profiles').select('*',{count:'exact'}).eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+  document.getElementById('dTeam').textContent = teamCount || 0;
+  
+  const {count: sickCount} = await supabase.from('attendance').select('*',{count:'exact'}).eq('restaurant_id',myRestaurantId).eq('work_date',TODAY).eq('status','sick');
+  document.getElementById('dTeamStatus').textContent = sickCount > 0 ? `${sickCount} на больничном` : 'Все на месте';
+  
+  // 2. Опоздания сегодня
+  const {data: todayAtt} = await supabase.from('attendance').select('time_in').eq('restaurant_id',myRestaurantId).eq('work_date',TODAY).not('time_in', 'is', null);
+  const opozdali = todayAtt?.filter(a => a.time_in > '10:00').length || 0;
+  document.getElementById('dOpoz').textContent = opozdali;
+    }
   
 async function loadData(){
   try{
