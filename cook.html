@@ -1,129 +1,126 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit | Повар</title>
-<link rel="stylesheet" href="./css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отметка - HotPit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-.layout{display:flex;min-height:100vh} 
-.sidebar{width:220px;background:#111;color:#fff;padding:16px} 
-.sidebar button{width:100%;text-align:left;margin:8px 0;padding:10px;background:transparent;border:0;color:#fff;cursor:pointer}
-.sidebar button.active{background:#222;border-radius:8px}
-.content{flex:1;padding:20px} 
-.request-card{border:1px solid #ddd;padding:12px;border-radius:8px;margin-bottom:10px}
-.badge{background:red;color:#fff;border-radius:50%;padding:2px 6px;font-size:12px}
+  :root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--radius:20px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+
+ .card{background:var(--card); padding:40px; border-radius:var(--radius); border:1px solid #262626; text-align:center; width:100%; max-width:420px; box-shadow:0 20px 50px rgba(0,0,0,0.5)}
+ .logo{width:70px; height:70px; border-radius:16px; object-fit:cover; margin:0 auto 16px; border:2px solid var(--accent)}
+  h1{color:var(--accent); margin:0 0 8px; font-size:28px; font-weight:800}
+ .sub{color:var(--muted); font-size:14px; margin-bottom:24px}
+  input{width:100%;padding:14px;margin:8px 0;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);font-size:15px;outline:none}
+  input:focus{border-color:var(--accent)}
+ .btn{width:100%; padding:18px; font-size:18px; font-weight:800; border:none; border-radius:10px; cursor:pointer; margin:8px 0; transition:0.2s}
+ .btn:active{transform:scale(0.97)}
+ .btn-primary{background:var(--accent);color:#000}
+ .btn-primary:hover{filter:brightness(1.1)}
+ .btn-green{background:#22c55e; color:#fff}
+ .btn-red{background:#ef4444; color:#fff}
+ .info{color:var(--muted); margin-top:15px; font-size:14px}
+ .late{color:#ef4444; font-weight:bold}
+ .ontime{color:#22c55e; font-weight:bold}
 </style>
 </head>
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <h2>HotPit</h2>
-    <button id="btn-shifts" class="active" onclick="showTab('shifts')">📅 Мой табель</button>
-    <button id="btn-requests" onclick="showTab('requests')">🔔 Запросы <span id="badge" class="badge" style="display:none">0</span></button>
-    <button onclick="logout()">🚪 Выйти</button>
-  </aside>
 
-  <main class="content">
-    <div id="tab-shifts">
-      <h1 id="name">Загрузка...</h1>
-      <p id="status">Проверяем...</p>
-      <button id="btn" class="btn-primary" style="display:none" onclick="toggleShift()">...</button>
-      <div id="msg" style="margin-top:12px;font-size:13px"></div>
-    </div>
-
-    <div id="tab-requests" style="display:none">
-      <h1>Запросы на исправление</h1>
-      <div id="requests-list">Загрузка...</div>
-    </div>
-  </main>
+<div class="card" id="loginCard" style="display:none">
+  <h1>HotPit</h1>
+  <p class="sub">Вход для персонала</p>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Пароль">
+  <button class="btn btn-primary" onclick="login()">Войти</button>
 </div>
 
-<script type="module">
-import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-import {SUPABASE_URL, SUPABASE_ANON_KEY} from './js/config.js'
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<div class="card" id="markCard" style="display:none">
+  <img id="restLogo" class="logo" src="" style="display:none">
+  <h1 id="restName">Ресторан</h1>
+  <p class="sub" id="userInfo"></p>
+  <button class="btn btn-green" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button>
+  <button class="btn btn-red" id="btnOut" onclick="mark('out')" style="display:none">ОТМЕТИТЬ УХОД</button>
+  <p class="info" id="status"></p>
+</div>
 
-let cookId=null, restaurantId=null, today=new Date().toISOString().split('T')[0];
+<script>
+const SUPA_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const urlParams = new URLSearchParams(window.location.search);
+const restaurant_id = urlParams.get('restaurant_id');
+
+let currentUser = null;
+let startTime = '10:00';
 
 async function init(){
-  const {data:{user}} = await supabase.auth.getUser();
-  if(!user) return location.href='./index.html';
-  cookId = user.id;
-  const {data:cook} = await supabase.from('profiles').select('full_name, restaurant_id, role').eq('id', cookId).eq('is_active', true).single();
-  if(!cook || cook.role!== 'cook'){ document.getElementById('name').innerHTML='<div style="color:#f87171">Нет доступа</div>'; return }
-  restaurantId = cook.restaurant_id;
-  document.getElementById('name').textContent = cook.full_name;
-  loadShift();
-  loadRequests();
-}
+  if(!restaurant_id) { alert('Ошибка: нет restaurant_id в QR'); return; }
 
-function showTab(tab){
-  document.querySelectorAll('.content > div').forEach(d=>d.style.display='none');
-  document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+tab).style.display='block';
-  document.getElementById('btn-'+tab).classList.add('active');
-}
+  const {data: rest} = await supabase.from('restaurants').select('name,start_time,logo_url').eq('id',restaurant_id).single();
+  if(rest){
+    document.getElementById('restName').textContent = rest.name;
+    startTime = rest.start_time || '10:00';
+    if(rest.logo_url){
+      document.getElementById('restLogo').src = rest.logo_url;
+      document.getElementById('restLogo').style.display = 'block';
+    }
+  }
 
-async function loadShift(){
-  const {data:shift} = await supabase.from('attendance').select('id').eq('cook_id', cookId).eq('work_date', today).eq('status', 'work').maybeSingle();
-  updateBtn(!!shift);
-}
-
-function updateBtn(onShift){
-  const btn = document.getElementById('btn');
-  const status = document.getElementById('status');
-  btn.style.display='block';
-  if(onShift){
-    btn.textContent='Уйти со смены';
-    btn.className='btn-danger';
-    status.innerHTML='<div style="color:#22c55e">Вы на смене</div>';
+  const {data: {session}} = await supabase.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    showMarkScreen();
   } else {
-    btn.textContent='Прийти на смену';
-    btn.className='btn-primary';
-    status.textContent='Не на смене';
+    document.getElementById('loginCard').style.display = 'block';
   }
 }
 
-window.toggleShift = async()=>{
-  const btn = document.getElementById('btn');
-  const msg = document.getElementById('msg');
-  btn.disabled=true; msg.textContent = 'Сохраняю...';
-  const onShift = btn.textContent.includes('Уйти');
-  try{
-    if(!onShift){
-      await supabase.from('attendance').insert({ cook_id: cookId, restaurant_id: restaurantId, work_date: today, status: 'work' })
-    }else{
-      await supabase.from('attendance').update({time_out: new Date().toTimeString().split(' ')[0]}).eq('cook_id', cookId).eq('work_date', today)
-    }
-    loadShift();
-    msg.textContent = '';
-  }catch(e){ msg.innerHTML = `<div style="color:#f87171">${e.message}</div>`; }
-  btn.disabled=false;
+async function login(){
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const {error} = await supabase.auth.signInWithPassword({email,password});
+  if(error) alert(error.message); else location.reload();
 }
 
-async function loadRequests(){
-  const {data:reqs} = await supabase.from('attendance_requests').select('*').eq('cook_id', cookId).eq('status','pending');
-  const list = document.getElementById('requests-list');
-  const badge = document.getElementById('badge');
-  if(!reqs || reqs.length===0){ list.innerHTML='Нет новых запросов'; badge.style.display='none'; return }
-  badge.style.display='inline'; badge.textContent=reqs.length;
-  list.innerHTML = reqs.map(r=>`
-    <div class="request-card">
-      <b>Дата:</b> ${r.work_date || '?' }<br>
-      <b>Что хотят:</b> ${r.new_status}<br>
-      <b>Причина:</b> ${r.reason}<br><br>
-      <button onclick="approveRequest('${r.id}','approved')">Одобрить</button>
-      <button onclick="approveRequest('${r.id}','rejected')">Отклонить</button>
-    </div>
-  `).join('');
+async function showMarkScreen(){
+  document.getElementById('loginCard').style.display = 'none';
+  document.getElementById('markCard').style.display = 'block';
+  const {data: profile} = await supabase.from('profiles').select('name').eq('id',currentUser.id).single();
+  document.getElementById('userInfo').textContent = `Привет, ${profile?.name || 'Сотрудник'}! Смена с ${startTime}`;
+
+  const TODAY = new Date().toISOString().split('T')[0];
+  const {data: att} = await supabase.from('attendance').select('*').eq('user_id',currentUser.id).eq('work_date',TODAY).eq('restaurant_id',restaurant_id).single();
+  if(att?.time_in) document.getElementById('btnIn').style.display='none';
+  if(att?.time_in &&!att?.time_out) document.getElementById('btnOut').style.display='block';
 }
 
-window.approveRequest = async(id, status)=>{
-  await supabase.from('attendance_requests').update({status}).eq('id',id);
-  loadRequests();
-  alert(status==='approved'? 'Одобрено' : 'Отклонено');
+async function mark(type){
+  const now = new Date();
+  const time = now.toTimeString().split(' ')[0].substring(0,5);
+  const TODAY = now.toISOString().split('T')[0];
+
+  if(type==='in'){
+    const status = time > startTime? 'late' : 'on_time';
+    await supabase.from('attendance').insert({
+      user_id: currentUser.id, restaurant_id, work_date: TODAY, time_in: time, status
+    });
+    const msg = status==='late'? `Отмечено в ${time}. <span class="late">Опоздание</span>` : `Отмечено в ${time}. <span class="ontime">Вовремя</span>`;
+    document.getElementById('status').innerHTML = msg;
+    document.getElementById('btnIn').style.display='none';
+    document.getElementById('btnOut').style.display='block';
+  }
+  if(type==='out'){
+    await supabase.from('attendance').update({time_out: time}).eq('user_id',currentUser.id).eq('work_date',TODAY).eq('restaurant_id',restaurant_id);
+    document.getElementById('status').textContent = `Уход отмечен в ${time}`;
+    document.getElementById('btnOut').style.display='none';
+  }
 }
 
-window.logout = async()=>{ await supabase.auth.signOut(); location.href='./index.html'; }
-init()
-</script></body></html>
+init();
+</script>
+</body>
+  </html>
