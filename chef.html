@@ -403,4 +403,14 @@ async function loadData(){
       }
       tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
     });
-    document.getElementById('
+    document.getElementById('tabelList').innerHTML=tabelHTML;
+    document.querySelectorAll('.day').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.cook,d.dataset.date)));
+    povaraCache.forEach(p=>renderTotal(p.id));
+    updateMonthLabels();
+  }catch(e){
+    console.error('ОШИБКА:', e);
+    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
+  }
+}
+loadData();
+</script></body></html>
