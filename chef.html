@@ -398,6 +398,7 @@ async function loadData(){
     console.error(e);
     showToast('Ошибка загрузки: ' + e.message, 'error');
   }
+} 
 
     let povaraHTML = '';
     povaraCache.forEach(p=>{povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`});
