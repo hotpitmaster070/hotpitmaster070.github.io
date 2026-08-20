@@ -64,19 +64,19 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <button class="tab-btn" data-tab="tabel">📋 Табель</button>
 
   <!-- НОВОЕ МЕНЮ ChefOS -->
-  <div>
-    <button class="menu-parent" onclick="toggleChefOS()">🍳 ChefOS <span id="chefos-arrow">▼</span></button>
-    <div class="submenu" id="chefos-submenu">
-      <button onclick="alert('Скоро: Приход товара')">1. Приход товара</button>
-      <button onclick="alert('Скоро: Задания')">2. Создать задание</button>
-      <button onclick="alert('Скоро: Склад')">4. Мой склад</button>
-      <button onclick="alert('Скоро: Заготовки')">5. Мои заготовки</button>
-      <button onclick="alert('Скоро: Списание')">6. Списание</button>
-      <button onclick="alert('Скоро: Отчет списания')">7. Отчет по списанию</button>
-      <button onclick="alert('Скоро: Отчет месяц')">8. Отчет за месяц</button>
-      <button onclick="alert('Скоро: Инвентаризация')">9. Инвентаризация</button>
-    </div>
+<div class="menu-item has-submenu">
+  <button class="menu-parent">🍳 ChefOS</button>
+  <div class="submenu">
+    <button data-action="prixod">1. Приход товара</button>
+    <button data-action="zadaniya">2. Создать задание</button>
+    <button data-action="sklad">4. Мой склад</button>
+    <button data-action="zagotovki">5. Мои заготовки</button>
+    <button data-action="spisanie">6. Списание</button>
+    <button data-action="otchet-spis">7. Отчет по списанию</button>
+    <button data-action="otchet-mes">8. Отчет за месяц</button>
+    <button data-action="invent">9. Инвентаризация</button>
   </div>
+</div>
 
   <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
   <button id="logoutBtn">🚪 Выйти</button>
