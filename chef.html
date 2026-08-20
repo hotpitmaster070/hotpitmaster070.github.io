@@ -338,6 +338,7 @@ async function loadSettings(){
   const {data: rest} = await supabase.from('restaurants').select('start_time').eq('id',myRestaurantId).single();
   if(rest) document.getElementById('startTime').value = rest.start_time || '10:00';
 }
+
 async function saveSettings(){
   const newTime = document.getElementById('startTime').value;
   const {error} = await supabase.from('restaurants').update({start_time: newTime}).eq('id',myRestaurantId);
@@ -397,15 +398,9 @@ async function loadData(){
     if(restNameEl){
       const name = prof.restaurants?.name || 'Ресторан';
       restNameEl.textContent = name;
-  }
-
-    // 3. Если нет restaurant_id - выходим но не падаем
-    if(!prof.restaurant_id){
-      showToast('Привяжите ресторан в профиле админа', 'error');
-      return; 
     }
 
-    // 4. Дальше грузим всё остальное
+    // 3. Дальше грузим всё остальное
     await loadDashboard();
     if(currentTab === 'settings') loadSettings();
 
@@ -415,40 +410,8 @@ async function loadData(){
     console.error(e);
     showToast('Ошибка загрузки: ' + e.message, 'error');
   }
-} 
+} // <- ЗАКРЫЛИ ФУНКЦИЮ. ДАЛЬШЕ НИЧЕГО НЕ ДОЛЖНО БЫТЬ
 
-    let povaraHTML = '';
-    povaraCache.forEach(p=>{povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`});
-    document.getElementById('povaraList').innerHTML = povaraHTML;
-    document.querySelectorAll('.btn-danger').forEach(b=>b.onclick=()=>fireCook(b.dataset.id,b.dataset.name));
-
-    let tabelHTML = '';
-    const daysOfWeek = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-    povaraCache.forEach(p=>{
-      let daysHtml='';
-      daysOfWeek.forEach(d=>daysHtml+=`<div class="day-header">${d}</div>`);
-      const firstDay = new Date(year, month, 1).getDay();
-      const offset = firstDay === 0? 6 : firstDay - 1;
-      for(let k=0;k<offset;k++) daysHtml+=`<div></div>`;
-      for(let i=0;i<days;i++){
-        const day=i+1;
-        const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const rec=attendanceCache[p.id]?.days.find(d=>d.work_date===dateStr);
-        const status=getDayStatus(rec);
-        const isToday = dateStr === TODAY? 'today' : '';
-        const isPast = dateStr < TODAY? 'past' : '';
-        daysHtml+=`<div class="day ${status} ${isToday} ${isPast}" data-cook="${p.id}" data-date="${dateStr}">${day}</div>`
-      }
-      tabelHTML+=`<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name[0]}</div><div><b>${p.full_name}</b></div></div></div><div class="calendar-grid">${daysHtml}</div><div class="total" id="total-${p.id}">0₽</div></div>`
-    });
-    document.getElementById('tabelList').innerHTML=tabelHTML;
-    document.querySelectorAll('.day').forEach(d=>d.addEventListener('click', ()=>openStatusModal(d.dataset.cook,d.dataset.date)));
-    povaraCache.forEach(p=>renderTotal(p.id));
-    updateMonthLabels();
-  }catch(e){
-    console.error('ОШИБКА:', e);
-    document.getElementById('povaraList').innerHTML=`<div class="err">Ошибка: ${e.message}</div>`
-  }
-}
 loadData();
+    
 </script></body></html>
