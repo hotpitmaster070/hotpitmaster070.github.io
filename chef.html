@@ -343,7 +343,7 @@ async function loadData(){
 
     await loadDashboard();
     if(currentTab === 'settings') loadSettings();
-    await Promise.all([loadStaff()]); // только staff пока
+    await Promise.all([loadProducts(), loadStaff(), loadInventory()]);
 
   }catch(e){
     console.error(e);
