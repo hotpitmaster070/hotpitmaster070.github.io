@@ -125,6 +125,22 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
     <p id="settingsMsg" style="color:#22c55e; text-align:center; margin-top:10px"></p>
   </div>
 </div>
+  <!-- Вкладка 1. Приход товара -->
+<div data-tab-content="items" style="display:none">
+  <div class="card">
+    <h3>Приход товара</h3>
+    <button class="btn-primary" onclick="alert('Скоро добавим форму')">+ Добавить товар</button>
+    <div id="itemsList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- Вкладка 4. Мой склад -->
+<div data-tab-content="stock" style="display:none">
+  <div class="card">
+    <h3>Движения склада</h3>
+    <div id="stockList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
 </div></main></div>
 
 <div class="modal" id="addModal"><div class="modal-card"><h3>Пригласить повара</h3>
