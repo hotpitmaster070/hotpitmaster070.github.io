@@ -235,6 +235,33 @@ async function loadDashboard(){
   document.getElementById('dOpoz').textContent = opozdali;
 }
 
+async function loadProducts(){
+  if(!myRestaurantId) return;
+  const {data, error} = await supabase.from('items').select('*').eq('restaurant_id',myRestaurantId).order('created_at', {ascending: false});
+  if(error) throw error;
+  const listEl = document.getElementById('itemsList'); 
+  if(!listEl) return;
+  let html = '';
+  data?.forEach(i=>{
+    html += `<div class="item-card" style="padding:12px;border:1px solid #333;border-radius:10px"><b>${i.name}</b> <div style="color:var(--muted);font-size:12px">Ед.изм: ${i.unit}</div></div>`
+  });
+  listEl.innerHTML = html || '<div>Номенклатуры нет. Добавьте товар.</div>';
+}
+
+async function loadInventory(){
+  if(!myRestaurantId) return;
+  const {data, error} = await supabase.from('stock_moves').select('*, items(name, unit)').eq('restaurant_id',myRestaurantId).order('created_at', {ascending: false});
+  if(error) throw error;
+  const listEl = document.getElementById('stockList'); 
+  if(!listEl) return;
+  let html = '';
+  data?.forEach(s=>{
+    const sign = s.type==='in'?'+':'-';
+    html += `<div class="stock-card" style="padding:12px;border:1px solid #333;border-radius:10px"><b>${s.items?.name || 'Товар удален'}</b> ${sign} ${s.qty} ${s.items?.unit} <div style="color:var(--muted);font-size:12px">${s.note || ''}</div></div>`
+  });
+  listEl.innerHTML = html || '<div>Движений нет</div>';
+}
+  
 async function loadStaff(){
   if(!myRestaurantId) return;
   const {data: staff, error} = await supabase.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
