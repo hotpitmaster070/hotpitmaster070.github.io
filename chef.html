@@ -406,5 +406,85 @@ async function loadData(){
     showToast('Ошибка: ' + e.message, 'error');
   }
 }
+  // === КАРМАННЫЙ ШЕФ - ДОБАВЛЕНИЕ ПРОДУКТА (надежно для аренды) ===
+document.getElementById('openAddItemBtn')?.addEventListener('click', ()=>{
+  document.getElementById('addItemModal').classList.add('show');
+});
+
+document.getElementById('saveItemBtn')?.addEventListener('click', async ()=>{
+  const name = document.getElementById('itemName').value.trim();
+  const qty = parseFloat(document.getElementById('itemQty').value) || 0;
+  const unit = document.getElementById('itemUnit').value;
+  const min_stock = parseFloat(document.getElementById('itemMin').value) || 0;
+  const note = document.getElementById('itemNote').value.trim();
+  const price = parseFloat(document.getElementById('itemPrice').value) || null;
+
+  if(!name || qty <= 0) { showToast('Введи название и кол-во', 'error'); return; }
+  if(!myRestaurantId) { showToast('Нет ресторана', 'error'); return; }
+
+  const btn = document.getElementById('saveItemBtn');
+  btn.textContent = 'Сохраняю...'; btn.disabled = true;
+
+  try {
+    // 1. Проверяем есть ли такой товар уже
+    const { data: existing } = await supabase.from('items').select('id').eq('restaurant_id', myRestaurantId).ilike('name', name).maybeSingle();
+
+    let itemId;
+    if(existing){
+      itemId = existing.id;
+      // Если есть - просто приход
+      const { error: moveErr } = await supabase.from('stock_moves').insert([{
+        restaurant_id: myRestaurantId,
+        item_id: itemId,
+        type: 'in',
+        qty: qty,
+        note: note,
+        created_by: me?.id
+      }]);
+      if(moveErr) throw moveErr;
+    } else {
+      // Если новый - создаем номенклатуру
+      const { data: newItem, error: itemErr } = await supabase.from('items').insert([{
+        restaurant_id: myRestaurantId,
+        name: name,
+        unit: unit,
+        current_stock: qty,
+        min_stock: min_stock,
+        price: price,
+        created_by: me?.id
+      }]).select().single();
+      if(itemErr) throw itemErr;
+      itemId = newItem.id;
+
+      const { error: moveErr } = await supabase.from('stock_moves').insert([{
+        restaurant_id: myRestaurantId,
+        item_id: itemId,
+        type: 'in',
+        qty: qty,
+        note: 'Первый приход: ' + note,
+        created_by: me?.id
+      }]);
+      if(moveErr) throw moveErr;
+    }
+
+    showToast(`+ ${qty} ${unit} ${name} на склад`, 'ok');
+    document.getElementById('addItemModal').classList.remove('show');
+    document.getElementById('itemName').value = '';
+    document.getElementById('itemNote').value = '';
+    document.getElementById('itemQty').value = '1';
+    
+    // Обновляем списки
+    await loadProducts();
+    await loadInventory();
+    await loadDashboard();
+
+  } catch(e){
+    console.error(e);
+    showToast('Ошибка: ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'Сохранить на склад'; btn.disabled = false;
+  }
+});
+  
 loadData();
 </script></body></html>
