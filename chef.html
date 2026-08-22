@@ -417,7 +417,7 @@ document.getElementById('saveItemBtn')?.addEventListener('click', async ()=>{
   const unit = document.getElementById('itemUnit').value;
   const min_stock = parseFloat(document.getElementById('itemMin').value) || 0;
   const note = document.getElementById('itemNote').value.trim();
-  const price = parseFloat(document.getElementById('itemPrice').value) || null;
+  const price = parseFloat(document.getElementById('itemPrice').value) || 0;
 
   if(!name || qty <= 0) { showToast('Введи название и кол-во', 'error'); return; }
   if(!myRestaurantId) { showToast('Нет ресторана', 'error'); return; }
@@ -426,46 +426,33 @@ document.getElementById('saveItemBtn')?.addEventListener('click', async ()=>{
   btn.textContent = 'Сохраняю...'; btn.disabled = true;
 
   try {
-    // 1. Проверяем есть ли такой товар уже
+    // 1. Ищем товар по ресторану (для аренды)
     const { data: existing } = await supabase.from('items').select('id').eq('restaurant_id', myRestaurantId).ilike('name', name).maybeSingle();
-
     let itemId;
     if(existing){
       itemId = existing.id;
-      // Если есть - просто приход
-      const { error: moveErr } = await supabase.from('stock_moves').insert([{
-        restaurant_id: myRestaurantId,
-        item_id: itemId,
-        type: 'in',
-        qty: qty,
-        note: note,
-        created_by: me?.id
-      }]);
-      if(moveErr) throw moveErr;
     } else {
-      // Если новый - создаем номенклатуру
+      // Создаем новый - чисто для аренды, без created_by
       const { data: newItem, error: itemErr } = await supabase.from('items').insert([{
         restaurant_id: myRestaurantId,
         name: name,
         unit: unit,
-        current_stock: qty,
+        current_stock: 0,
         min_stock: min_stock,
-        price: price,
-        created_by: me?.id
+        price: price
       }]).select().single();
       if(itemErr) throw itemErr;
       itemId = newItem.id;
-
-      const { error: moveErr } = await supabase.from('stock_moves').insert([{
-        restaurant_id: myRestaurantId,
-        item_id: itemId,
-        type: 'in',
-        qty: qty,
-        note: 'Первый приход: ' + note,
-        created_by: me?.id
-      }]);
-      if(moveErr) throw moveErr;
     }
+    // 2. Делаем приход - триггер сам обновит current_stock
+    const { error: moveErr } = await supabase.from('stock_moves').insert([{
+      restaurant_id: myRestaurantId,
+      item_id: itemId,
+      type: 'in',
+      qty: qty,
+      note: note
+    }]);
+    if(moveErr) throw moveErr;
 
     showToast(`+ ${qty} ${unit} ${name} на склад`, 'ok');
     document.getElementById('addItemModal').classList.remove('show');
@@ -473,11 +460,9 @@ document.getElementById('saveItemBtn')?.addEventListener('click', async ()=>{
     document.getElementById('itemNote').value = '';
     document.getElementById('itemQty').value = '1';
     
-    // Обновляем списки
     await loadProducts();
     await loadInventory();
     await loadDashboard();
-
   } catch(e){
     console.error(e);
     showToast('Ошибка: ' + e.message, 'error');
