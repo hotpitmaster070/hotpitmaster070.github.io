@@ -170,6 +170,32 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('requestModal').classList.remove('show')">Отмена</button>
 </div></div>
 
+  <div class="modal" id="addItemModal"><div class="modal-card">
+  <h3>Добавить продукт</h3>
+  <label>Название</label>
+  <input id="itemName" type="text" placeholder="Напр: Курица филе">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+    <div><label>Кол-во</label><input id="itemQty" type="number" value="1" step="0.1"></div>
+    <div><label>Ед.изм</label>
+      <select id="itemUnit">
+        <option value="кг">кг</option>
+        <option value="л">л</option>
+        <option value="шт">шт</option>
+        <option value="г">г</option>
+        <option value="уп">уп</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+    <div><label>Мин. остаток</label><input id="itemMin" type="number" placeholder="2"></div>
+    <div><label>Цена за ед (необяз)</label><input id="itemPrice" type="number" placeholder="350"></div>
+  </div>
+  <label style="margin-top:10px">Заметка</label>
+  <input id="itemNote" type="text" placeholder="Поставщик, накладная...">
+  <button class="btn" id="saveItemBtn" style="width:100%;margin-top:16px">Сохранить на склад</button>
+  <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addItemModal').classList.remove('show')">Отмена</button>
+</div></div>
+  
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
