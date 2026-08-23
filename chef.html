@@ -113,7 +113,13 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   </div>
 </div>
 
-<div data-tab-content="personal" style="display:none"><h3>Команда</h3><div id="povaraList">Загрузка...</div></div>
+<div data-tab-content="personal" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="margin:0">Персонал</h3>
+    <button class="btn" id="addBtn" style="width:auto;padding:10px 16px;background:#ff6b00;color:#000;font-weight:700;border-radius:20px">+ Пригласить</button>
+  </div>
+  <div id="povaraList">Загрузка...</div>
+</div>
 <div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
 <div data-tab-content="settings" style="display:none">
   <h3>Настройки ресторана</h3>
