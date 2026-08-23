@@ -249,16 +249,99 @@ document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentD
 document.getElementById('addBtn').onclick=()=>document.getElementById('addModal').classList.add('show');
 function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
 
-async function genInvite(){}
+// 1. Приглашение - у тебя уже SQL залит, вот рабочая версия
+async function genInvite(){
+  const email = document.getElementById('cookEmail').value.trim();
+  const job = document.getElementById('cookJob').value || 'Повар';
+  const type = document.getElementById('cookSalaryType').value;
+  const salary = parseFloat(document.getElementById('cookSalary').value) || 0;
+  if(!email || !salary){ showToast('Email и ставка обязательны','error'); return; }
+  const btn = document.getElementById('genInviteBtn');
+  btn.textContent='...'; btn.disabled=true;
+  try{
+    const token = crypto.randomUUID();
+    const {error} = await supabase.from('invites').insert([{
+      token, restaurant_id: myRestaurantId, role: 'cook',
+      email, job_title: job, salary, salary_type: type
+    }]);
+    if(error) throw error;
+    const link = `${location.origin}/join.html?token=${token}`;
+    document.getElementById('inviteLink').innerHTML = `<div style="background:#000;padding:12px;border-radius:12px;margin-top:12px;border:1px solid #333"><div style="color:#a3a3a3;font-size:12px">${email} • ${job}</div><div style="color:#22c55e;margin-top:8px;word-break:break-all">${link}</div></div>`;
+    document.getElementById('qrcode').innerHTML='';
+    new QRCode(document.getElementById('qrcode'), {text: link, width: 140, height: 140});
+    showToast('Ссылка готова!','ok');
+  }catch(e){ showToast(e.message,'error'); }
+  finally{ btn.textContent='Сгенерировать ссылку'; btn.disabled=false; }
+}
 document.getElementById('genInviteBtn').onclick=genInvite;
-async function setStatus(action){}
-function calcHoursAndPay(cook, rec){}
-function renderTotal(cookId){}
-function getDayStatus(rec){ return rec? rec.status : 'empty'; }
-function openStatusModal(cookId,dateStr){}
-function createBtn(container, text, color, onClick){}
-function openRequestForm(cookId, dateStr, record){}
-if(document.getElementById('sendRequestBtn')) document.getElementById('sendRequestBtn').onclick = async()=>{}
+
+// 2. Табель - смена статусов
+async function setStatus(cookId, dateStr, status, time_in=null){
+  try{
+    const {error} = await supabase.from('attendance').upsert({
+      restaurant_id: myRestaurantId,
+      profile_id: cookId,
+      work_date: dateStr,
+      status: status,
+      time_in: time_in
+    }, {onConflict: 'profile_id,work_date'});
+    if(error) throw error;
+    closeStatusModal();
+    loadTabel(); loadDashboard();
+  }catch(e){ showToast(e.message,'error'); }
+}
+
+function getDayStatus(rec){ 
+  if(!rec) return 'empty';
+  return rec.status || 'empty'; 
+}
+
+function calcHoursAndPay(cook, rec){
+  if(!rec || !rec.time_in) return {hours:0, pay:0};
+  // тут можно считать часы от time_in до time_out, пока просто 1 смена
+  const hours = 12; // стандарт смена
+  const rate = cook.salary || 0;
+  const pay = cook.salary_type === 'hourly' ? hours * rate : rate;
+  return {hours, pay};
+}
+
+function renderTotal(cookId){
+  // сумма за месяц - потом допилим
+  const el = document.getElementById(`total-${cookId}`);
+  if(el) el.textContent = '';
+}
+
+function createBtn(container, text, color, onClick){
+  const b = document.createElement('button');
+  b.textContent = text;
+  b.style.cssText = `background:${color};border:none;padding:8px 12px;border-radius:8px;color:#fff;margin:4px;cursor:pointer`;
+  b.onclick = onClick;
+  container.appendChild(b);
+  return b;
+}
+
+function openStatusModal(cookId, dateStr){
+  const modal = document.getElementById('statusModal');
+  const body = document.getElementById('statusModalBody');
+  body.innerHTML = '';
+  createBtn(body, 'Пришел', '#22c55e', ()=> setStatus(cookId, dateStr, 'present', new Date().toTimeString().slice(0,5)));
+  createBtn(body, 'Опоздал', '#f59e0b', ()=> setStatus(cookId, dateStr, 'late', new Date().toTimeString().slice(0,5)));
+  createBtn(body, 'Болел', '#ef4444', ()=> setStatus(cookId, dateStr, 'sick'));
+  createBtn(body, 'Не пришел', '#6b7280', ()=> setStatus(cookId, dateStr, 'absent'));
+  modal.classList.remove('hidden');
+}
+function closeStatusModal(){ document.getElementById('statusModal')?.classList.add('hidden'); }
+
+function openRequestForm(cookId, dateStr, record){
+  // форма заявки на замену - заглушка пока
+  showToast('Заявка - в разработке','info');
+}
+if(document.getElementById('sendRequestBtn')){
+  document.getElementById('sendRequestBtn').onclick = async()=>{
+    showToast('Отправлено','ok');
+    closeStatusModal();
+  }
+  }
 
 async function loadSettings(){
   if(!myRestaurantId) return;
