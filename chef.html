@@ -134,8 +134,10 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <!-- Вкладка 1. Приход товара -->
 <div data-tab-content="items" style="display:none">
   <div class="card">
-    <h3>Приход товара</h3>
-    <button class="btn-primary" id="openAddItemBtn">+ Добавить товар</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">Приход товара</h3>
+      <button class="btn" id="openAddItemBtn" style="width:auto;padding:10px 16px;background:#ff6b00;color:#000;font-weight:700;border-radius:20px">+ Добавить товар</button>
+    </div>
     <div id="itemsList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
   </div>
 </div>
