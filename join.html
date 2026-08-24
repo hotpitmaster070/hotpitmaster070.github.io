@@ -8,22 +8,17 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .auth-wrap{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
-h1{font-size:22px;text-align:center;color:var(--accent)}
-.info-box{background:var(--card-2);padding:12px;border-radius:12px;margin:16px 0;font-size:14px;line-height:1.5}
-.info-box b{color:var(--accent)}
+h1{font-size:22px;text-align:center;color:var(--accent)}.info-box{background:var(--card-2);padding:12px;border-radius:12px;margin:16px 0;font-size:14px;line-height:1.5}.info-box b{color:var(--accent)}
 input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:10px}
 .btn-primary{width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#000;font-weight:700;font-size:15px;cursor:pointer;margin-top:12px}
-.hidden{display:none}
-#err{font-size:14px;margin-top:10px;text-align:center}
+.hidden{display:none}#err{font-size:14px;margin-top:10px;text-align:center;white-space:pre-wrap}
 </style>
 </head>
 <body>
 <div class="auth-wrap">
   <h1>Присоединиться к HotPit</h1>
   <p style="color:var(--muted);font-size:14px;text-align:center;margin-top:8px" id="restName">Проверка ссылки...</p>
-  
   <div class="info-box hidden" id="inviteInfo"></div>
-
   <form id="join" class="hidden">
     <input name="fullName" id="fullName" placeholder="Ваше ФИО" required>
     <input name="email" id="email" type="email" placeholder="Ваш Email" required>
@@ -32,54 +27,89 @@ input{width:100%;padding:12px;background:var(--card-2);border:1px solid #333;bor
   </form>
   <div id="err"></div>
 </div>
-
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 
 const token=new URLSearchParams(location.search).get('token');
-const form=document.getElementById('join');
-const err=document.getElementById('err');
-const restName=document.getElementById('restName');
-const infoBox=document.getElementById('inviteInfo');
-const btn=document.getElementById('submitBtn');
+const form=document.getElementById('join'), err=document.getElementById('err'), restName=document.getElementById('restName'), infoBox=document.getElementById('inviteInfo'), btn=document.getElementById('submitBtn');
+let invite=null;
 
-if(!token){ 
-  restName.textContent='Ссылка невалидна: нет token'; 
+if(!token){
+  restName.textContent='Ссылка невалидна: нет token';
 } else {
-  // ГРУЗИМ ДЕТАЛИ ПРИГЛАШЕНИЯ КАК НА СТАРОМ СКРИНЕ
-  const {data, error} = await supabase.from('invites').select('*, restaurants(name)').eq('token', token).single();
-  if(error || !data){
-    restName.textContent='Приглашение не найдено или использовано';
+  const {data,error}=await supabase.from('invites').select('*, restaurants(name)').eq('token',token).maybeSingle();
+  if(error||!data){
+    restName.textContent='Приглашение не найдено или уже использовано';
   } else {
-    const typeText = data.salary_type==='hourly'?'₽/час':'₽/день';
-    restName.textContent=`Вас пригласили в ресторан: ${data.restaurants?.name || ''}`;
+    invite=data;
+    const typeText=data.salary_type==='hourly'?'₽/час':data.salary_type==='daily'?'₽/день':'₽/смена';
+    restName.textContent=`Вас пригласили в ресторан: ${data.restaurants?.name || 'Land'}`;
     infoBox.classList.remove('hidden');
-    infoBox.innerHTML=`Вас приглашают на должность: <b>${data.job_title}</b><br>Ставка: <b>${data.salary}${typeText}</b>`;
-    document.getElementById('email').value = data.email || '';
+    infoBox.innerHTML=`Должность: <b>${data.job_title}</b><br>Ставка: <b>${data.salary}${typeText}</b>`;
+    document.getElementById('email').value=data.email||'';
     form.classList.remove('hidden');
   }
 }
 
 form.addEventListener('submit',async e=>{
   e.preventDefault();
-  btn.disabled=true;
-  err.style.color='#a3a3a3';
-  err.textContent='Регистрирую...';
+  if(!invite){ err.textContent='Нет данных приглашения'; return; }
+  btn.disabled=true; err.style.color='#a3a3a3'; err.textContent='Регистрирую...';
   const fd=new FormData(form);
-  try {
-    const {data:{user}, error:ae}=await supabase.auth.signUp({email: fd.get('email').trim(), password: fd.get('password')});
-    if(ae) throw ae;
-    await supabase.auth.signInWithPassword({email: fd.get('email').trim(), password: fd.get('password')});
-    const {error:fe}=await supabase.rpc('accept_invite', {p_token:token, p_full_name:fd.get('fullName').trim()});
-    if(fe) throw fe;
+  const fullName=fd.get('fullName').trim();
+  const email=fd.get('email').trim().toLowerCase();
+  const password=fd.get('password');
+
+  try{
+    // 1. пробуем регистрацию, если уже есть - просто логиним
+    let userId=null;
+    let {data:signUp,error:signErr}=await supabase.auth.signUp({email,password});
+    if(signErr && signErr.message.includes('already registered')){
+      const {data:signIn,error:signInErr}=await supabase.auth.signInWithPassword({email,password});
+      if(signInErr) throw signInErr;
+      userId=signIn.user.id;
+    } else {
+      if(signErr) throw signErr;
+      if(signUp.user) userId=signUp.user.id;
+      // если сессия не создалась из-за confirm email, логиним принудительно
+      if(!signUp.session){
+        const {data:signIn}=await supabase.auth.signInWithPassword({email,password});
+        if(signIn?.user) userId=signIn.user.id;
+      }
+    }
+    if(!userId){
+      const {data:{user}}=await supabase.auth.getUser();
+      if(user) userId=user.id;
+    }
+    if(!userId) throw new Error('Не удалось получить ID пользователя');
+
+    // 2. НАДЕЖНАЯ привязка к ресторану Land - как в твоем register.html но без rpc
+    const {error:profErr}=await supabase.from('profiles').upsert({
+      id:userId,
+      full_name:fullName,
+      email:email,
+      role:'cook',
+      restaurant_id:invite.restaurant_id,
+      job_title:invite.job_title,
+      salary:invite.salary,
+      salary_type:invite.salary_type,
+      is_active:true
+    },{onConflict:'id'});
+
+    if(profErr) throw profErr;
+
+    // 3. удаляем инвайт
+    await supabase.from('invites').delete().eq('token',token);
+
     err.style.color='#22c55e';
-    err.textContent='Готово! Перекидываю...';
-    setTimeout(()=>location.href='./cook.html',1200);
-  } catch(e) {
+    err.textContent='Готово! Перекидываю в кабинет...';
+    setTimeout(()=>location.href='./cook.html?v=301',1000);
+
+  }catch(e){
     err.style.color='#f87171';
     err.textContent='Ошибка: '+e.message;
     btn.disabled=false;
   }
-})
+});
 </script></body></html>
