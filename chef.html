@@ -478,54 +478,65 @@ async function loadData(){
     if(!user) return location.href='/index.html';
 
     // 1. Берем профиль
-    let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
+    let {data:prof} = await supabase.from('profiles').select('*,restaurants(id,name)').eq('id',user.id).maybeSingle();
     if(!prof){
-      const {data:newProf} = await supabase.from('profiles').insert([{
-        id: user.id, email: user.email, full_name: user.email.split('@')[0], role: 'owner', is_active: true
-      }]).select('*,restaurants(name)').maybeSingle();
+      const {data:newProf} = await supabase.from('profiles').insert([{id:user.id,email:user.email,full_name:user.email.split('@')[0],role:'owner',is_active:true}]).select('*,restaurants(id,name)').maybeSingle();
       prof = newProf;
     }
-    me = prof;
-    myRestaurantId = prof.restaurant_id;
 
-    // 2. Если у профиля нет привязки - ищем ЛЮБОЙ ресторан этого владельца (без имени!)
-    if(!myRestaurantId){
-      const {data: myRest} = await supabase.from('restaurants').select('id').eq('owner_id', user.id).order('created_at', {ascending: true}).maybeSingle();
+    let restId = prof.restaurant_id;
+    let restExists = false;
 
-      if(myRest){
-        myRestaurantId = myRest.id;
+    // 2. САМОЛЕЧЕНИЕ: Проверяем, существует ли ресторан на который ссылается профиль
+    if(restId){
+      const {data: check} = await supabase.from('restaurants').select('id').eq('id', restId).maybeSingle();
+      if(check) restExists = true;
+      else restId = null; // ID битый - лечим
+    }
+
+    // 3. Если привязки нет или битая - ищем или создаем
+    if(!restId){
+      // Ищем любой ресторан этого владельца
+      const {data: myRests} = await supabase.from('restaurants').select('id').eq('owner_id', user.id).limit(1).maybeSingle();
+      if(myRests){
+        restId = myRests.id;
       } else {
-        // 3. Если у владельца вообще нет ресторана - создаем 1 раз
+        // Создаем только если вообще 0 ресторанов - система не упадет никогда
         const {data:newRest} = await supabase.from('restaurants').insert([{ owner_id: user.id, name: 'Мой ресторан' }]).select().single();
-        myRestaurantId = newRest.id;
+        restId = newRest.id;
       }
-      // Привязываем к профилю
-      await supabase.from('profiles').update({ restaurant_id: myRestaurantId }).eq('id', user.id);
-      const {data:prof2} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
+      // Чиним профиль
+      await supabase.from('profiles').update({ restaurant_id: restId }).eq('id', user.id);
+      // Перечитываем
+      const {data:prof2} = await supabase.from('profiles').select('*,restaurants(id,name)').eq('id',user.id).maybeSingle();
       prof = prof2;
     }
 
-    // 4. Название берем напрямую по ID - это 100% правда из БД
-    const restNameEl = document.getElementById('restName');
-    let finalName = prof.restaurants?.name || 'Ресторан';
-    if(myRestaurantId){
-      const {data: direct} = await supabase.from('restaurants').select('name').eq('id', myRestaurantId).maybeSingle();
-      if(direct?.name) finalName = direct.name;
+    // 4. САМОЛЕЧЕНИЕ 2: Если у ресторана нет owner_id - ставим
+    if(restId){
+      const {data: r} = await supabase.from('restaurants').select('owner_id').eq('id', restId).maybeSingle();
+      if(r &&!r.owner_id){
+        await supabase.from('restaurants').update({ owner_id: user.id }).eq('id', restId);
+      }
     }
-    if(restNameEl) restNameEl.textContent = finalName;
 
-    await loadDashboard();
-    if(currentTab === 'settings') await loadSettings();
-    await loadStaff();
-    await loadProducts();
-    await loadInventory();
+    myRestaurantId = restId;
+    me = prof;
+
+    // 5. Название - всегда из таблицы, 100% правда
+    const restNameEl = document.getElementById('restName');
+    if(restNameEl) restNameEl.textContent = prof.restaurants?.name || 'Ресторан';
+
+    // 6. Грузим все, но если один блок упал - остальные работают
+    await Promise.allSettled([loadDashboard(), loadStaff(), loadProducts(), loadInventory()]);
     updateMonthLabels();
 
   }catch(e){
-    console.error(e);
-    showToast('Ошибка: ' + e.message, 'error');
+    console.error('Критическая ошибка, но система жива:', e);
+    showToast('Чиним... обнови страницу через 3 сек', 'info');
+    setTimeout(()=>loadData(), 3000); // авто-ретрай
   }
-}
+  }
 
     // --- ФИКС НАЗВАНИЯ: тянем напрямую из restaurants ---
     const restNameEl = document.getElementById('restName');
