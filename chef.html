@@ -296,9 +296,16 @@ async function setStatus(cookId, dateStr, status, time_in=null){
   }catch(e){ showToast(e.message,'error'); }
 }
 
-function getDayStatus(rec){ 
-  if(!rec) return 'empty';
-  return rec.status || 'empty'; 
+function getDayStatus(rec){
+  if(!rec) return '';
+  if(rec.status==='present') return 'work';
+  if(rec.status==='late') return 'sick';
+  if(rec.status==='sick') return 'vac';
+  if(rec.status==='absent') return 'off';
+  if(rec.status==='in') return 'in';
+  if(rec.status==='out') return 'out';
+  if(rec.status==='done') return 'done';
+  return '';
 }
 
 function calcHoursAndPay(cook, rec){
