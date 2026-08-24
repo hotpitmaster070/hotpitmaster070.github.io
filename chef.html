@@ -479,7 +479,7 @@ async function loadData(){
     me = prof;
     myRestaurantId = prof.restaurant_id;
     if(!myRestaurantId){
-      const { data: newRest, error: restErr } = await supabase.from('restaurants').insert([{ owner_id: user.id, name: 'Мой ресторан' }]).select().single();
+      const { data: newRest } = await supabase.from('restaurants').insert([{ owner_id: user.id, name: 'Мой ресторан' }]).select().maybeSingle();
       if(restErr) throw restErr;
       await supabase.from('profiles').update({ restaurant_id: newRest.id }).eq('id', user.id);
       myRestaurantId = newRest.id;
