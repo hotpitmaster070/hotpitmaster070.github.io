@@ -475,7 +475,17 @@ async function loadData(){
     if(!user) return location.href='/index.html';
     let {data:prof, error:profErr} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
     if(profErr) throw profErr;
-    if(!prof) throw new Error('Профиль не найден');
+    if(!prof){
+      const {data:newProf, error:newErr} = await supabase.from('profiles').insert([{
+        id: user.id,
+        email: user.email,
+        full_name: user.email.split('@')[0],
+        role: 'owner',
+        is_active: true
+      }]).select('*,restaurants(name)').maybeSingle();
+      if(newErr) throw newErr;
+      prof = newProf;
+    }
     me = prof;
     myRestaurantId = prof.restaurant_id;
     if(!myRestaurantId){
