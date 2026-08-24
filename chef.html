@@ -350,7 +350,7 @@ if(document.getElementById('sendRequestBtn')){
 
 async function loadSettings(){
   if(!myRestaurantId) return;
-  const {data: rest} = await supabase.from('restaurants').select('start_time').eq('id',myRestaurantId).single();
+const {data: rest} = await supabase.from('restaurants').select('start_time').eq('id',myRestaurantId).maybeSingle();
   if(rest && document.getElementById('startTime')) document.getElementById('startTime').value = rest.start_time || '10:00';
 }
 
