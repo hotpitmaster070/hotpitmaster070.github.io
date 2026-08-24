@@ -496,6 +496,7 @@ async function loadData(){
       let {data:prof2} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
       prof = prof2;
     }
+    
     const restNameEl = document.getElementById('restName');
     if(restNameEl){ restNameEl.textContent = prof.restaurants?.name || 'Ресторан'; }
 
