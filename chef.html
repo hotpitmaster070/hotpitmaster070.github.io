@@ -340,15 +340,16 @@ function createBtn(container, text, color, onClick){
 
 function openStatusModal(cookId, dateStr){
   const modal = document.getElementById('statusModal');
-  const body = document.getElementById('statusModalBody');
+  document.getElementById('statusDate').textContent = dateStr;
+  const body = document.getElementById('modalButtons');
   body.innerHTML = '';
-  createBtn(body, 'Пришел', '#22c55e', ()=> setStatus(cookId, dateStr, 'present', new Date().toTimeString().slice(0,5)));
-  createBtn(body, 'Опоздал', '#f59e0b', ()=> setStatus(cookId, dateStr, 'late', new Date().toTimeString().slice(0,5)));
-  createBtn(body, 'Болел', '#ef4444', ()=> setStatus(cookId, dateStr, 'sick'));
-  createBtn(body, 'Не пришел', '#6b7280', ()=> setStatus(cookId, dateStr, 'absent'));
-  modal.classList.remove('hidden');
+  createBtn(body, 'Пришел ✅', '#22c55e', ()=> setStatus(cookId, dateStr, 'present', new Date().toTimeString().slice(0,5)));
+  createBtn(body, 'Опоздал ⏰', '#f59e0b', ()=> setStatus(cookId, dateStr, 'late', new Date().toTimeString().slice(0,5)));
+  createBtn(body, 'Больничный 🤒', '#ef4444', ()=> setStatus(cookId, dateStr, 'sick'));
+  createBtn(body, 'Не пришел ❌', '#6b7280', ()=> setStatus(cookId, dateStr, 'absent'));
+  modal.classList.add('show');
 }
-function closeStatusModal(){ document.getElementById('statusModal')?.classList.add('hidden'); }
+function closeStatusModal(){ document.getElementById('statusModal')?.classList.remove('show'); }
 
 function openRequestForm(cookId, dateStr, record){
   // форма заявки на замену - заглушка пока
