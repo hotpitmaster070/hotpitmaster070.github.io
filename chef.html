@@ -466,8 +466,11 @@ async function loadAttendance(){
   const {data} = await supabase.from('attendance').select('*').eq('restaurant_id',myRestaurantId).gte('work_date',start).lte('work_date',end);
   attendanceCache = {};
   povaraCache.forEach(p=>attendanceCache[p.id]={cook:p,days:[]});
-  data?.forEach(d=>{if(attendanceCache[d.cook_id]) attendanceCache[d.cook_id].days.push(d)});
-}
+  data?.forEach(d=>{
+    const pid = d.profile_id || d.cook_id;
+    if(attendanceCache[pid]) attendanceCache[pid].days.push(d)
+  });
+  }
 
 async function loadData(){
   try{
