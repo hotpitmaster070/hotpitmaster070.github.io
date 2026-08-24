@@ -489,21 +489,19 @@ async function loadData(){
     me = prof;
     myRestaurantId = prof.restaurant_id;
     if(!myRestaurantId){
-      const { data: newRest } = await supabase.from('restaurants').insert([{ owner_id: user.id, name: 'Мой ресторан' }]).select().maybeSingle();
+      const { data: newRest, error: restErr } = await supabase.from('restaurants').insert([{ owner_id: user.id, name: 'Мой ресторан' }]).select().maybeSingle();
       if(restErr) throw restErr;
       await supabase.from('profiles').update({ restaurant_id: newRest.id }).eq('id', user.id);
       myRestaurantId = newRest.id;
-      let {data:prof2} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).single();
+      let {data:prof2} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
       prof = prof2;
     }
-    
+
     const restNameEl = document.getElementById('restName');
     if(restNameEl){ restNameEl.textContent = prof.restaurants?.name || 'Ресторан'; }
 
     await loadDashboard();
     if(currentTab === 'settings') loadSettings();
-
-    // НАДЕЖНО: повара грузятся всегда, склад не валит их
     await loadStaff();
     loadProducts();
     loadInventory();
