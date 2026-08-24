@@ -502,10 +502,11 @@ async function loadData(){
   me=prof;
   document.getElementById('restName').textContent=prof.restaurants.name;
   if(document.getElementById('restTitle')) document.getElementById('restTitle').textContent=prof.restaurants.name;
-  await loadAttendance();
-  await Promise.allSettled([loadDashboard(), loadStaff(), loadProducts(), loadInventory()]);
+  await loadStaff(); // СНАЧАЛА персонал
+  await loadAttendance(); // ПОТОМ табель
+  await Promise.allSettled([loadDashboard(), loadProducts(), loadInventory()]);
   updateMonthLabels();
-  }
+}
   // === КАРМАННЫЙ ШЕФ - ДОБАВЛЕНИЕ ПРОДУКТА (надежно для аренды) ===
 document.getElementById('openAddItemBtn')?.addEventListener('click', ()=>{
   document.getElementById('addItemModal').classList.add('show');
