@@ -475,29 +475,19 @@ async function loadAttendance(){
 async function loadData(){
   const {data:{user}} = await supabase.auth.getUser();
   if(!user) return location.href='/index.html';
-  let {data:prof} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
-  if(!prof){
-    const {data:np}=await supabase.from('profiles').insert([{id:user.id,email:user.email,full_name:user.email.split('@')[0],role:'owner',is_active:true}]).select('*,restaurants(name)').maybeSingle();
-    prof=np;
+  const {data:prof} = await supabase.from('profiles').select('*, restaurants(id,name)').eq('id',user.id).single();
+  if(!prof) return location.href='/index.html';
+  if(!prof.restaurant_id || !prof.restaurants){
+    const {data:realRest} = await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).maybeSingle();
+    if(!realRest) return location.href='/index.html';
+    await supabase.from('profiles').update({restaurant_id:realRest.id}).eq('id',user.id);
+    prof.restaurants = realRest;
+    prof.restaurant_id = realRest.id;
   }
-  let rid = prof.restaurant_id;
-  if(rid){
-    const {data:chk}=await supabase.from('restaurants').select('id').eq('id',rid).maybeSingle();
-    if(!chk) rid=null;
-  }
-  if(!rid){
-    const {data:found}=await supabase.from('restaurants').select('id').eq('owner_id',user.id).maybeSingle();
-    if(found) rid=found.id;
-    else {
-      const {data:cr}=await supabase.from('restaurants').insert([{owner_id:user.id,name:'Мой ресторан'}]).select().single();
-      rid=cr.id;
-    }
-    await supabase.from('profiles').update({restaurant_id:rid}).eq('id',user.id);
-    const {data:p2}=await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
-    prof=p2;
-  }
-  myRestaurantId=rid; me=prof;
-  document.getElementById('restName').textContent = prof.restaurants?.name || 'Ресторан';
+  myRestaurantId = prof.restaurant_id;
+  me = prof;
+  document.getElementById('restName').textContent = prof.restaurants.name;
+  if(document.getElementById('restTitle')) document.getElementById('restTitle').textContent = prof.restaurants.name;
   await Promise.allSettled([loadDashboard(), loadStaff(), loadProducts(), loadInventory()]);
   updateMonthLabels();
 }
