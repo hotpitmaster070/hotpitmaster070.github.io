@@ -491,43 +491,48 @@ async function loadData(){
     }
     me = prof;
     myRestaurantId = prof.restaurant_id;
-    if(!myRestaurantId || true){ // всегда проверяем чтобы найти мангал
-      // 1. Приоритет - ищем "мангал" этого владельца
+
+    // --- ФИКС ДЛЯ АРЕНДЫ: умный поиск, без || true ---
+    if(!myRestaurantId){
+      // 1. Ищем мангал твоего владельца
       let {data: mangalRest} = await supabase.from('restaurants').select('id, name').eq('owner_id', user.id).ilike('name','%мангал%').maybeSingle();
-      // 2. Если мангала нет у этого владельца - ищем мангал вообще без владельца
-      if(!mangalRest){
-        let {data: freeMangal} = await supabase.from('restaurants').select('id, name').ilike('name','%мангал%').maybeSingle();
-        if(freeMangal){
-          await supabase.from('restaurants').update({ owner_id: user.id }).eq('id', freeMangal.id);
-          mangalRest = freeMangal;
-        }
-      }
       if(mangalRest){
         myRestaurantId = mangalRest.id;
-        await supabase.from('profiles').update({ restaurant_id: myRestaurantId }).eq('id', user.id);
-        // Авто-чистка всех "Мой ресторан" этого владельца
-        await supabase.from('restaurants').delete().eq('owner_id', user.id).eq('name','Мой ресторан');
       } else {
-        // Если мангала совсем нет - берем первый нормальный ресторан
+        // 2. Любой твой ресторан кроме "Мой ресторан"
         let {data: anyRest} = await supabase.from('restaurants').select('id').eq('owner_id', user.id).neq('name','Мой ресторан').maybeSingle();
-        if(anyRest){
-          myRestaurantId = anyRest.id;
-          await supabase.from('profiles').update({ restaurant_id: myRestaurantId }).eq('id', user.id);
+        if(anyRest) myRestaurantId = anyRest.id;
+        else {
+          let {data: firstRest} = await supabase.from('restaurants').select('id').eq('owner_id', user.id).maybeSingle();
+          if(firstRest) myRestaurantId = firstRest.id;
         }
       }
+      // 3. Если вообще ничего нет - создаем ОДИН раз мангал
+      if(!myRestaurantId){
+        const { data: newRest, error: restErr } = await supabase.from('restaurants').insert([{ owner_id: user.id, name: 'мангал' }]).select().single();
+        if(restErr) throw restErr;
+        myRestaurantId = newRest.id;
+      }
+      await supabase.from('profiles').update({ restaurant_id: myRestaurantId }).eq('id', user.id);
       let {data:prof2} = await supabase.from('profiles').select('*,restaurants(name)').eq('id',user.id).maybeSingle();
       prof = prof2;
-      if(prof2?.restaurant_id) myRestaurantId = prof2.restaurant_id;
     }
 
+    // --- ФИКС НАЗВАНИЯ: тянем напрямую из restaurants ---
     const restNameEl = document.getElementById('restName');
-    if(restNameEl){ restNameEl.textContent = prof.restaurants?.name || 'Ресторан'; }
+    let finalName = prof.restaurants?.name;
+    if(myRestaurantId){
+      const {data: directRest} = await supabase.from('restaurants').select('name').eq('id', myRestaurantId).maybeSingle();
+      if(directRest?.name) finalName = directRest.name;
+    }
+    if(restNameEl){ restNameEl.textContent = finalName || 'Ресторан'; }
 
     await loadDashboard();
-    if(currentTab === 'settings') loadSettings();
+    if(currentTab === 'settings') await loadSettings();
     await loadStaff();
-    loadProducts();
-    loadInventory();
+    await loadProducts();
+    await loadInventory();
+    updateMonthLabels();
 
   }catch(e){
     console.error(e);
