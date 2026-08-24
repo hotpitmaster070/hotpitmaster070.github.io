@@ -487,24 +487,25 @@ async function loadAttendance(){
 }
 
 async function loadData(){
-  const {data:{user}} = await supabase.auth.getUser();
+  const {data:{user}}=await supabase.auth.getUser();
   if(!user) return location.href='/index.html';
-  const {data:prof} = await supabase.from('profiles').select('*, restaurants(id,name)').eq('id',user.id).single();
+  const {data:prof}=await supabase.from('profiles').select('*, restaurants(id,name)').eq('id',user.id).single();
   if(!prof) return location.href='/index.html';
-  if(!prof.restaurant_id || !prof.restaurants){
-    const {data:realRest} = await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).maybeSingle();
+  if(!prof.restaurant_id||!prof.restaurants){
+    const {data:realRest}=await supabase.from('restaurants').select('id,name').eq('owner_id',user.id).maybeSingle();
     if(!realRest) return location.href='/index.html';
     await supabase.from('profiles').update({restaurant_id:realRest.id}).eq('id',user.id);
-    prof.restaurants = realRest;
-    prof.restaurant_id = realRest.id;
+    prof.restaurants=realRest;
+    prof.restaurant_id=realRest.id;
   }
-  myRestaurantId = prof.restaurant_id;
-  me = prof;
-  document.getElementById('restName').textContent = prof.restaurants.name;
-  if(document.getElementById('restTitle')) document.getElementById('restTitle').textContent = prof.restaurants.name;
+  myRestaurantId=prof.restaurant_id;
+  me=prof;
+  document.getElementById('restName').textContent=prof.restaurants.name;
+  if(document.getElementById('restTitle')) document.getElementById('restTitle').textContent=prof.restaurants.name;
+  await loadAttendance();
   await Promise.allSettled([loadDashboard(), loadStaff(), loadProducts(), loadInventory()]);
   updateMonthLabels();
-}
+  }
   // === КАРМАННЫЙ ШЕФ - ДОБАВЛЕНИЕ ПРОДУКТА (надежно для аренды) ===
 document.getElementById('openAddItemBtn')?.addEventListener('click', ()=>{
   document.getElementById('addItemModal').classList.add('show');
