@@ -2,21 +2,21 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CookOS - HotPit</title>
+<title>CookOS</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--r:20px;--green:#22c55e;--red:#ef4444}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:14px;min-height:100vh}
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--r:18px;--green:#22c55e;--red:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:sans-serif;padding:12px}
 .card{background:var(--card);padding:16px;border-radius:var(--r);border:1px solid #262626;margin-bottom:12px}
-.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
-.tab{padding:10px 14px;border-radius:10px;background:var(--card-2);border:1px solid #333;white-space:nowrap;font-weight:800;cursor:pointer}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;white-space:nowrap}
+.tab{padding:10px 14px;border-radius:10px;background:var(--card-2);border:1px solid #333;font-weight:800;cursor:pointer}
 .tab.active{background:var(--accent);color:#000}
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:800;margin:6px 0;cursor:pointer}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;margin:6px 0;cursor:pointer}
 .btn-a{background:var(--accent);color:#000}.btn-g{background:var(--green);color:#fff}.btn-r{background:var(--red);color:#fff}
 input,select{width:100%;padding:12px;margin:6px 0;background:var(--card-2);border:1px solid #333;border-radius:10px;color:#fff}
 .small{color:var(--muted);font-size:13px}
 .badge{padding:3px 8px;border-radius:8px;font-size:12px;font-weight:800}.low{background:#f59e0b22;color:#f59e0b}.stop{background:#ef444422;color:#ef4444}
+.timerCard{background:var(--card-2);padding:12px;border-radius:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;border-left:4px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -30,45 +30,32 @@ input,select{width:100%;padding:12px;margin:6px 0;background:var(--card-2);borde
 <div class="tab" data-t="timers">⏰ Будильник</div>
 <div class="tab" data-t="qr">📷 QR Вход</div>
 <div class="tab" data-t="tabel">📅 Табель</div>
-<div class="tab" data-t="docs">📁 Доки + ДР</div>
+<div class="tab" data-t="docs">📁 Доки</div>
 </div>
 
-<div id="tab-tasks" class="card"></div>
-<div id="tab-stock" class="card" style="display:none"></div>
+<div id="tab-tasks" class="card"><h3>Мои задания</h3><div id="tasksList" class="small">Загрузка...</div></div>
+<div id="tab-stock" class="card" style="display:none"><h3>📦 Склад</h3><div id="stockList"></div></div>
 <div id="tab-waste" class="card" style="display:none">
 <h3>Списание — обязательно фото</h3>
-<select id="wProd"></select>
-<input id="wQty" type="number" placeholder="Кол-во">
-<input id="wReason" placeholder="Причина: испортилось">
-<input id="wPhoto" type="file" accept="image/*" capture="environment">
-<button class="btn btn-r" onclick="doWaste()">Списать с фото</button>
-<p class="small" id="wStatus"></p>
+<select id="wProd"></select><input id="wQty" type="number" placeholder="Кол-во"><input id="wReason" placeholder="Причина: испортилось"><input id="wPhoto" type="file" accept="image/*" capture="environment"><button class="btn btn-r" onclick="doWaste()">Списать с фото</button><p class="small" id="wStatus"></p>
 </div>
+
 <div id="tab-timers" class="card" style="display:none">
-<h3>⏰ Будильник для готовки</h3>
-<p class="small">Поставил рис — не забудешь, запищит</p>
-<input id="tName" placeholder="Что готовишь?"><input id="tMin" type="number" placeholder="Минут">
-<button class="btn btn-a" onclick="addTimer()">Поставить</button><div id="tList"></div>
+<h3>⏰ Будильник — чтобы не забыть что готовишь</h3>
+<p class="small">Поставил — внизу покажет сколько осталось, запищит громко</p>
+<input id="tName" placeholder="Что готовишь? Рис, бульон, мясо"><input id="tMin" type="number" placeholder="Минут: 15"><button class="btn btn-a" onclick="addTimer()">⏰ Поставить будильник</button>
+<div id="tList" style="margin-top:12px"></div>
 </div>
-<div id="tab-qr" class="card" style="display:none; text-align:center">
-<h3>Отметка прихода/ухода</h3><p class="small" id="qrInfo"></p>
-<button class="btn btn-g" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button>
-<button class="btn btn-r" id="btnOut" style="display:none" onclick="mark('out')">ОТМЕТИТЬ УХОД</button>
-<p class="small" id="qrStatus"></p>
-</div>
-<div id="tab-tabel" class="card" style="display:none"><h3>Мои отработанные дни</h3><div id="tabelList" class="small"></div></div>
-<div id="tab-docs" class="card" style="display:none">
-<h3>Оформление + День Рождения</h3><p class="small">Добавь ДР — у шефа автоматом появится напоминание, поздравит вся команда. И для доброго дела — честная система.</p>
-<input id="bDay" type="date"><button class="btn btn-a" onclick="saveBday()">Сохранить День Рождения</button>
-<p class="small" id="docStatus"></p>
-</div>
+
+<div id="tab-qr" class="card" style="display:none; text-align:center"><h3>Отметка</h3><p class="small" id="qrInfo"></p><button class="btn btn-g" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button><button class="btn btn-r" id="btnOut" style="display:none" onclick="mark('out')">ОТМЕТИТЬ УХОД</button><p class="small" id="qrStatus"></p></div>
+<div id="tab-tabel" class="card" style="display:none"><h3>Табель</h3><div id="tabelList" class="small"></div></div>
+<div id="tab-docs" class="card" style="display:none"><h3>📁 Мои документы</h3><p class="small">Паспорт, медкнижка, договор — загрузи фото. Видит только шеф.</p><input id="docFile" type="file"><input id="docName" placeholder="Название: Паспорт"><button class="btn btn-a" onclick="uploadDoc()">Загрузить документ</button><p class="small" id="docStatus"></p><div id="docsList" class="small" style="margin-top:10px"></div></div>
 
 <script>
 const SUPA_URL='https://xljogkyropyocvuuodfl.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
 const supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-const rid=new URLSearchParams(location.search).get('restaurant_id')||localStorage.getItem('restaurant_id');
-if(rid) localStorage.setItem('restaurant_id',rid);
+let rid = new URLSearchParams(location.search).get('restaurant_id') || localStorage.getItem('restaurant_id');
 let uid=null; let startTime='10:00';
 
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
@@ -79,68 +66,73 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
 
 async function init(){
  try{
-  if(!rid){ document.getElementById('log').textContent='Открой по ссылке с?restaurant_id=... Копируй QR у шефа'; return; }
-  document.getElementById('log').textContent='Ресторан: '+rid;
   const {data:{session}} = await supa.auth.getSession();
-  if(!session){ document.getElementById('log').innerHTML='Не залогинен. <a href="mark.html?restaurant_id='+rid+'" style="color:#f97316">Войти</a>'; return; }
+  if(!session){ document.getElementById('log').innerHTML='Не залогинен. Открой <a href="mark.html" style="color:#f97316">mark.html</a>'; return; }
   uid=session.user.id;
 
-  const {data:rest}=await supa.from('restaurants').select('name,start_time').eq('id',rid).single();
-  if(rest){ startTime=rest.start_time||'10:00'; document.getElementById('log').textContent=rest.name+' | Смена с '+startTime; document.getElementById('qrInfo').textContent='Смена с '+startTime; }
+  // УМНОЕ ОПРЕДЕЛЕНИЕ РЕСТОРАНА: из ссылки, из localStorage, ИЛИ из профиля повара
+  if(!rid){
+    const {data:prof} = await supa.from('profiles').select('restaurant_id,full_name,role').eq('id',uid).single();
+    if(prof?.restaurant_id){ rid=prof.restaurant_id; localStorage.setItem('restaurant_id',rid); }
+    document.getElementById('log').textContent = prof? (prof.full_name+' | '+prof.restaurant_id) : 'Нет restaurant_id';
+  }
 
-  loadTasks(); loadStock(); checkAtt(); loadTabel();
+  if(!rid){ document.getElementById('log').textContent='Открой по QR у шефа один раз'; return; }
+  localStorage.setItem('restaurant_id',rid);
+
+  const {data:rest} = await supa.from('restaurants').select('name,start_time').eq('id',rid).single();
+  if(rest){ startTime=rest.start_time||'10:00'; document.getElementById('log').textContent=rest.name+' | Смена с '+startTime; document.getElementById('qrInfo').textContent='Смена с '+startTime+' | '+rest.name; }
+
+  loadTasks(); loadStock(); checkAtt(); loadTabel(); loadDocs();
  }catch(e){ document.getElementById('log').textContent='Ошибка: '+e.message; }
 }
 
-async function loadTasks(){
- const {data}=await supa.from('tasks').select('*').eq('restaurant_id',rid).eq('assigned_to',uid).neq('status','done').order('created_at',{ascending:false});
- const el=document.getElementById('tab-tasks');
- if(!data||data.length==0){ el.innerHTML='<h3>📋 Мои задания от шефа</h3><p class="small">Заданий нет — ты красавчик!</p>'; return; }
- el.innerHTML='<h3>📋 Мои задания (фото-отчет)</h3>'+data.map(t=>`<div style="border-left:4px solid #f97316;padding-left:10px;margin:10px 0"><b>${t.title}</b><p class="small">${t.description||''}</p><input type="file" id="f_${t.id}" accept="image/*" capture="environment"><button class="btn btn-g" onclick="doneTask('${t.id}')">Сделал + Фото</button></div>`).join('');
+// --- БУДИЛЬНИК ИСПРАВЛЕН - ПОКАЗЫВАЕТ СПИСОК СНИЗУ ---
+let timers = JSON.parse(localStorage.getItem('cook_timers')||'[]');
+function addTimer(){
+  const n=document.getElementById('tName').value||'Блюдо';
+  const m=parseInt(document.getElementById('tMin').value);
+  if(!m){ alert('Укажи минуты'); return; }
+  timers.push({id:Date.now(), name:n, end:Date.now()+m*60000, mins:m});
+  saveTimers(); document.getElementById('tName').value=''; document.getElementById('tMin').value='';
+  if(Notification && Notification.permission!=='granted') Notification.requestPermission();
 }
-async function doneTask(id){
- const file=document.getElementById('f_'+id).files[0]; if(!file){ alert('Фото обязательно, братик!'); return; }
- const path=`${rid}/${id}_${Date.now()}.jpg`;
- const {error:upErr}=await supa.storage.from('task_proofs').upload(path,file);
- if(upErr){ alert('Создай папку task_proofs в Storage Public'); return; }
- const {data:{publicUrl}}=supa.storage.from('task_proofs').getPublicUrl(path);
- await supa.from('tasks').update({status:'done',photo_url:publicUrl}).eq('id',id);
- alert('✅ Отчет улетел шефу с фото'); loadTasks();
+function saveTimers(){ localStorage.setItem('cook_timers', JSON.stringify(timers)); }
+function renderTimers(){
+  const list=document.getElementById('tList');
+  if(timers.length==0){ list.innerHTML='<p class="small">Нет активных готовок. Поставь рис 🍚</p>'; return; }
+  list.innerHTML='<h4>🔥 Готовится сейчас ('+timers.length+'):</h4>'+timers.map(t=>{
+    const diff=Math.max(0, t.end-Date.now());
+    const sec=Math.ceil(diff/1000);
+    const mm=Math.floor(sec/60); const ss=('0'+sec%60).slice(-2);
+    const urgent = sec<60? 'border-left-color:#ef4444; background:#ef444422' : '';
+    return `<div class="timerCard" style="${urgent}"><div><b>${t.name}</b><br><span class="small">Осталось: ${mm}:${ss}</span></div><div><span style="font-size:20px;font-weight:800">${mm}:${ss}</span> <span style="cursor:pointer" onclick="removeTimer(${t.id})"> ✅</span></div></div>`;
+  }).join('');
 }
+function removeTimer(id){ timers=timers.filter(x=>x.id!==id); saveTimers(); renderTimers(); }
+setInterval(()=>{
+  renderTimers();
+  timers.forEach(t=>{
+    if(Date.now()>=t.end){
+      try{ const audio=new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); audio.play(); }catch{}
+      if(Notification.permission==='granted') new Notification('🔥 ГОТОВО: '+t.name+'! Снимай!', {body:'Время вышло: '+t.name});
+      else alert('🔥 '+t.name+' ГОТОВ! Снимай с плиты!');
+      timers=timers.filter(x=>x.id!==t.id); saveTimers();
+    }
+  });
+},1000);
 
-async function loadStock(){
- const {data}=await supa.from('items').select('*').eq('restaurant_id',rid);
- const el=document.getElementById('tab-stock');
- if(!data||data.length==0){ el.innerHTML='<h3>📦 Склад</h3><p class="small">Склад пустой</p>'; return; }
- el.innerHTML='<h3>📦 Склад — МАЛО / СТОП</h3>'+data.map(p=>{
-  const cur=p.current_stock||0; const min=p.min_stock||5;
-  let badge=cur<=0?'<span class="badge stop">СТОП</span>':cur<=min?'<span class="badge low">МАЛО</span>':'';
-  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222"><span>${p.name} — ${cur} ${p.unit||''}</span>${badge}</div>`;
- }).join('')+`<button class="btn btn-a" onclick="reportLow()">Сообщить что мало</button>`;
- document.getElementById('wProd').innerHTML=data.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
-}
+async function loadTasks(){ try{ const {data}=await supa.from('tasks').select('*').eq('restaurant_id',rid).eq('assigned_to',uid).neq('status','done').order('created_at',{ascending:false}); document.getElementById('tasksList').innerHTML=data&&data.length? data.map(t=>`<div style="border-left:4px solid #f97316;padding-left:10px;margin:10px 0"><b>${t.title}</b><p class="small">${t.description||''}</p><input type="file" id="f_${t.id}" accept="image/*"><button class="btn btn-g" onclick="doneTask('${t.id}')">Сделал + Фото</button></div>`).join('') : 'Заданий нет — отдыхаешь!'; }catch(e){ document.getElementById('tasksList').textContent='Ошибка заданий: '+e.message; } }
+async function doneTask(id){ const file=document.getElementById('f_'+id).files[0]; if(!file) return alert('Фото обязательно'); const path=`${rid}/${id}_${Date.now()}.jpg`; const {error}=await supa.storage.from('task_proofs').upload(path,file); if(error) return alert('Создай Storage папку task_proofs Public'); const {data:{publicUrl}}=supa.storage.from('task_proofs').getPublicUrl(path); await supa.from('tasks').update({status:'done',photo_url:publicUrl}).eq('id',id); alert('✅ Отчет улетел шефу'); loadTasks(); }
+async function loadStock(){ try{ const {data}=await supa.from('items').select('*').eq('restaurant_id',rid); document.getElementById('stockList').innerHTML=data? data.map(p=>{ const cur=p.current_stock||0; const min=p.min_stock||5; let badge=cur<=0?'<span class="badge stop">СТОП</span>':cur<=min?'<span class="badge low">МАЛО</span>':''; return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222"><span>${p.name} — ${cur} ${p.unit||''}</span>${badge}</div>`}).join('') : 'Пусто'; document.getElementById('wProd').innerHTML=data? data.map(p=>`<option value="${p.id}">${p.name}</option>`).join('') : ''; }catch(e){ document.getElementById('stockList').textContent=e.message; } }
+async function doWaste(){ const pid=document.getElementById('wProd').value; const qty=document.getElementById('wQty').value; const reason=document.getElementById('wReason').value; const file=document.getElementById('wPhoto').files[0]; if(!file) return alert('Фото обязательно'); document.getElementById('wStatus').textContent='Загрузка...'; const path=`${rid}/${Date.now()}.jpg`; const {error}=await supa.storage.from('waste_photos').upload(path,file); if(error) return document.getElementById('wStatus').textContent='Создай Storage waste_photos Public'; const {data:{publicUrl}}=supa.storage.from('waste_photos').getPublicUrl(path); await supa.from('waste_logs').insert({restaurant_id:rid,user_id:uid,product_id:pid,qty,reason,photo_url:publicUrl}); document.getElementById('wStatus').textContent='✅ Списано с фото'; }
+async function checkAtt(){ const TODAY=new Date().toISOString().split('T')[0]; try{ const {data}=await supa.from('attendance').select('*').eq('profile_id',uid).eq('work_date',TODAY).eq('restaurant_id',rid).single(); if(data?.time_in){ document.getElementById('btnIn').style.display='none'; document.getElementById('qrStatus').textContent='Приход: '+data.time_in; if(!data.time_out) document.getElementById('btnOut').style.display='block'; } }catch{} }
+async function mark(type){ const now=new Date(); const time=now.toTimeString().slice(0,5); const TODAY=now.toISOString().split('T')[0]; try{ if(type==='in'){ await supa.from('attendance').insert({profile_id:uid,restaurant_id:rid,work_date:TODAY,time_in:time,status:time>startTime?'late':'on_time'}); document.getElementById('qrStatus').textContent='Приход '+time; document.getElementById('btnIn').style.display='none'; document.getElementById('btnOut').style.display='block'; } else { await supa.from('attendance').update({time_out:time}).eq('profile_id',uid).eq('work_date',TODAY).eq('restaurant_id',rid); document.getElementById('qrStatus').textContent='Уход '+time; document.getElementById('btnOut').style.display='none'; } loadTabel(); }catch(e){ alert(e.message); } }
+async function loadTabel(){ try{ const {data}=await supa.from('attendance').select('*').eq('profile_id',uid).eq('restaurant_id',rid).order('work_date',{ascending:false}).limit(20); document.getElementById('tabelList').innerHTML=data? data.map(a=>`${a.work_date}: ${a.time_in||'-'} - ${a.time_out||'-'} (${a.status||''})`).join('<br>') : 'Нет смен'; }catch{} }
+async function uploadDoc(){ const f=document.getElementById('docFile').files[0]; const n=document.getElementById('docName').value||'Документ'; if(!f) return alert('Выбери файл'); const path=`${rid}/${uid}_${Date.now()}.jpg`; const {error}=await supa.storage.from('documents').upload(path,f); if(error) return document.getElementById('docStatus').textContent='Создай Storage documents Public'; const {data:{publicUrl}}=supa.storage.from('documents').getPublicUrl(path); document.getElementById('docStatus').textContent='✅ Загружено: '+n; loadDocs(); }
+async function loadDocs(){ document.getElementById('docsList').innerHTML='<p class="small">Документы видит только шеф. ДР теперь вводит шеф, не ты.</p>'; }
 
-async function doWaste(){
- const pid=document.getElementById('wProd').value; const qty=document.getElementById('wQty').value; const reason=document.getElementById('wReason').value; const file=document.getElementById('wPhoto').files[0];
- if(!file){ alert('Фото обязательно для списания — защита от воровства'); return; }
- document.getElementById('wStatus').textContent='Загрузка фото...';
- const path=`${rid}/${Date.now()}.jpg`; const {error}=await supa.storage.from('waste_photos').upload(path,file);
- if(error){ document.getElementById('wStatus').textContent='Создай папку waste_photos в Storage Public'; return; }
- const {data:{publicUrl}}=supa.storage.from('waste_photos').getPublicUrl(path);
- await supa.from('waste_logs').insert({restaurant_id:rid,user_id:uid,product_id:pid,qty,reason,photo_url:publicUrl});
- document.getElementById('wStatus').textContent='✅ Списано с фото, шеф видит';
-}
-
-let timers=[]; function addTimer(){ const n=document.getElementById('tName').value||'Блюдо'; const m=parseInt(document.getElementById('tMin').value)||1; timers.push({id:Date.now(),name:n,end:Date.now()+m*60000}); if(Notification&&Notification.permission!=='granted') Notification.requestPermission(); }
-setInterval(()=>{ document.getElementById('tList').innerHTML=timers.map(t=>{ const l=Math.max(0,Math.ceil((t.end-Date.now())/1000)); return `<div style="background:#262626;padding:10px;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between"><span>🔥 ${t.name} ${Math.floor(l/60)}:${('0'+l%60).slice(-2)}</span><span style="cursor:pointer" onclick="timers=timers.filter(x=>x.id!==${t.id})">✅</span></div>`}).join(''); timers.forEach(t=>{ if(Date.now()>=t.end){ try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); }catch{} if(Notification.permission==='granted') new Notification('ГОТОВО: '+t.name); alert('🔥 '+t.name+' ГОТОВ!'); timers=timers.filter(x=>x.id!==t.id); } }); },1000);
-
-async function checkAtt(){ const TODAY=new Date().toISOString().split('T')[0]; try{ const {data}=await supa.from('attendance').select('*').eq('profile_id',uid).eq('work_date',TODAY).eq('restaurant_id',rid).single(); if(data?.time_in){ document.getElementById('btnIn').style.display='none'; document.getElementById('qrStatus').textContent='Приход: '+data.time_in; } if(data?.time_in&&!data?.time_out) document.getElementById('btnOut').style.display='block'; }catch(e){ try{ const {data}=await supa.from('attendance').select('*').eq('user_id',uid).eq('work_date',TODAY).eq('restaurant_id',rid).single(); if(data?.time_in){ document.getElementById('btnIn').style.display='none'; if(!data.time_out) document.getElementById('btnOut').style.display='block'; } }catch{} } }
-async function mark(type){ const now=new Date(); const time=now.toTimeString().slice(0,5); const TODAY=now.toISOString().split('T')[0]; try{ if(type==='in'){ await supa.from('attendance').insert({profile_id:uid,restaurant_id:rid,work_date:TODAY,time_in:time,status:time>startTime?'late':'on_time'}); document.getElementById('qrStatus').textContent='Приход '+time; document.getElementById('btnIn').style.display='none'; document.getElementById('btnOut').style.display='block'; } else { await supa.from('attendance').update({time_out:time}).eq('profile_id',uid).eq('work_date',TODAY).eq('restaurant_id',rid); document.getElementById('qrStatus').textContent='Уход '+time; document.getElementById('btnOut').style.display='none'; } }catch{ await supa.from('attendance').insert({user_id:uid,restaurant_id:rid,work_date:TODAY,time_in:time}); document.getElementById('qrStatus').textContent='Приход '+time; } loadTabel(); }
-async function loadTabel(){ try{ const {data}=await supa.from('attendance').select('*').eq('profile_id',uid).eq('restaurant_id',rid).order('work_date',{ascending:false}).limit(20); document.getElementById('tabelList').innerHTML=data?data.map(a=>`${a.work_date}: ${a.time_in||'-'} - ${a.time_out||'-'} (${a.status||''})`).join('<br>'):'Нет данных'; }catch{ const {data}=await supa.from('attendance').select('*').eq('user_id',uid).eq('restaurant_id',rid).order('work_date',{ascending:false}).limit(20); document.getElementById('tabelList').innerHTML=data?data.map(a=>`${a.work_date}: ${a.time_in||'-'} - ${a.time_out||'-'}`).join('<br>'):'Нет данных'; } }
-async function saveBday(){ const d=document.getElementById('bDay').value; if(!d) return alert('Выбери дату'); const {error}=await supa.from('profiles').update({birthday:d}).eq('id',uid); if(error){ document.getElementById('docStatus').textContent='Выполни в SQL: alter table profiles add column birthday date;'; } else { document.getElementById('docStatus').textContent='✅ ДР сохранен! У шефа появится напоминание'; } }
-function reportLow(){ const n=prompt('Чего мало?'); if(n) supa.from('low_stock_alerts').insert({restaurant_id:rid,user_id:uid,product_name:n}).then(()=>alert('Шефу улетело!')); }
-
-init();
+init(); renderTimers();
 </script>
 </body>
 </html>
