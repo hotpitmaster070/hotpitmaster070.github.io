@@ -52,3 +52,353 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:260px}.burger,.close-sidebar{display:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head><body><div class="app"><div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header"><h2 style="color:var(--accent)">HotPit KITCHEN</h2><button class="close-sidebar" id="closeSidebarBtn">×</button></div>
+<div id="sidebarChef" class="sidebar-chef" style="display:none"><div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
+<div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
+<nav class="menu">
+  <button class="tab-btn active" data-tab="dashboard">🏠 Главная</button>
+  <button class="tab-btn" data-tab="personal">👥 Персонал</button>
+  <button class="tab-btn" data-tab="tabel">📋 Табель</button>
+
+  <!-- НОВОЕ МЕНЮ ChefOS -->
+<div class="menu-item has-submenu open">
+  <button class="menu-parent">🍳 ChefOS</button>
+  <div class="submenu">
+    <button class="tab-btn" data-tab="items" style="text-align:left">1. Приход товара</button>
+    <button class="tab-btn" data-tab="tasks" style="text-align:left;opacity:0.5">2. Создать задание (скоро)</button>
+    <button class="tab-btn" data-tab="stock" style="text-align:left">4. Мой склад</button>
+    <button class="tab-btn" data-tab="zagotovki" style="text-align:left;opacity:0.5">5. Заготовки (скоро)</button>
+    <button class="tab-btn" data-tab="spisanie" style="text-align:left;opacity:0.5">6. Списание (скоро)</button>
+    <button class="tab-btn" data-tab="otchet-spis" style="text-align:left;opacity:0.5">7. Отчет по списанию (скоро)</button>
+    <button class="tab-btn" data-tab="otchet-mes" style="text-align:left;opacity:0.5">8. Отчет за месяц (скоро)</button>
+    <button class="tab-btn" data-tab="invent" style="text-align:left;opacity:0.5">9. Инвентаризация (скоро)</button>
+  </div>
+</div>
+
+  <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
+  <button id="logoutBtn">🚪 Выйти</button>
+</nav></aside>
+<main class="content">
+  <div class="topbar"><button class="burger" id="burgerBtn">☰</button><div><div style="color:var(--accent);font-size:20px;font-weight:800">HotPit KITCHEN</div><div style="font-size:13px">ChefOS <span id="pageSubtitle"></span></div></div></div>
+<div id="tab-content">
+
+<div data-tab-content="dashboard">
+  <h3 style="margin-bottom:20px">Сегодня на кухне</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div class="povar-card" onclick="document.querySelector('[data-tab=personal]').click()" style="cursor:pointer">
+      <h4>👥 Персонал</h4>
+      <b style="font-size:28px" id="dTeam">0</b> <span class="muted">человек</span>
+      <div class="muted" id="dTeamStatus" style="font-size:12px;margin-top:4px">Загрузка...</div>
+    </div>
+    <div class="povar-card" onclick="document.querySelector('[data-tab=tabel]').click()" style="cursor:pointer">
+      <h4>📋 Табель</h4>
+      <b style="font-size:28px" id="dOpoz">0</b> <span class="muted">опоздали</span>
+      <div class="muted" id="dTabelStatus" style="font-size:12px;margin-top:4px">За сегодня</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="povar-card" style="cursor:default;opacity:0.6">
+      <h4>📦 Склад</h4>
+      <b style="font-size:28px">0</b> <span class="muted">мало</span>
+      <div class="muted" style="font-size:12px;margin-top:4px">Подключим позже</div>
+    </div>
+    <div class="povar-card" style="cursor:default;opacity:0.6">
+      <h4>📅 График</h4>
+      <b style="font-size:28px">0</b> <span class="muted">в смене</span>
+      <div class="muted" style="font-size:12px;margin-top:4px">Подключим позже</div>
+    </div>
+  </div>
+</div>
+
+<div data-tab-content="personal" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="margin:0">Персонал</h3>
+    <button class="btn" id="addBtn" style="width:auto;padding:10px 16px;background:#ff6b00;color:#000;font-weight:700;border-radius:20px">+ Пригласить</button>
+  </div>
+  <div id="povaraList">Загрузка...</div>
+</div>
+<div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
+<div data-tab-content="settings" style="display:none">
+  <h3>Настройки ресторана</h3>
+  <div class="povar-card" style="max-width:500px">
+    <p class="muted" style="margin-bottom:16px">Это время используется для проверки опозданий поваров</p>
+    <label>Время начала смены</label>
+    <input type="time" id="startTime" style="margin-bottom:16px">
+    <button class="btn" onclick="saveSettings()" style="width:100%">Сохранить</button>
+    <p id="settingsMsg" style="color:#22c55e; text-align:center; margin-top:10px"></p>
+  </div>
+</div>
+  <!-- Вкладка 1. Приход товара -->
+<div data-tab-content="items" style="display:none">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">Приход товара</h3>
+      <button class="btn" id="openAddItemBtn" style="width:auto;padding:10px 16px;background:#ff6b00;color:#000;font-weight:700;border-radius:20px">+ Добавить товар</button>
+    </div>
+    <div id="itemsList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
+<!-- Вкладка 4. Мой склад -->
+<div data-tab-content="stock" style="display:none">
+  <div class="card">
+    <h3>Движения склада</h3>
+    <div id="stockList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+</div></main></div>
+
+<div class="modal" id="addModal"><div class="modal-card"><h3>Пригласить повара</h3>
+<input id="cookEmail" type="email" placeholder="Email повара">
+<select id="cookJob"><option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option><option>Повар холодного цеха</option><option>Повар-универсал</option><option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option></select>
+<select id="cookSalaryType"><option value="hourly">Почасовая ₽/час</option><option value="daily">Фикс за день ₽/день</option></select>
+<input id="cookSalary" type="number" placeholder="Ставка">
+<button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
+<div id="inviteLink" class="muted"></div><div id="qrcode"></div>
+<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
+</div></div>
+
+<div class="modal" id="statusModal"><div class="modal-card"><h3>На <span id="statusDate"></span></h3>
+<div id="statusHint" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+<div id="modalButtons"></div>
+<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
+
+  <div class="modal" id="requestModal"><div class="modal-card"><h3>Запрос для <span id="requestCookName"></span></h3>
+<p class="muted">Дата: <span id="requestDate"></span></p>
+<select id="reqStatus"><option value="work">Был на работе</option><option value="sick">Больничный</option><option value="vac">Отпуск</option><option value="off">Выходной</option></select>
+<label class="muted" style="font-size:12px;margin-top:8px;">Время прихода</label>
+<input id="reqTimeIn" type="time">
+<label class="muted" style="font-size:12px;margin-top:8px;">Время ухода</label>
+<input id="reqTimeOut" type="time">
+<input id="reqReason" type="text" placeholder="Причина: Ошибка в табеле" style="margin-top:8px;">
+<button class="btn" id="sendRequestBtn">Отправить запрос повару</button>
+<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('requestModal').classList.remove('show')">Отмена</button>
+</div></div>
+
+  <div class="modal" id="addItemModal"><div class="modal-card">
+  <h3>Добавить продукт</h3>
+  <label>Название <span style="color:#ff6b00">*</span></label>
+  <input id="itemName" type="text" placeholder="Напр: Курица филе">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+    <div><label>Кол-во <span style="color:#ff6b00">*</span></label><input id="itemQty" type="number" value="1" step="0.1"></div>
+    <div><label>Ед.изм</label>
+      <select id="itemUnit">
+        <option value="кг">кг</option>
+        <option value="л">л</option>
+        <option value="шт">шт</option>
+        <option value="г">г</option>
+        <option value="уп">уп</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+    <div><label>Мин. ост.</label><input id="itemMin" type="number" placeholder="2"></div>
+    <div><label>Закупка</label><input id="itemPrice" type="number" placeholder="350"></div>
+  </div>
+  <label style="margin-top:12px">Заметка</label>
+  <input id="itemNote" type="text" placeholder="Поставщик...">
+  <button class="btn" id="saveItemBtn" style="width:100%;margin-top:16px">Сохранить на склад</button>
+  <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addItemModal').classList.remove('show')">Отмена</button>
+  <p class="muted" style="font-size:11px;margin-top:10px"><span style="color:#ff6b00">*</span> - обязательно</p>
+</div></div>
+<script type="module">
+import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
+
+let currentTab='dashboard',myRestaurantId=null,currentDate=new Date(),povaraCache=[],attendanceCache={},tempStatusData={},me=null;
+function getLocalDateStr(d=new Date()){const tzOffset = d.getTimezoneOffset() * 60000;const localDate = new Date(d.getTime() - tzOffset);return localDate.toISOString().split('T')[0];}
+const TODAY = getLocalDateStr();
+
+function showToast(msg, type='info'){
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = `position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;z-index:9999;color:#fff;font-weight:500;`;
+  el.style.background = type==='error'?'#e74c3c':type==='ok'?'#27ae60':'#3498db';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+
+document.getElementById('burgerBtn').onclick=()=>{document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+document.getElementById('closeSidebarBtn').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+document.getElementById('overlay').onclick=()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+document.getElementById('logoutBtn').onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html')
+
+document.addEventListener('click', (e)=>{
+  const parentBtn = e.target.closest('.menu-parent');
+  if(parentBtn){ parentBtn.closest('.menu-item').classList.toggle('open'); }
+  const actionBtn = e.target.closest('[data-action]');
+  if(actionBtn){ showToast('Скоро: ' + actionBtn.textContent, 'info'); }
+})
+
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{
+  currentTab=btn.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===currentTab?'block':'none');
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  loadData()
+});
+
+function updateMonthLabels(){const el=document.getElementById('monthYearT'); if(el) el.textContent=currentDate.toLocaleString('ru',{month:'long',year:'numeric'});}
+document.getElementById('prevMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()-1);updateMonthLabels();loadData()}
+document.getElementById('nextMonthT').onclick=()=>{currentDate.setMonth(currentDate.getMonth()+1);updateMonthLabels();loadData()}
+document.getElementById('addBtn').onclick=()=>document.getElementById('addModal').classList.add('show');
+function fireCook(cookId,name){if(confirm(`Уволить ${name}?`)){supabase.from('profiles').update({is_active:false}).eq('id',cookId).then(()=>loadData())}}
+
+// 1. Приглашение - финальная версия без onclick
+async function genInvite(){
+  const email = document.getElementById('cookEmail').value.trim();
+  const job = document.getElementById('cookJob').value || 'Повар';
+  const type = document.getElementById('cookSalaryType').value;
+  const salary = parseFloat(document.getElementById('cookSalary').value) || 0;
+  if(!email || !salary){ showToast('Email и ставка обязательны','error'); return; }
+  const btn = document.getElementById('genInviteBtn');
+  btn.textContent='...'; btn.disabled=true;
+  try{
+    const token = crypto.randomUUID();
+    const {error} = await supabase.from('invites').insert([{
+      token, restaurant_id: myRestaurantId,
+      email, job_title: job, salary, salary_type: type
+    }]);
+    if(error) throw error;
+    const link = `https://hotpitmaster070.github.io/join.html?token=${token}`;
+    document.getElementById('inviteLink').innerHTML = `
+      <div style="background:#000;padding:12px;border-radius:12px;margin-top:12px;border:1px solid #333">
+        <div style="color:#a3a3a3;font-size:12px">${email} • ${job}</div>
+        <a href="${link}" target="_blank" style="color:#22c55e;margin-top:8px;word-break:break-all;display:block;text-decoration:underline">${link}</a>
+        <a href="${link}" target="_blank" style="display:block;text-align:center;margin-top:10px;background:#ff6b00;color:#000;padding:8px;border-radius:8px;font-weight:700;text-decoration:none">Открыть</a>
+      </div>`;
+    document.getElementById('qrcode').innerHTML='';
+    new QRCode(document.getElementById('qrcode'), {text: link, width: 140, height: 140});
+    showToast('Ссылка готова!','ok');
+  }catch(e){ showToast(e.message,'error'); }
+  finally{ btn.textContent='Сгенерировать ссылку'; btn.disabled=false; }
+}
+document.getElementById('genInviteBtn').addEventListener('click', genInvite);
+
+// 2. Табель - смена статусов
+async function setStatus(cookId, dateStr, status, time_in=null){
+  const {error}=await supabase.from('attendance').upsert({
+    restaurant_id:myRestaurantId,
+    profile_id:cookId,
+    work_date:dateStr,
+    status:status,
+    time_in:time_in
+  },{onConflict:'profile_id,work_date'});
+  if(error){ showToast(error.message,'error'); return; }
+  closeStatusModal();
+  await loadAttendance();
+  await loadStaff();
+}
+
+function getDayStatus(rec){
+  if(!rec) return '';
+  if(rec.status==='present') return 'work';
+  if(rec.status==='late') return 'sick';
+  if(rec.status==='sick') return 'vac';
+  if(rec.status==='absent') return 'off';
+  if(rec.status==='in') return 'in';
+  if(rec.status==='out') return 'out';
+  if(rec.status==='done') return 'done';
+  return '';
+}
+
+function calcHoursAndPay(cook, rec){
+  if(!rec || !rec.time_in) return {hours:0, pay:0};
+  // тут можно считать часы от time_in до time_out, пока просто 1 смена
+  const hours = 12; // стандарт смена
+  const rate = cook.salary || 0;
+  const pay = cook.salary_type === 'hourly' ? hours * rate : rate;
+  return {hours, pay};
+}
+
+function renderTotal(cookId){
+  const recs=attendanceCache[cookId]?.days||[];
+  let total=0;
+  const cook=povaraCache.find(c=>c.id===cookId);
+  recs.forEach(r=>{
+    if(r.status==='present'||r.status==='late'||r.status==='in'||r.status==='done'){
+      total+=cook?.salary_type==='hourly'?12*(cook?.salary||0):(cook?.salary||0);
+    }
+  });
+  const el=document.getElementById(`total-${cookId}`);
+  if(el) el.textContent=`${total}₽ за месяц`;
+}
+
+function createBtn(container, text, color, onClick){
+  const b = document.createElement('button');
+  b.textContent = text;
+  b.style.cssText = `background:${color};border:none;padding:8px 12px;border-radius:8px;color:#fff;margin:4px;cursor:pointer`;
+  b.onclick = onClick;
+  container.appendChild(b);
+  return b;
+}
+
+function openStatusModal(cookId, dateStr){
+  const modal = document.getElementById('statusModal');
+  document.getElementById('statusDate').textContent = dateStr;
+  const body = document.getElementById('modalButtons');
+  body.innerHTML = '';
+  createBtn(body, 'Пришел ✅', '#22c55e', ()=> setStatus(cookId, dateStr, 'present', new Date().toTimeString().slice(0,5)));
+  createBtn(body, 'Опоздал ⏰', '#f59e0b', ()=> setStatus(cookId, dateStr, 'late', new Date().toTimeString().slice(0,5)));
+  createBtn(body, 'Больничный 🤒', '#ef4444', ()=> setStatus(cookId, dateStr, 'sick'));
+  createBtn(body, 'Не пришел ❌', '#6b7280', ()=> setStatus(cookId, dateStr, 'absent'));
+  modal.classList.add('show');
+}
+function closeStatusModal(){ document.getElementById('statusModal')?.classList.remove('show'); }
+
+function openRequestForm(cookId, dateStr, record){
+  // форма заявки на замену - заглушка пока
+  showToast('Заявка - в разработке','info');
+}
+if(document.getElementById('sendRequestBtn')){
+  document.getElementById('sendRequestBtn').onclick = async()=>{
+    showToast('Отправлено','ok');
+    closeStatusModal();
+  }
+  }
+
+async function loadSettings(){
+  if(!myRestaurantId) return;
+const {data: rest} = await supabase.from('restaurants').select('start_time').eq('id',myRestaurantId).maybeSingle();
+  if(rest && document.getElementById('startTime')) document.getElementById('startTime').value = rest.start_time || '10:00';
+}
+
+async function saveSettings(){
+  const newTime = document.getElementById('startTime').value;
+  const {error} = await supabase.from('restaurants').update({start_time: newTime}).eq('id',myRestaurantId);
+  if(error) showToast(error.message, 'error');
+  else {
+    const el=document.getElementById('settingsMsg'); if(el) el.textContent = 'Сохранено!';
+    setTimeout(()=>{ if(el) el.textContent=''},2000)
+  }
+}
+
+async function loadDashboard(){
+  if(!myRestaurantId) return;
+  try {
+    const {count: teamCount} = await supabase.from('profiles').select('*',{count:'exact'}).eq('restaurant_id',myRestaurantId).eq('is_active',true).eq('role','cook');
+    const el=document.getElementById('dTeam'); if(el) el.textContent = teamCount || 0;
+    const {count: sickCount} = await supabase.from('attendance').select('*',{count:'exact'}).eq('restaurant_id',myRestaurantId).eq('work_date',TODAY).eq('status','sick');
+    const el2=document.getElementById('dTeamStatus'); if(el2) el2.textContent = sickCount > 0? `${sickCount} на больничном` : 'Все на месте';
+    const {data: todayAtt} = await supabase.from('attendance').select('time_in').eq('restaurant_id',myRestaurantId).eq('work_date',TODAY).not('time_in', 'is', null);
+    const opozdali = todayAtt?.filter(a => a.time_in > '10:00').length || 0;
+    const el3=document.getElementById('dOpoz'); if(el3) el3.textContent = opozdali;
+  } catch(e){ console.error('dashboard', e); }
+}
+
+// === НАДЕЖНЫЕ ФУНКЦИИ СКЛАДА (не валят сайт если ошибка) ===
+async function loadProducts(){
+  try {
+    if(!myRestaurantId) return;
+    const {data, error} = await supabase.from('items').select('*').eq('restaurant_id',myRestaurantId).order('created_at', {ascending: false});
+    if(error) throw error;
+    const listEl = document.getElementById('itemsList');
+    if(!listEl) return;
+    let html = '';
+    data?.forEach(i=>{
+      html += `<div style="padding:12px;border:1px solid #333;border-radius:10px"><b>${
