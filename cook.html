@@ -1,126 +1,107 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Отметка - HotPit</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CookOS - HotPit</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--radius:20px}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-
- .card{background:var(--card); padding:40px; border-radius:var(--radius); border:1px solid #262626; text-align:center; width:100%; max-width:420px; box-shadow:0 20px 50px rgba(0,0,0,0.5)}
- .logo{width:70px; height:70px; border-radius:16px; object-fit:cover; margin:0 auto 16px; border:2px solid var(--accent)}
-  h1{color:var(--accent); margin:0 0 8px; font-size:28px; font-weight:800}
- .sub{color:var(--muted); font-size:14px; margin-bottom:24px}
-  input{width:100%;padding:14px;margin:8px 0;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);font-size:15px;outline:none}
-  input:focus{border-color:var(--accent)}
- .btn{width:100%; padding:18px; font-size:18px; font-weight:800; border:none; border-radius:10px; cursor:pointer; margin:8px 0; transition:0.2s}
- .btn:active{transform:scale(0.97)}
- .btn-primary{background:var(--accent);color:#000}
- .btn-primary:hover{filter:brightness(1.1)}
- .btn-green{background:#22c55e; color:#fff}
- .btn-red{background:#ef4444; color:#fff}
- .info{color:var(--muted); margin-top:15px; font-size:14px}
- .late{color:#ef4444; font-weight:bold}
- .ontime{color:#22c55e; font-weight:bold}
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--r:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:14px}
+.card{background:var(--card);padding:16px;border-radius:var(--r);border:1px solid #262626;margin-bottom:12px}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px}
+.tab{padding:10px 14px;border-radius:10px;background:var(--card-2);border:1px solid #333;white-space:nowrap;font-weight:800;cursor:pointer}
+.tab.active{background:var(--accent);color:#000}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-weight:800;margin:6px 0;cursor:pointer}
+.btn-a{background:var(--accent);color:#000}.btn-g{background:#22c55e;color:#fff}.btn-r{background:#ef4444;color:#fff}
+input{width:100%;padding:12px;margin:6px 0;background:var(--card-2);border:1px solid #333;border-radius:10px;color:#fff}
+.small{color:var(--muted);font-size:13px}
+.badge{padding:3px 8px;border-radius:8px;font-size:12px;font-weight:800}.low{background:#f59e0b22;color:#f59e0b}.stop{background:#ef444422;color:#ef4444}
 </style>
 </head>
 <body>
+<h2 style="color:var(--accent)">HotPit CookOS</h2>
+<p class="small" id="debug">Загрузка...</p>
 
-<div class="card" id="loginCard" style="display:none">
-  <h1>HotPit</h1>
-  <p class="sub">Вход для персонала</p>
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="password" placeholder="Пароль">
-  <button class="btn btn-primary" onclick="login()">Войти</button>
+<div class="tabs">
+  <div class="tab active" data-t="tasks">📋 Задания</div>
+  <div class="tab" data-t="stock">📦 Склад</div>
+  <div class="tab" data-t="timers">⏰ Будильник</div>
+  <div class="tab" data-t="qr">📷 QR Вход</div>
+  <div class="tab" data-t="tabel">📅 Табель</div>
+  <div class="tab" data-t="docs">📁 Доки + ДР</div>
 </div>
 
-<div class="card" id="markCard" style="display:none">
-  <img id="restLogo" class="logo" src="" style="display:none">
-  <h1 id="restName">Ресторан</h1>
-  <p class="sub" id="userInfo"></p>
-  <button class="btn btn-green" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button>
-  <button class="btn btn-red" id="btnOut" onclick="mark('out')" style="display:none">ОТМЕТИТЬ УХОД</button>
-  <p class="info" id="status"></p>
+<div id="tab-tasks" class="card"><h3>Мои задания</h3><div id="tasksList" class="small">Тут будут задания от шефа с фото-отчетом</div></div>
+<div id="tab-stock" class="card" style="display:none"><h3>Склад</h3><div id="stockList" class="small">Загрузка items...</div></div>
+<div id="tab-timers" class="card" style="display:none">
+  <h3>⏰ Будильник — поставил готовить, не забудешь</h3>
+  <input id="tName" placeholder="Что готовишь? Рис, бульон"><input id="tMin" type="number" placeholder="Минут"><button class="btn btn-a" onclick="addTimer()">Поставить</button><div id="tList"></div>
 </div>
+<div id="tab-qr" class="card" style="display:none; text-align:center">
+  <h3>QR Отметка</h3><p class="small" id="qrInfo">Смена</p><button class="btn btn-g" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button><button class="btn btn-r" id="btnOut" style="display:none" onclick="mark('out')">ОТМЕТИТЬ УХОД</button><p class="small" id="qrStatus"></p>
+</div>
+<div id="tab-tabel" class="card" style="display:none"><h3>Мой табель / Зарплата</h3><div id="tabelList" class="small"></div></div>
+<div id="tab-docs" class="card" style="display:none"><h3>Мои документы + День Рождения</h3><p class="small">Сюда загрузишь доки, а ДР автоматом уйдет шефу для поздравлений</p><input id="bDay" type="date"><button class="btn btn-a" onclick="saveBday()">Сохранить ДР</button><input id="doc" type="file"><button class="btn btn-a" onclick="uploadDoc()">Загрузить документ</button><p class="small" id="docStatus"></p></div>
 
 <script>
-const SUPA_URL = 'https://xljogkyropyocvuuodfl.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
-const supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const SUPA_URL='https://xljogkyropyocvuuodfl.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const restaurant_id=new URLSearchParams(location.search).get('restaurant_id')||localStorage.getItem('restaurant_id');
+let user=null, startTime='10:00', profileId=null;
+if(restaurant_id) localStorage.setItem('restaurant_id',restaurant_id);
 
-const urlParams = new URLSearchParams(window.location.search);
-const restaurant_id = urlParams.get('restaurant_id');
-
-let currentUser = null;
-let startTime = '10:00';
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  document.querySelectorAll('[id^="tab-"]').forEach(c=>c.style.display='none');
+  document.getElementById('tab-'+t.dataset.t).style.display='block';
+}));
 
 async function init(){
-  if(!restaurant_id) { alert('Ошибка: нет restaurant_id в QR'); return; }
+  try{
+    document.getElementById('debug').textContent='ID ресторана: '+(restaurant_id||'нет');
+    if(!restaurant_id){ document.getElementById('tasksList').textContent='Открой по ссылке с ?restaurant_id=...'; return; }
+    const {data:{session}} = await supa.auth.getSession();
+    if(!session){ document.getElementById('debug').textContent='Не залогинен. Иди в mark.html?restaurant_id='+restaurant_id; return; }
+    user=session.user; profileId=user.id;
 
-  const {data: rest} = await supabase.from('restaurants').select('name,start_time,logo_url').eq('id',restaurant_id).single();
-  if(rest){
-    document.getElementById('restName').textContent = rest.name;
-    startTime = rest.start_time || '10:00';
-    if(rest.logo_url){
-      document.getElementById('restLogo').src = rest.logo_url;
-      document.getElementById('restLogo').style.display = 'block';
-    }
-  }
+    // ПРАВИЛЬНЫЕ КОЛОНКИ ПОД ТВОЮ БАЗУ
+    const {data:rest} = await supa.from('restaurants').select('name,start_time').eq('id',restaurant_id).single();
+    if(rest){ startTime=rest.start_time||'10:00'; document.getElementById('qrInfo').textContent='Смена с '+startTime+' | '+rest.name; }
 
-  const {data: {session}} = await supabase.auth.getSession();
-  if(session){
-    currentUser = session.user;
-    showMarkScreen();
-  } else {
-    document.getElementById('loginCard').style.display = 'block';
-  }
+    const {data:prof} = await supa.from('profiles').select('full_name,role,salary,fines').eq('id',profileId).single();
+    document.getElementById('debug').textContent=(prof?.full_name||'Повар')+' | Роль: '+(prof?.role||'-');
+
+    loadStock(); checkAtt(); loadTabel();
+  }catch(e){ document.getElementById('debug').textContent='Ошибка: '+e.message; console.error(e); }
 }
 
-async function login(){
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const {error} = await supabase.auth.signInWithPassword({email,password});
-  if(error) alert(error.message); else location.reload();
+async function loadStock(){
+  try{
+    const {data} = await supa.from('items').select('*').eq('restaurant_id',restaurant_id).limit(50);
+    if(!data||!data.length){ document.getElementById('stockList').innerHTML='Таблица items пустая. Добавь товары в items'; return; }
+    document.getElementById('stockList').innerHTML=data.map(p=>{
+      const qty=p.quantity||p.qty||0;
+      let b=qty<=0?'<span class="badge stop">СТОП</span>':qty<5?'<span class="badge low">МАЛО</span>':'';
+      return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222"><span>${p.name||p.title} — ${qty}</span>${b}</div>`;
+    }).join('');
+  }catch(e){ document.getElementById('stockList').textContent='Ошибка items: '+e.message; }
 }
 
-async function showMarkScreen(){
-  document.getElementById('loginCard').style.display = 'none';
-  document.getElementById('markCard').style.display = 'block';
-  const {data: profile} = await supabase.from('profiles').select('name').eq('id',currentUser.id).single();
-  document.getElementById('userInfo').textContent = `Привет, ${profile?.name || 'Сотрудник'}! Смена с ${startTime}`;
+let timers=[];
+function addTimer(){ const n=document.getElementById('tName').value||'Блюдо'; const m=parseInt(document.getElementById('tMin').value)||1; timers.push({id:Date.now(),name:n,end:Date.now()+m*60000}); if(Notification&&Notification.permission!=='granted') Notification.requestPermission(); }
+setInterval(()=>{ document.getElementById('tList').innerHTML=timers.map(t=>{ const l=Math.max(0,Math.ceil((t.end-Date.now())/1000)); return `<div style="background:#262626;padding:10px;border-radius:8px;margin:6px 0;display:flex;justify-content:space-between"><span>🔥 ${t.name} ${Math.floor(l/60)}:${('0'+l%60).slice(-2)}</span><span onclick="timers=timers.filter(x=>x.id!==${t.id})">✅</span></div>`}).join(''); timers.forEach(t=>{ if(Date.now()>=t.end){ try{ new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); }catch{} alert('🔥 '+t.name+' ГОТОВ! Снимай!'); timers=timers.filter(x=>x.id!==t.id); } }); },1000);
 
-  const TODAY = new Date().toISOString().split('T')[0];
-  const {data: att} = await supabase.from('attendance').select('*').eq('user_id',currentUser.id).eq('work_date',TODAY).eq('restaurant_id',restaurant_id).single();
-  if(att?.time_in) document.getElementById('btnIn').style.display='none';
-  if(att?.time_in &&!att?.time_out) document.getElementById('btnOut').style.display='block';
-}
+async function checkAtt(){ const TODAY=new Date().toISOString().split('T')[0]; const {data}=await supa.from('attendance').select('*').eq('profile_id',profileId).eq('work_date',TODAY).eq('restaurant_id',restaurant_id).single(); if(data?.time_in){ document.getElementById('btnIn').style.display='none'; } if(data?.time_in&&!data?.time_out){ document.getElementById('btnOut').style.display='block'; } }
+async function mark(type){ const now=new Date(); const time=now.toTimeString().slice(0,5); const TODAY=now.toISOString().split('T')[0]; try{ if(type==='in'){ const status=time>startTime?'late':'on_time'; await supa.from('attendance').insert({profile_id:profileId,restaurant_id,work_date:TODAY,time_in:time,status}); document.getElementById('qrStatus').textContent='Приход '+time+' - '+status; document.getElementById('btnIn').style.display='none'; document.getElementById('btnOut').style.display='block'; } else { await supa.from('attendance').update({time_out:time}).eq('profile_id',profileId).eq('work_date',TODAY).eq('restaurant_id',restaurant_id); document.getElementById('qrStatus').textContent='Уход '+time; document.getElementById('btnOut').style.display='none'; } loadTabel(); }catch(e){ alert('Ошибка отметки: '+e.message); } }
+async function loadTabel(){ const {data}=await supa.from('attendance').select('*').eq('profile_id',profileId).eq('restaurant_id',restaurant_id).order('work_date',{ascending:false}).limit(30); document.getElementById('tabelList').innerHTML=data?data.map(a=>`${a.work_date}: ${a.time_in||'-'} - ${a.time_out||'-'} (${a.status})`).join('<br>'):'Нет смен'; }
 
-async function mark(type){
-  const now = new Date();
-  const time = now.toTimeString().split(' ')[0].substring(0,5);
-  const TODAY = now.toISOString().split('T')[0];
-
-  if(type==='in'){
-    const status = time > startTime? 'late' : 'on_time';
-    await supabase.from('attendance').insert({
-      user_id: currentUser.id, restaurant_id, work_date: TODAY, time_in: time, status
-    });
-    const msg = status==='late'? `Отмечено в ${time}. <span class="late">Опоздание</span>` : `Отмечено в ${time}. <span class="ontime">Вовремя</span>`;
-    document.getElementById('status').innerHTML = msg;
-    document.getElementById('btnIn').style.display='none';
-    document.getElementById('btnOut').style.display='block';
-  }
-  if(type==='out'){
-    await supabase.from('attendance').update({time_out: time}).eq('user_id',currentUser.id).eq('work_date',TODAY).eq('restaurant_id',restaurant_id);
-    document.getElementById('status').textContent = `Уход отмечен в ${time}`;
-    document.getElementById('btnOut').style.display='none';
-  }
-}
+// Для ДР - добавим колонку если нет
+async function saveBday(){ const d=document.getElementById('bDay').value; if(!d) return; try{ await supa.from('profiles').update({birthday:d}).eq('id',profileId); document.getElementById('docStatus').textContent='✅ ДР сохранен, шеф увидит!'; }catch(e){ document.getElementById('docStatus').textContent='Нужно добавить колонку birthday в profiles. Напиши мне, дам SQL'; } }
+async function uploadDoc(){ document.getElementById('docStatus').textContent='Загрузка доков - сделаем после'; }
 
 init();
 </script>
 </body>
-  </html>
+</html>
