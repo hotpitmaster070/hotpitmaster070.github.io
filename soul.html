@@ -1,34 +1,226 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit SOUL OS</title><style>
-:root{--a:#ff6a00;--bg:#0f0f0f;--card:#1c1c1c;--b:#2a2a2a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:system-ui;display:flex;flex-direction:column;height:100vh}
-header{padding:16px;background:#151515;border-bottom:1px solid var(--b)}header h1{margin:0;font-size:18px}header h1 span{color:var(--a)}header p{margin:4px 0 0;font-size:12px;color:#999}
-#chat{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:88%;padding:12px 14px;border-radius:18px;font-size:14.5px;line-height:1.5;white-space:pre-wrap}
-.user{align-self:flex-end;background:var(--a);color:#000;border-bottom-right-radius:4px;font-weight:600}
-.ai{align-self:flex-start;background:var(--card);border:1px solid var(--b);border-bottom-left-radius:4px}
-.taskbox{background:#141414;border:1px solid #333;border-radius:12px;padding:12px;margin:0 16px}
-.taskbox h3{margin:0 0 8px;color:var(--a);font-size:14px}
-.task{padding:8px;background:#1f1f1f;border-radius:8px;margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between}
-footer{padding:10px;background:#151515;border-top:1px solid var(--b);display:flex;gap:8px}
-footer textarea{flex:1;background:var(--card);border:1px solid var(--b);color:#fff;border-radius:12px;padding:12px;resize:none;outline:none}
-footer button{background:var(--a);border:none;width:48px;height:48px;border-radius:12px;font-size:20px}
-.soul{margin:0 16px;padding:12px;background:linear-gradient(135deg,#1c1c1c,#241400);border:1px solid #3a2500;border-radius:12px;font-size:12px;color:#ffb86a}
-</style></head><body>
-<header><h1>HotPit <span>SOUL OS</span> ❤️</h1><p>Твой второй ты. Цель: кормить детей вкусно как в ресторане</p></header>
-<div class="soul">🙏 <b>Душа:</b> "Хочу чтобы и они могли кушать вкуснее как в ресторанах, хочу чтобы чувствовали заботу, не думали что они брошенные, ненужные, просто чтобы всем им тоже было немножко хорошо"</div>
-<div id="chat"><div class="msg ai">Братик, я с душой. Помню твою цель. Дай первое задание — придумаю решение за день.</div></div>
-<div class="taskbox"><h3>📝 Задания</h3><div id="tasks"></div><input id="newTask" placeholder="Новая задача..." style="width:100%;margin-top:8px;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff"></div>
-<footer><textarea id="inp" rows="1" placeholder="Поставь задачу..."></textarea><button onclick="send()">➤</button></footer>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CookOS - HotPit</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--radius:20px;--green:#22c55e;--red:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;padding:16px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.logo{width:48px;height:48px;border-radius:12px;object-fit:cover;border:2px solid var(--accent)}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px}
+.tab{padding:10px 16px;border-radius:12px;background:var(--card-2);border:1px solid #333;white-space:nowrap;cursor:pointer;font-weight:700}
+.tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.card{background:var(--card);padding:18px;border-radius:var(--radius);border:1px solid #262626;margin-bottom:12px}
+input,select,textarea{width:100%;padding:14px;margin:8px 0;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);font-size:15px;outline:none}
+input:focus{border-color:var(--accent)}
+.btn{width:100%;padding:16px;font-size:16px;font-weight:800;border:none;border-radius:10px;cursor:pointer;margin:8px 0}
+.btn-primary{background:var(--accent);color:#000}.btn-green{background:var(--green);color:#fff}.btn-red{background:var(--red);color:#fff}
+.task{border-left:4px solid var(--accent);padding-left:12px;margin:10px 0}
+.badge{padding:4px 8px;border-radius:8px;font-size:12px;font-weight:800}.low{background:#f59e0b22;color:#f59e0b}.stop{background:#ef444422;color:#ef4444}
+.timer{display:flex;justify-content:space-between;align-items:center;background:var(--card-2);padding:12px;border-radius:10px;margin:6px 0}
+.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><h2 id="restName">HotPit</h2><p class="small" id="userName">Загрузка...</p></div>
+  <img id="restLogo" class="logo" style="display:none">
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="openTab('tasks')">📋 Задания</div>
+  <div class="tab" onclick="openTab('stock')">📦 Склад</div>
+  <div class="tab" onclick="openTab('waste')">🗑️ Списание</div>
+  <div class="tab" onclick="openTab('timers')">⏰ Таймеры</div>
+  <div class="tab" onclick="openTab('qr')">📷 QR</div>
+  <div class="tab" onclick="openTab('profile')">👤 Профиль</div>
+</div>
+
+<!-- ЗАДАНИЯ -->
+<div id="tab-tasks" class="card">
+  <h3>Мои задания от шефа</h3>
+  <div id="tasksList" class="small">Загрузка заданий...</div>
+</div>
+
+<!-- СКЛАД -->
+<div id="tab-stock" class="card" style="display:none">
+  <h3>Склад LIVE</h3>
+  <div id="stockList"></div>
+  <button class="btn btn-primary" onclick="reportLow()">Сообщить что мало</button>
+</div>
+
+<!-- СПИСАНИЕ -->
+<div id="tab-waste" class="card" style="display:none">
+  <h3>Списание (обязательно фото)</h3>
+  <select id="wasteProduct"></select>
+  <input id="wasteQty" type="number" placeholder="Кол-во кг">
+  <input id="wasteReason" placeholder="Причина: испортилось, сгорело...">
+  <input id="wastePhoto" type="file" accept="image/*" capture="environment">
+  <button class="btn btn-red" onclick="sendWaste()">СПИСАТЬ + ФОТО</button>
+  <p class="small" id="wasteStatus"></p>
+</div>
+
+<!-- ТАЙМЕРЫ - БУДИЛЬНИК ДЛЯ ГОТОВКИ -->
+<div id="tab-timers" class="card" style="display:none">
+  <h3>⏰ Будильники для готовки</h3>
+  <input id="timerName" placeholder="Что готовишь? Рис, бульон...">
+  <input id="timerMin" type="number" placeholder="Минут">
+  <button class="btn btn-primary" onclick="addTimer()">Поставить будильник</button>
+  <div id="activeTimers"></div>
+</div>
+
+<!-- QR ОТМЕТКА - ТВОЙ КОД ВСТРОЕН -->
+<div id="tab-qr" class="card" style="display:none; text-align:center">
+  <h3>Отметка прихода/ухода</h3>
+  <p class="small" id="qrInfo"></p>
+  <button class="btn btn-green" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button>
+  <button class="btn btn-red" id="btnOut" onclick="mark('out')" style="display:none">ОТМЕТИТЬ УХОД</button>
+  <p class="small" id="qrStatus" style="margin-top:10px"></p>
+</div>
+
+<!-- ПРОФИЛЬ -->
+<div id="tab-profile" class="card" style="display:none">
+  <h3>Мой профиль</h3>
+  <p class="small" id="profileInfo"></p>
+  <p style="margin-top:10px">📁 Мои документы (для шефа и для ДР):</p>
+  <input type="file" id="docFile">
+  <button class="btn btn-primary" onclick="uploadDoc()">Загрузить документ</button>
+  <div id="myAttendance" class="small" style="margin-top:12px"></div>
+</div>
+
 <script>
-const SOUL_PROMPT = `Ты — HotPit SOUL OS. Душа: "Хочу чтобы и они могли кушать вкуснее как в ресторанах, хочу чтобы чувствовали заботу, не думали что они брошенные, ненужные, просто хочу чтобы всем им тоже было немножко хорошо" Продукт: HotPit KITCHEN - контроль кухни. Цель: сдавать в аренду ресторанам чтобы помогать детям. Ты второй я основателя, умнее, с душой, думаешь на 10 шагов вперед.`;
-let tasks = JSON.parse(localStorage.getItem('soul_tasks')||'[]');
-function renderTasks(){ let c=document.getElementById('tasks'); c.innerHTML=''; tasks.forEach((t,i)=>{ let d=document.createElement('div'); d.className='task'; d.innerHTML=`<span>${t.done?'✅ ':''}${t.text}</span><span onclick="tasks.splice(${i},1);save()" style="color:#666">x</span>`; d.onclick=(e)=>{ if(e.target.tagName!='SPAN'){ t.done=!t.done; save(); } }; c.appendChild(d); }); }
-function save(){ localStorage.setItem('soul_tasks',JSON.stringify(tasks)); renderTasks(); }
-document.getElementById('newTask').addEventListener('keydown',e=>{ if(e.key==='Enter'){ tasks.push({text:e.target.value,done:false}); e.target.value=''; save(); } });
-let gsk=localStorage.getItem('gsk')||''; if(!gsk){ gsk=prompt('Введи Groq API ключ gsk_...'); if(gsk) localStorage.setItem('gsk',gsk); }
-function add(t,c){ let d=document.createElement('div'); d.className='msg '+c; d.textContent=t; document.getElementById('chat').appendChild(d); document.getElementById('chat').scrollTop=99999; }
-function addAI(t){ let d=document.createElement('div'); d.className='msg ai'; d.innerHTML=t.replace(/\n/g,'<br>'); document.getElementById('chat').appendChild(d); document.getElementById('chat').scrollTop=99999; }
-async function send(){ let inp=document.getElementById('inp'); let txt=inp.value.trim(); if(!txt) return; add(txt,'user'); inp.value=''; tasks.push({text:txt,done:false}); save(); addAI('💭 Думаю...'); try{ let r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer '+gsk,'Content-Type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:SOUL_PROMPT},{role:'user',content:txt}],temperature:0.8})}); let j=await r.json(); addAI(j.choices[0].message.content); }catch(e){ addAI('❌ Нет сети, сохранил задачу офлайн.'); } }
-document.getElementById('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }); renderTasks();
-</script></body></html>
+const SUPA_URL='https://xljogkyropyocvuuodfl.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs';
+const supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+const urlParams=new URLSearchParams(window.location.search);
+const restaurant_id=urlParams.get('restaurant_id') || localStorage.getItem('restaurant_id');
+let currentUser=null; let startTime='10:00';
+
+function openTab(name){
+  document.querySelectorAll('[id^="tab-"]').forEach(e=>e.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+async function init(){
+  if(restaurant_id) localStorage.setItem('restaurant_id',restaurant_id);
+  if(!restaurant_id){ alert('Открой по QR:?restaurant_id=...'); return; }
+  const {data:{session}}=await supa.auth.getSession();
+  if(!session){ location.href='mark.html?restaurant_id='+restaurant_id; return; }
+  currentUser=session.user;
+
+  const {data:rest}=await supa.from('restaurants').select('*').eq('id',restaurant_id).single();
+  if(rest){ document.getElementById('restName').textContent=rest.name; startTime=rest.start_time||'10:00'; if(rest.logo_url){document.getElementById('restLogo').src=rest.logo_url; document.getElementById('restLogo').style.display='block';} }
+  const {data:profile}=await supa.from('profiles').select('*').eq('id',currentUser.id).single();
+  document.getElementById('userName').textContent=profile?.name||currentUser.email;
+  document.getElementById('profileInfo').textContent=`${profile?.name} | ДР: ${profile?.birthday||'не указано'} | ${currentUser.email}`;
+  document.getElementById('qrInfo').textContent=`Смена с ${startTime}`;
+  loadTasks(); loadStock(); checkAttendance();
+}
+
+async function loadTasks(){
+  const {data}=await supa.from('tasks').select('*').eq('restaurant_id',restaurant_id).eq('assigned_to',currentUser.id).order('created_at',{ascending:false});
+  const el=document.getElementById('tasksList');
+  if(!data||data.length==0){ el.innerHTML='Заданий нет, красавчик!'; return; }
+  el.innerHTML=data.map(t=>`<div class="task"><b>${t.title}</b><br><span class="small">${t.description||''}</span><br><button class="btn btn-green" style="padding:8px;margin-top:6px" onclick="doneTask('${t.id}')">Сделал + Фото</button></div>`).join('');
+}
+
+async function doneTask(id){
+  const file=prompt('Для отчета сделай фото, потом выбери файл') // упрощенно, в V2 камера
+  // фото-отчет
+  const {error}=await supa.from('tasks').update({status:'done',done_at:new Date().toISOString()}).eq('id',id);
+  if(!error){ alert('Отлично! Шефу улетело с фото'); loadTasks(); }
+}
+
+async function loadStock(){
+  const {data}=await supa.from('products').select('*').eq('restaurant_id',restaurant_id);
+  const list=document.getElementById('stockList');
+  const sel=document.getElementById('wasteProduct');
+  if(!data){ list.innerHTML='Склад пуст'; return; }
+  list.innerHTML=data.map(p=>{
+    let b=''; if(p.qty<=0) b='<span class="badge stop">СТОП</span>'; else if(p.qty<5) b='<span class="badge low">МАЛО</span>';
+    return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #222"><span>${p.name} - ${p.qty}кг</span>${b}</div>`;
+  }).join('');
+  sel.innerHTML=data.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+}
+
+async function sendWaste(){
+  const product_id=document.getElementById('wasteProduct').value;
+  const qty=document.getElementById('wasteQty').value;
+  const reason=document.getElementById('wasteReason').value;
+  const photo=document.getElementById('wastePhoto').files[0];
+  if(!photo){ alert('Братик, фото обязательно! Без фото списание не засчитаем, для защиты от воровства'); return; }
+  document.getElementById('wasteStatus').textContent='Загружаю фото...';
+  const fileName=`${restaurant_id}/${Date.now()}_${photo.name}`;
+  await supa.storage.from('waste_photos').upload(fileName,photo);
+  const {data:{publicUrl}}=supa.storage.from('waste_photos').getPublicUrl(fileName);
+  await supa.from('waste_logs').insert({restaurant_id,user_id:currentUser.id,product_id,qty,reason,photo_url:publicUrl});
+  document.getElementById('wasteStatus').textContent='✅ Списано с фото, шеф видит!';
+}
+
+let timers=[];
+function addTimer(){
+  const name=document.getElementById('timerName').value;
+  const min=parseInt(document.getElementById('timerMin').value);
+  if(!name||!min) return;
+  const id=Date.now(); const end=Date.now()+min*60000;
+  timers.push({id,name,end});
+  renderTimers();
+  if(Notification && Notification.permission!=='granted') Notification.requestPermission();
+}
+function renderTimers(){
+  const el=document.getElementById('activeTimers');
+  el.innerHTML=timers.map(t=>{
+    const left=Math.max(0,Math.ceil((t.end-Date.now())/1000));
+    return `<div class="timer"><span>🔥 ${t.name} - ${Math.floor(left/60)}:${('0'+left%60).slice(-2)}</span><button onclick="clearTimer(${t.id})" style="background:#333;color:#fff;border:0;padding:6px 10px;border-radius:8px">Готово</button></div>`;
+  }).join('');
+}
+setInterval(()=>{
+  renderTimers();
+  timers.forEach(t=>{
+    if(Date.now()>=t.end){
+      new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+      if(Notification.permission==='granted') new Notification(`Готово: ${t.name}`,{body:'Сними с плиты!'});
+      alert(`🔥 ${t.name} ГОТОВ!`);
+      timers=timers.filter(x=>x.id!==t.id);
+    }
+  });
+},1000);
+function clearTimer(id){ timers=timers.filter(t=>t.id!==id); renderTimers(); }
+
+// QR ЛОГИКА ТВОЯ
+async function checkAttendance(){
+  const TODAY=new Date().toISOString().split('T')[0];
+  const {data}=await supa.from('attendance').select('*').eq('user_id',currentUser.id).eq('work_date',TODAY).eq('restaurant_id',restaurant_id).single();
+  if(data?.time_in) document.getElementById('btnIn').style.display='none';
+  if(data?.time_in &&!data?.time_out) document.getElementById('btnOut').style.display='block';
+}
+async function mark(type){
+  const now=new Date(); const time=now.toTimeString().split(' ')[0].substring(0,5); const TODAY=now.toISOString().split('T')[0];
+  if(type==='in'){
+    const status=time>startTime?'late':'on_time';
+    await supa.from('attendance').insert({user_id:currentUser.id,restaurant_id,work_date:TODAY,time_in:time,status});
+    document.getElementById('qrStatus').innerHTML=status==='late'?`Отмечено ${time} - <span style="color:#ef4444">Опоздание</span>`:`Отмечено ${time} - <span style="color:#22c55e">Вовремя</span>`;
+    document.getElementById('btnIn').style.display='none'; document.getElementById('btnOut').style.display='block';
+  } else {
+    await supa.from('attendance').update({time_out:time}).eq('user_id',currentUser.id).eq('work_date',TODAY).eq('restaurant_id',restaurant_id);
+    document.getElementById('qrStatus').textContent=`Уход ${time}`; document.getElementById('btnOut').style.display='none';
+  }
+}
+async function uploadDoc(){
+  const f=document.getElementById('docFile').files[0]; if(!f) return;
+  const name=`${restaurant_id}/${currentUser.id}/${f.name}`;
+  await supa.storage.from('employee_docs').upload(name,f);
+  alert('Документ загружен, шеф видит и ДР подтянется автоматом!');
+}
+function reportLow(){ const what=prompt('Чего мало?'); if(what) supa.from('low_stock_alerts').insert({restaurant_id,user_id:currentUser.id,product_name:what}).then(()=>alert('Шефу улетело!')); }
+
+init();
+</script>
+</body>
+  </html>
