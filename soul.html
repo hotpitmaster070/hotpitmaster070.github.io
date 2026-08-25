@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HotPit SOUL OS</title><style>
+:root{--a:#ff6a00;--bg:#0f0f0f;--card:#1c1c1c;--b:#2a2a2a}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:system-ui;display:flex;flex-direction:column;height:100vh}
+header{padding:16px;background:#151515;border-bottom:1px solid var(--b)}header h1{margin:0;font-size:18px}header h1 span{color:var(--a)}header p{margin:4px 0 0;font-size:12px;color:#999}
+#chat{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:88%;padding:12px 14px;border-radius:18px;font-size:14.5px;line-height:1.5;white-space:pre-wrap}
+.user{align-self:flex-end;background:var(--a);color:#000;border-bottom-right-radius:4px;font-weight:600}
+.ai{align-self:flex-start;background:var(--card);border:1px solid var(--b);border-bottom-left-radius:4px}
+.taskbox{background:#141414;border:1px solid #333;border-radius:12px;padding:12px;margin:0 16px}
+.taskbox h3{margin:0 0 8px;color:var(--a);font-size:14px}
+.task{padding:8px;background:#1f1f1f;border-radius:8px;margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between}
+footer{padding:10px;background:#151515;border-top:1px solid var(--b);display:flex;gap:8px}
+footer textarea{flex:1;background:var(--card);border:1px solid var(--b);color:#fff;border-radius:12px;padding:12px;resize:none;outline:none}
+footer button{background:var(--a);border:none;width:48px;height:48px;border-radius:12px;font-size:20px}
+.soul{margin:0 16px;padding:12px;background:linear-gradient(135deg,#1c1c1c,#241400);border:1px solid #3a2500;border-radius:12px;font-size:12px;color:#ffb86a}
+</style></head><body>
+<header><h1>HotPit <span>SOUL OS</span> ❤️</h1><p>Твой второй ты. Цель: кормить детей вкусно как в ресторане</p></header>
+<div class="soul">🙏 <b>Душа:</b> "Хочу чтобы и они могли кушать вкуснее как в ресторанах, хочу чтобы чувствовали заботу, не думали что они брошенные, ненужные, просто чтобы всем им тоже было немножко хорошо"</div>
+<div id="chat"><div class="msg ai">Братик, я с душой. Помню твою цель. Дай первое задание — придумаю решение за день.</div></div>
+<div class="taskbox"><h3>📝 Задания</h3><div id="tasks"></div><input id="newTask" placeholder="Новая задача..." style="width:100%;margin-top:8px;padding:10px;background:#111;border:1px solid #333;border-radius:8px;color:#fff"></div>
+<footer><textarea id="inp" rows="1" placeholder="Поставь задачу..."></textarea><button onclick="send()">➤</button></footer>
+<script>
+const SOUL_PROMPT = `Ты — HotPit SOUL OS. Душа: "Хочу чтобы и они могли кушать вкуснее как в ресторанах, хочу чтобы чувствовали заботу, не думали что они брошенные, ненужные, просто хочу чтобы всем им тоже было немножко хорошо" Продукт: HotPit KITCHEN - контроль кухни. Цель: сдавать в аренду ресторанам чтобы помогать детям. Ты второй я основателя, умнее, с душой, думаешь на 10 шагов вперед.`;
+let tasks = JSON.parse(localStorage.getItem('soul_tasks')||'[]');
+function renderTasks(){ let c=document.getElementById('tasks'); c.innerHTML=''; tasks.forEach((t,i)=>{ let d=document.createElement('div'); d.className='task'; d.innerHTML=`<span>${t.done?'✅ ':''}${t.text}</span><span onclick="tasks.splice(${i},1);save()" style="color:#666">x</span>`; d.onclick=(e)=>{ if(e.target.tagName!='SPAN'){ t.done=!t.done; save(); } }; c.appendChild(d); }); }
+function save(){ localStorage.setItem('soul_tasks',JSON.stringify(tasks)); renderTasks(); }
+document.getElementById('newTask').addEventListener('keydown',e=>{ if(e.key==='Enter'){ tasks.push({text:e.target.value,done:false}); e.target.value=''; save(); } });
+let gsk=localStorage.getItem('gsk')||''; if(!gsk){ gsk=prompt('Введи Groq API ключ gsk_...'); if(gsk) localStorage.setItem('gsk',gsk); }
+function add(t,c){ let d=document.createElement('div'); d.className='msg '+c; d.textContent=t; document.getElementById('chat').appendChild(d); document.getElementById('chat').scrollTop=99999; }
+function addAI(t){ let d=document.createElement('div'); d.className='msg ai'; d.innerHTML=t.replace(/\n/g,'<br>'); document.getElementById('chat').appendChild(d); document.getElementById('chat').scrollTop=99999; }
+async function send(){ let inp=document.getElementById('inp'); let txt=inp.value.trim(); if(!txt) return; add(txt,'user'); inp.value=''; tasks.push({text:txt,done:false}); save(); addAI('💭 Думаю...'); try{ let r=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Authorization':'Bearer '+gsk,'Content-Type':'application/json'},body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'system',content:SOUL_PROMPT},{role:'user',content:txt}],temperature:0.8})}); let j=await r.json(); addAI(j.choices[0].message.content); }catch(e){ addAI('❌ Нет сети, сохранил задачу офлайн.'); } }
+document.getElementById('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } }); renderTasks();
+</script></body></html>
