@@ -54,14 +54,14 @@ input,select{width:100%;padding:12px;margin:6px 0;background:var(--card-2);borde
   <div id="tab-avatar" class="card" style="display:none; text-align:center">
     <h3>📷 Мое фото</h3>
     <p class="small">Твое фото для шефа. Нажми Выбери файл и Сохрани.</p>
-    <input id="avatarFile" type="file" accept="image/*" capture="environment">
+    <input id="avatarFile" type="file" accept="image/*">
     <button class="btn btn-a" onclick="uploadAvatar()">Сохранить фото</button>
     <p class="small" id="avatarStatus"></p>
   </div>
 
   <div id="tab-tasks" class="card" style="display:none"><h3>Мои задания</h3><div id="tasksList" class="small">Загрузка...</div></div>
   <div id="tab-stock" class="card" style="display:none"><h3>📦 Склад</h3><div id="stockList"></div></div>
-  <div id="tab-waste" class="card" style="display:none"><h3>Списание — обязательно фото</h3><select id="wProd"></select><input id="wQty" type="number" placeholder="Кол-во"><input id="wReason" placeholder="Причина: испортилось"><input id="wPhoto" type="file" accept="image/*" capture="environment"><button class="btn btn-r" onclick="doWaste()">Списать с фото</button><p class="small" id="wStatus"></p></div>
+  <div id="tab-waste" class="card" style="display:none"><h3>Списание — обязательно фото</h3><select id="wProd"></select><input id="wQty" type="number" placeholder="Кол-во"><input id="wReason" placeholder="Причина: испортилось"><input id="wPhoto" type="file" accept="image/*"><button class="btn btn-r" onclick="doWaste()">Списать с фото</button><p class="small" id="wStatus"></p></div>
   <div id="tab-timers" class="card" style="display:none"><h3>⏰ Будильник — чтобы не забыть что готовишь</h3><p class="small">Поставил — внизу покажет сколько осталось, запищит громко</p><input id="tName" placeholder="Что готовишь? Рис, бульон, мясо"><input id="tMin" type="number" placeholder="Минут: 15"><button class="btn btn-a" onclick="addTimer()">⏰ Поставить будильник</button><div id="tList" style="margin-top:12px"></div><button class="btn btn-r" onclick="stopAllSound()" style="margin-top:10px">🔇 СТОП ВСЕ + ВЫКЛЮЧИТЬ ЗВУК</button></div>
   <div id="tab-qr" class="card" style="display:none; text-align:center"><h3>Отметка</h3><p class="small" id="qrInfo"></p><button class="btn btn-g" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button><button class="btn btn-r" id="btnOut" style="display:none" onclick="mark('out')">ОТМЕТИТЬ УХОД</button><p class="small" id="qrStatus"></p></div>
   <div id="tab-tabel" class="card" style="display:none"><h3>Табель</h3><div id="tabelList" class="small"></div></div>
@@ -170,9 +170,10 @@ async function uploadAvatar(){
   document.getElementById('avatarStatus').textContent='Загрузка...';
   const path=`${uid}_${Date.now()}.jpg`;
   const {error}=await supa.storage.from('avatars').upload(path,f);
-  if(error) return document.getElementById('avatarStatus').textContent='Создай bucket avatars Public в Storage';
+  if(error){ console.log(error); return document.getElementById('avatarStatus').textContent='Ошибка: '+error.message; }
   const {data:{publicUrl}}=supa.storage.from('avatars').getPublicUrl(path);
-  await supa.from('profiles').update({avatar_url:publicUrl}).eq('id',uid);
+  const {error:upErr}=await supa.from('profiles').update({avatar_url:publicUrl}).eq('id',uid);
+  if(upErr){ console.log(upErr); return document.getElementById('avatarStatus').textContent='Ошибка профиля: '+upErr.message; }
   document.getElementById('avatarStatus').textContent='✅ Фото обновлено';
   document.getElementById('cookAvatar').src=publicUrl;
   document.getElementById('cookAvatar').style.display='block';
@@ -182,4 +183,4 @@ async function uploadAvatar(){
 init(); renderTimers();
 </script>
 </body>
-                                                                                                           </html>
+</html>
