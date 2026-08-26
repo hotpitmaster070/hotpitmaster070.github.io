@@ -110,14 +110,26 @@ function renderTimers(){
   }).join('');
 }
 function removeTimer(id){ timers=timers.filter(x=>x.id!==id); saveTimers(); renderTimers(); }
+let alarmAudio = null;
+function stopAllSound(){
+  if(alarmAudio){ alarmAudio.pause(); alarmAudio.currentTime=0; alarmAudio=null; }
+  timers=[]; saveTimers(); renderTimers();
+  alert('🔇 Остановлено');
+}
+
 setInterval(()=>{
   renderTimers();
   timers.forEach(t=>{
-    if(Date.now()>=t.end){
-      try{ const audio=new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'); audio.play(); }catch{}
-      if(Notification.permission==='granted') new Notification('🔥 ГОТОВО: '+t.name+'! Снимай!', {body:'Время вышло: '+t.name});
-      else alert('🔥 '+t.name+' ГОТОВ! Снимай с плиты!');
-      timers=timers.filter(x=>x.id!==t.id); saveTimers();
+    if(Date.now()>=t.end && !t.rang){
+      t.rang=true;
+      saveTimers();
+      try{ 
+        alarmAudio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+        alarmAudio.loop=true;
+        alarmAudio.play(); 
+      }catch{}
+      if(Notification.permission==='granted') new Notification('🔥 ГОТОВО: '+t.name+'! Снимай!');
+      else alert('🔥 '+t.name+' ГОТОВ! Снимай! Нажми СТОП чтобы остановить звук');
     }
   });
 },1000);
