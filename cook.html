@@ -33,7 +33,7 @@ input,select{width:100%;padding:12px;margin:6px 0;background:var(--card-2);borde
     <p id="restName">Land</p>
     <div class="status-chip"><span class="dot" id="statusDot" style="background:#22c55e"></span><span id="statusText">На смене</span></div>
   </div>
-  <div class="photo-box" onclick="openTab('docs')">
+  <div class="photo-box" onclick="openTab('avatar')">
     <span id="photoLetter" style="opacity:0">?</span>
     <img id="cookAvatar" onerror="this.style.display='none'">
   </div>
@@ -50,6 +50,15 @@ input,select{width:100%;padding:12px;margin:6px 0;background:var(--card-2);borde
 </div>
 <div id="modal">
   <button class="btn" style="background:#262626;color:#fff" onclick="closeModal()">← Назад к кнопкам</button>
+
+  <div id="tab-avatar" class="card" style="display:none; text-align:center">
+    <h3>📷 Мое фото</h3>
+    <p class="small">Твое фото для шефа. Нажми Выбери файл и Сохрани.</p>
+    <input id="avatarFile" type="file" accept="image/*" capture="environment">
+    <button class="btn btn-a" onclick="uploadAvatar()">Сохранить фото</button>
+    <p class="small" id="avatarStatus"></p>
+  </div>
+
   <div id="tab-tasks" class="card" style="display:none"><h3>Мои задания</h3><div id="tasksList" class="small">Загрузка...</div></div>
   <div id="tab-stock" class="card" style="display:none"><h3>📦 Склад</h3><div id="stockList"></div></div>
   <div id="tab-waste" class="card" style="display:none"><h3>Списание — обязательно фото</h3><select id="wProd"></select><input id="wQty" type="number" placeholder="Кол-во"><input id="wReason" placeholder="Причина: испортилось"><input id="wPhoto" type="file" accept="image/*" capture="environment"><button class="btn btn-r" onclick="doWaste()">Списать с фото</button><p class="small" id="wStatus"></p></div>
@@ -84,7 +93,6 @@ async function init(){
   const imgEl=document.getElementById('cookAvatar');
   const {data:prof} = await supa.from('profiles').select('restaurant_id,full_name,role,avatar_url').eq('id',uid).single();
   if(prof?.restaurant_id){ rid=prof.restaurant_id; localStorage.setItem('restaurant_id',rid); }
-  // ТОЛЬКО ИМЯ - без email
   if(prof?.full_name && prof.full_name.trim()){
     letterEl.textContent=prof.full_name.trim()[0].toUpperCase();
   } else {
@@ -156,7 +164,22 @@ async function mark(type){ const now=new Date(); const time=now.toTimeString().s
 async function loadTabel(){ try{ const {data}=await supa.from('attendance').select('*').eq('profile_id',uid).eq('restaurant_id',rid).order('work_date',{ascending:false}).limit(20); document.getElementById('tabelList').innerHTML=data? data.map(a=>`${a.work_date}: ${a.time_in||'-'} - ${a.time_out||'-'} (${a.status||''})`).join('<br>') : 'Нет смен'; document.getElementById('grafList').innerHTML=document.getElementById('tabelList').innerHTML; }catch{} }
 async function uploadDoc(){ const f=document.getElementById('docFile').files[0]; const n=document.getElementById('docName').value||'Документ'; if(!f) return alert('Выбери файл'); const path=`${rid}/${uid}_${Date.now()}.jpg`; const {error}=await supa.storage.from('documents').upload(path,f); if(error) return document.getElementById('docStatus').textContent='Создай Storage documents Public'; document.getElementById('docStatus').textContent='✅ Загружено: '+n; loadDocs(); }
 async function loadDocs(){ document.getElementById('docsList').innerHTML='<p class="small">Документы видит только шеф. ДР теперь вводит шеф, не ты.</p>'; }
+async function uploadAvatar(){
+  const f=document.getElementById('avatarFile').files[0];
+  if(!f) return alert('Выбери фото');
+  document.getElementById('avatarStatus').textContent='Загрузка...';
+  const path=`${uid}_${Date.now()}.jpg`;
+  const {error}=await supa.storage.from('avatars').upload(path,f);
+  if(error) return document.getElementById('avatarStatus').textContent='Создай bucket avatars Public в Storage';
+  const {data:{publicUrl}}=supa.storage.from('avatars').getPublicUrl(path);
+  await supa.from('profiles').update({avatar_url:publicUrl}).eq('id',uid);
+  document.getElementById('avatarStatus').textContent='✅ Фото обновлено';
+  document.getElementById('cookAvatar').src=publicUrl;
+  document.getElementById('cookAvatar').style.display='block';
+  document.getElementById('photoLetter').style.display='none';
+  setTimeout(()=>closeModal(),800);
+}
 init(); renderTimers();
 </script>
 </body>
-</html>
+                                                                                                           </html>
