@@ -45,6 +45,7 @@ input,select{width:100%;padding:12px;margin:6px 0;background:var(--card-2);borde
 <p class="small">Поставил — внизу покажет сколько осталось, запищит громко</p>
 <input id="tName" placeholder="Что готовишь? Рис, бульон, мясо"><input id="tMin" type="number" placeholder="Минут: 15"><button class="btn btn-a" onclick="addTimer()">⏰ Поставить будильник</button>
 <div id="tList" style="margin-top:12px"></div>
+  <button class="btn btn-r" onclick="stopAllSound()" style="margin-top:10px">🔇 СТОП ВСЕ + ВЫКЛЮЧИТЬ ЗВУК</button>
 </div>
 
 <div id="tab-qr" class="card" style="display:none; text-align:center"><h3>Отметка</h3><p class="small" id="qrInfo"></p><button class="btn btn-g" id="btnIn" onclick="mark('in')">ОТМЕТИТЬ ПРИХОД</button><button class="btn btn-r" id="btnOut" style="display:none" onclick="mark('out')">ОТМЕТИТЬ УХОД</button><p class="small" id="qrStatus"></p></div>
