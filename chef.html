@@ -372,22 +372,19 @@ function closeStatusModal(){ document.getElementById('statusModal')?.classList.r
 function openCookProfile(cookId){
   try{
     const p = povaraCache?.find(x=>x.id===cookId);
-    if(!p) { console.warn('Повар не найден:', cookId); return; }
-
+    if(!p) return;
     let present=0, late=0;
     try{
       const recs = attendanceCache?.[cookId]?.days || [];
       recs.forEach(r=>{ if(r.status==='present') present++; if(r.status==='late') late++; });
     }catch(e){}
-
+    // БЕЗ onerror - чтобы не ломать синтаксис, надежно для платных клиентов
     const ava = p.avatar_url
-     ? `<img src="${p.avatar_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #ff6b00;margin:0 auto;display:block" onerror="this.parentElement.innerHTML='<div class=avatar style=width:100px;height:100px;font-size:40px;margin:0 auto>${(p.full_name||'?')[0]}</div>'">`
+     ? `<img src="${p.avatar_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #ff6b00;margin:0 auto;display:block">`
       : `<div class="avatar" style="width:100px;height:100px;font-size:40px;margin:0 auto">${(p.full_name||'?')[0]}</div>`;
-
     const content = document.getElementById('cookProfileContent');
     const modal = document.getElementById('cookProfileModal');
-    if(!content ||!modal){ alert('Нет модалки cookProfileModal в HTML!'); return; }
-
+    if(!content ||!modal) return;
     content.innerHTML = `
       <div style="text-align:center">${ava}<h3 style="margin-top:12px">${p.full_name}</h3><div style="color:var(--muted)">${p.job_title||''}</div><div style="color:var(--muted);font-size:12px">${p.email||''}</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px">
@@ -396,11 +393,10 @@ function openCookProfile(cookId){
         <div style="background:#000;padding:12px;border-radius:12px;text-align:center"><b style="color:#22c55e">${(present+late)*(p.salary||0)}₽</b><div style="font-size:11px;color:var(--muted)">К выплате</div></div>
         <div style="background:#000;padding:12px;border-radius:12px;text-align:center"><b>${p.salary||0}₽</b><div style="font-size:11px;color:var(--muted)">${p.salary_type||'ставка'}</div></div>
       </div>`;
-
     modal.classList.add('show');
   }catch(err){
-    console.error('openCookProfile error:', err);
-    alert('Ошибка профиля: ' + err.message);
+    console.error(err);
+    alert('Ошибка: ' + err.message);
   }
 }
 function closeCookProfile(){ document.getElementById('cookProfileModal')?.classList.remove('show'); }
