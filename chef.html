@@ -456,7 +456,10 @@ async function loadStaff(){
   povaraCache = staff || [];
   let povaraHTML = '';
   povaraCache.forEach(p=>{
-    povaraHTML += `<div class="povar-card"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar">${p.full_name?.[0] || 'П'}</div><div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}">Уволить</button></div></div>`;
+        const ava = p.avatar_url 
+      ? `<img src="${p.avatar_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #ff6b00">`
+      : `<div class="avatar">${p.full_name?.[0] || 'П'}</div>`;
+    povaraHTML += `<div class="povar-card" onclick="openCookProfile('${p.id}')" style="cursor:pointer"><div class="povar-head"><div style="display:flex;gap:12px;align-items:center">${ava}<div><b>${p.full_name}</b><div style="color:var(--muted);font-size:12px">${p.job_title || 'Повар'} • ${p.salary}₽/${p.salary_type==='hourly'?'час':'день'}</div></div></div><button class="btn-danger" data-id="${p.id}" data-name="${p.full_name}" onclick="event.stopPropagation(); fireCook('${p.id}','${p.full_name}')">Уволить</button></div></div>`;
   });
   const listEl = document.getElementById('povaraList');
   if(listEl) listEl.innerHTML = povaraHTML || '<div>Поваров нет</div>';
