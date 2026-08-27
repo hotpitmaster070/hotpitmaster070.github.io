@@ -206,6 +206,11 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
   <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addItemModal').classList.remove('show')">Отмена</button>
   <p class="muted" style="font-size:11px;margin-top:10px"><span style="color:#ff6b00">*</span> - обязательно</p>
 </div></div>
+
+  <div class="modal" id="cookProfileModal"><div class="modal-card" style="max-width:420px">
+  <div id="cookProfileContent">Загрузка...</div>
+  <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('cookProfileModal').classList.remove('show')">Закрыть</button>
+</div></div>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
