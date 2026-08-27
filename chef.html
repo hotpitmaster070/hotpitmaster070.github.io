@@ -156,6 +156,8 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
 <select id="cookJob"><option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option><option>Повар холодного цеха</option><option>Повар-универсал</option><option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option></select>
 <select id="cookSalaryType"><option value="hourly">Почасовая ₽/час</option><option value="daily">Фикс за день ₽/день</option></select>
 <input id="cookSalary" type="number" placeholder="Ставка">
+<input id="cookAvatarFile" type="file" accept="image/*" style="margin-top:10px">
+<p class="muted" style="font-size:11px">📷 Фото повара (не обязательно)</p>
 <button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
 <div id="inviteLink" class="muted"></div><div id="qrcode"></div>
 <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
