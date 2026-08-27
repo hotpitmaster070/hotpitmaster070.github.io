@@ -274,7 +274,8 @@ async function genInvite(){
     const token = crypto.randomUUID();
     const {error} = await supabase.from('invites').insert([{
       token, restaurant_id: myRestaurantId,
-      email, job_title: job, salary, salary_type: type
+      email, job_title: job, salary, salary_type: type,
+      avatar_url: avatarUrl
     }]);
     if(error) throw error;
     const link = `https://hotpitmaster070.github.io/join.html?token=${token}`;
