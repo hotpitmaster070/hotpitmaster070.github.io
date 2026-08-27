@@ -369,6 +369,19 @@ function openStatusModal(cookId, dateStr){
 }
 function closeStatusModal(){ document.getElementById('statusModal')?.classList.remove('show'); }
 
+function openCookProfile(cookId){
+  const p = povaraCache.find(x=>x.id===cookId);
+  if(!p) return;
+  const recs = attendanceCache[cookId]?.days || [];
+  let present=0,late=0;
+  recs.forEach(r=>{ if(r.status==='present') present++; if(r.status==='late') late++; });
+  const rate = p.salary||0;
+  const total = (present+late)*rate;
+  const ava = p.avatar_url? `<img src="${p.avatar_url}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid #ff6b00;margin:0 auto;display:block">` : `<div class="avatar" style="width:100px;height:100px;font-size:40px;margin:0 auto">${p.full_name?.[0]}</div>`;
+  document.getElementById('cookProfileContent').innerHTML = `<div style="text-align:center">${ava}<h3 style="margin-top:12px">${p.full_name}</h3><div style="color:var(--muted)">${p.job_title} • ${p.email||''}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px"><div style="background:#000;padding:12px;border-radius:12px;text-align:center"><b>${present+late}</b><div style="font-size:11px;color:var(--muted)">Смен</div></div><div style="background:#000;padding:12px;border-radius:12px;text-align:center"><b style="color:#f59e0b">${late}</b><div style="font-size:11px;color:var(--muted)">Опозданий</div></div><div style="background:#000;padding:12px;border-radius:12px;text-align:center"><b style="color:#22c55e">${total}₽</b><div style="font-size:11px;color:var(--muted)">К выплате</div></div><div style="background:#000;padding:12px;border-radius:12px;text-align:center"><b>${p.salary}₽</b><div style="font-size:11px;color:var(--muted)">${p.salary_type}</div></div></div><div style="margin-top:16px;background:#171717;padding:12px;border-radius:12px;font-size:13px"><div>📧 ${p.email||'-'}</div><div style="margin-top:6px">💰 Ставка: ${p.salary}₽/${p.salary_type}</div></div>`;
+  document.getElementById('cookProfileModal').classList.add('show');
+  }
+  
 function openRequestForm(cookId, dateStr, record){
   // форма заявки на замену - заглушка пока
   showToast('Заявка - в разработке','info');
