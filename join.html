@@ -46,7 +46,8 @@ if(!token){
     const typeText=data.salary_type==='hourly'?'₽/час':data.salary_type==='daily'?'₽/день':'₽/смена';
     restName.textContent=`Вас пригласили в ресторан: ${data.restaurants?.name || 'Land'}`;
     infoBox.classList.remove('hidden');
-    infoBox.innerHTML=`Должность: <b>${data.job_title}</b><br>Ставка: <b>${data.salary}${typeText}</b>`;
+    const avatarHtml = data.avatar_url ? `<img src="${data.avatar_url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin-bottom:10px;border:2px solid #f97316"><br>` : '';
+    infoBox.innerHTML=`${avatarHtml}Должность: <b>${data.job_title}</b><br>Ставка: <b>${data.salary}${typeText}</b>`;
     document.getElementById('email').value=data.email||'';
     form.classList.remove('hidden');
   }
@@ -62,7 +63,6 @@ form.addEventListener('submit',async e=>{
   const password=fd.get('password');
 
   try{
-    // 1. пробуем регистрацию, если уже есть - просто логиним
     let userId=null;
     let {data:signUp,error:signErr}=await supabase.auth.signUp({email,password});
     if(signErr && signErr.message.includes('already registered')){
@@ -72,7 +72,6 @@ form.addEventListener('submit',async e=>{
     } else {
       if(signErr) throw signErr;
       if(signUp.user) userId=signUp.user.id;
-      // если сессия не создалась из-за confirm email, логиним принудительно
       if(!signUp.session){
         const {data:signIn}=await supabase.auth.signInWithPassword({email,password});
         if(signIn?.user) userId=signIn.user.id;
@@ -84,7 +83,6 @@ form.addEventListener('submit',async e=>{
     }
     if(!userId) throw new Error('Не удалось получить ID пользователя');
 
-    // 2. НАДЕЖНАЯ привязка к ресторану Land - как в твоем register.html но без rpc
     const {error:profErr}=await supabase.from('profiles').upsert({
       id:userId,
       full_name:fullName,
@@ -94,12 +92,12 @@ form.addEventListener('submit',async e=>{
       job_title:invite.job_title,
       salary:invite.salary,
       salary_type:invite.salary_type,
-      is_active:true
+      is_active:true,
+      avatar_url:invite.avatar_url || null
     },{onConflict:'id'});
 
     if(profErr) throw profErr;
 
-    // 3. удаляем инвайт
     await supabase.from('invites').delete().eq('token',token);
 
     err.style.color='#22c55e';
