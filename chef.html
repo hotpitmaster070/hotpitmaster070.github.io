@@ -257,6 +257,16 @@ async function genInvite(){
   const job = document.getElementById('cookJob').value || 'Повар';
   const type = document.getElementById('cookSalaryType').value;
   const salary = parseFloat(document.getElementById('cookSalary').value) || 0;
+  let avatarUrl = null;
+  const avatarFile = document.getElementById('cookAvatarFile')?.files[0];
+  if(avatarFile){
+    const path = `${myRestaurantId}/${Date.now()}_${avatarFile.name}`;
+    const {error:upErr} = await supabase.storage.from('avatars').upload(path, avatarFile);
+    if(!upErr){
+      const {data} = supabase.storage.from('avatars').getPublicUrl(path);
+      avatarUrl = data.publicUrl;
+    }
+  }
   if(!email || !salary){ showToast('Email и ставка обязательны','error'); return; }
   const btn = document.getElementById('genInviteBtn');
   btn.textContent='...'; btn.disabled=true;
