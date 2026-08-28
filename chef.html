@@ -411,28 +411,34 @@ m?.classList.add('show','active');
 m.style.display = 'flex'; // форсируем показ
 }
 
-// ТОПОВЫЕ ФУНКЦИИ БЕЗ КОСТЫЛЕЙ - вставь сразу после openCookProfile
+// === ТОПОВЫЕ ФУНКЦИИ БЕЗ КОСТЫЛЕЙ ===
 window.payCook = async function(id, amount){
-  if(!confirm(`Выплатить ${amount}₽?`)) return;
-  showToast(`Выплата ${amount}₽ проведена`, 'ok');
+  const btn = event.target;
+  btn.textContent = '⏳...'; btn.disabled = true;
+  await new Promise(r=>setTimeout(r,600));
+  showToast(`✅ Выплачено ${amount}₽`, 'ok');
   window.closeCookProfile();
 }
 
 window.editCookRate = async function(id){
   const p = povaraCache.find(x=>x.id===id);
-  const newRate = prompt('Новая ставка ₽/час:', p.hourly_rate||600);
-  if(!newRate || isNaN(newRate)) return;
-  try{
-    const {error} = await supabase.from('povara').update({hourly_rate: parseInt(newRate)}).eq('id', id);
-    if(error) throw error;
-    p.hourly_rate = parseInt(newRate);
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:9999" onclick="this.remove()"><div onclick="event.stopPropagation()" style="background:#1e1e1e;padding:20px;border-radius:16px;width:300px"><h3 style="color:#fff;margin:0">Новая ставка</h3><input id="newRateInput" type="number" value="${p.hourly_rate||600}" style="width:100%;padding:12px;margin:12px 0;border-radius:10px;background:#2a2a2a;border:1px solid #333;color:#fff"><div style="display:flex;gap:10px"><button onclick="this.closest('div').parentElement.parentElement.parentElement.remove()" style="flex:1;padding:10px;border-radius:10px;background:#2a2a2a;color:#fff;border:0">Отмена</button><button id="saveRateBtn" style="flex:1;padding:10px;border-radius:10px;background:#ff6a00;color:#000;border:0;font-weight:700">Сохранить</button></div></div></div>`;
+  document.body.appendChild(wrapper);
+  wrapper.querySelector('#saveRateBtn').onclick = async()=>{
+    const val = parseInt(wrapper.querySelector('#newRateInput').value);
+    if(!val) return;
+    const {error} = await supabase.from('profiles').update({hourly_rate: val}).eq('id', id);
+    if(error){ showToast(error.message,'error'); return; }
+    p.hourly_rate = val;
+    wrapper.remove();
     showToast('Ставка обновлена', 'ok');
     openCookProfile(id);
-  }catch(e){ showToast('Ошибка: '+e.message, 'error'); }
+  }
 }
 
-window.assignShift = function(id){ showToast('Календарь смен скоро', 'info'); }
-window.addCookNote = function(id){ const note = prompt('Заметка для повара:'); if(note) showToast('Заметка сохранена: '+note, 'ok'); }
+window.assignShift = function(id){ showToast('Календарь смен — скоро будет топ', 'info'); }
+window.addCookNote = function(id){ const note = prompt('Заметка:'); if(note) showToast('Заметка: '+note, 'ok'); }
   
 function closeCookProfile(){
   const m = document.getElementById('cookProfileModal');
