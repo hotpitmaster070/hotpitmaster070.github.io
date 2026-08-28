@@ -392,18 +392,34 @@ window.payCook = async function(id, amount){
   showToast('Выплачено '+amount+'₽', 'ok');
   window.closeCookProfile();
 }
-window.editCookRate = async function(id){
+window.editCookRate = function(id){
   const p = povaraCache.find(x=>x.id===id);
-  const newRate = prompt('Новая ставка:', p.hourly_rate||600);
-  if(!newRate) return;
-  const {error} = await supabase.from('profiles').update({hourly_rate: parseInt(newRate)}).eq('id', id);
-  if(error){ showToast(error.message,'error'); return; }
-  p.hourly_rate = parseInt(newRate);
-  showToast('Ставка обновлена', 'ok');
-  openCookProfile(id);
+  document.getElementById('customRateModal')?.remove();
+  const div = document.createElement('div');
+  div.id = 'customRateModal';
+  div.style = 'position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px';
+  div.innerHTML = '<div style="background:#1c1c1e;border-radius:20px;padding:20px;width:100%;max-width:320px;border:1px solid #333"><h3 style="margin:0 0 6px;color:#fff;font-size:18px;font-weight:800">Новая ставка</h3><p style="margin:0 0 14px;color:#888;font-size:13px">Для '+p.full_name+'</p><div style="position:relative"><input id="rateInput" type="number" value="'+(p.hourly_rate||600)+'" style="width:100%;padding:14px 50px 14px 14px;border-radius:12px;background:#2c2c2e;border:1px solid #3a3a3c;color:#fff;font-size:18px;font-weight:700;outline:none"><span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#888">₽/час</span></div><div style="display:flex;gap:10px;margin-top:16px"><button onclick="document.getElementById(\'customRateModal\').remove()" style="flex:1;padding:13px;border-radius:12px;background:#2c2c2e;color:#fff;border:0;font-weight:600">Отмена</button><button id="doSaveRate" style="flex:1;padding:13px;border-radius:12px;background:#ff6a00;color:#000;border:0;font-weight:800">Сохранить</button></div></div>';
+  document.body.appendChild(div);
+  div.onclick = (e)=>{ if(e.target===div) div.remove(); }
+  div.querySelector('#doSaveRate').onclick = async()=>{
+    const val = parseInt(document.getElementById('rateInput').value);
+    if(!val || val<100){ showToast('Введи ставку','error'); return; }
+    const btn = div.querySelector('#doSaveRate'); btn.textContent='Сохраняю...'; btn.disabled=true;
+    const {error} = await supabase.from('profiles').update({hourly_rate: val}).eq('id', id);
+    if(error){ showToast(error.message,'error'); btn.textContent='Сохранить'; btn.disabled=false; return; }
+    p.hourly_rate = val; div.remove(); showToast('Ставка '+val+'₽ сохранена','ok'); openCookProfile(id);
+  }
 }
-window.assignShift = function(id){ showToast('Календарь скоро','info'); }
-window.addCookNote = function(id){ const n=prompt('Заметка:'); if(n) showToast('Сохранено','ok'); }
+window.assignShift = function(id){ showToast('Календарь смен — скоро','info'); }
+window.addCookNote = function(id){
+  const p = povaraCache.find(x=>x.id===id);
+  document.getElementById('customNoteModal')?.remove();
+  const div = document.createElement('div'); div.id = 'customNoteModal';
+  div.style = 'position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px';
+  div.innerHTML = '<div style="background:#1c1c1e;border-radius:20px;padding:20px;width:100%;max-width:320px;border:1px solid #333"><h3 style="margin:0 0 12px;color:#fff;font-size:18px;font-weight:800">Заметка</h3><p style="margin:0 0 12px;color:#888;font-size:13px">'+p.full_name+'</p><textarea id="noteInput" placeholder="Например: лучший по пицце..." style="width:100%;min-height:90px;padding:12px;border-radius:12px;background:#2c2c2e;border:1px solid #3a3a3c;color:#fff;outline:none;resize:none"></textarea><div style="display:flex;gap:10px;margin-top:16px"><button onclick="document.getElementById(\'customNoteModal\').remove()" style="flex:1;padding:13px;border-radius:12px;background:#2c2c2e;color:#fff;border:0">Отмена</button><button id="doSaveNote" style="flex:1;padding:13px;border-radius:12px;background:#ff6a00;color:#000;border:0;font-weight:800">Сохранить</button></div></div>';
+  document.body.appendChild(div); div.onclick = (e)=>{ if(e.target===div) div.remove(); }
+  div.querySelector('#doSaveNote').onclick = ()=>{ const txt=document.getElementById('noteInput').value.trim(); if(!txt){ showToast('Напиши заметку','error'); return; } div.remove(); showToast('Заметка: '+txt,'ok'); }
+}
 
 function closeCookProfile(){
   const m = document.getElementById('cookProfileModal');
