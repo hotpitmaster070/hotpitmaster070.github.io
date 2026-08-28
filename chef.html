@@ -300,18 +300,14 @@ async function genInvite(){
 document.getElementById('genInviteBtn').addEventListener('click', genInvite);
 
 // 2. Табель - смена статусов
-async function setStatus(cookId, dateStr, status, time_in=null){
-  const {error}=await supabase.from('attendance').upsert({
-    restaurant_id:myRestaurantId,
-    profile_id:cookId,
-    work_date:dateStr,
-    status:status,
-    time_in:time_in
-  },{onConflict:'profile_id,work_date'});
+async function setStatus(cookId, dateStr, status){
+  const now = new Date().toTimeString().slice(0,8);
+  let payload = { restaurant_id:myRestaurantId, profile_id:cookId, work_date:dateStr, status:status };
+  if(status==='present' || status==='late') { payload.time_in = now; payload.time_out = null; }
+  if(status==='done') { payload.time_out = now; }
+  const {error}=await supabase.from('attendance').upsert(payload,{onConflict:'profile_id,work_date'});
   if(error){ showToast(error.message,'error'); return; }
-  closeStatusModal();
-  await loadAttendance();
-  await loadStaff();
+  closeStatusModal(); await loadAttendance(); await loadStaff();
 }
 
 function getDayStatus(rec){
