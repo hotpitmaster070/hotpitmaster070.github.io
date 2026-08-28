@@ -431,7 +431,11 @@ window.editCookRate = async function(id){
 window.assignShift = function(id){ showToast('Календарь смен скоро', 'info'); }
 window.addCookNote = function(id){ const note = prompt('Заметка для повара:'); if(note) showToast('Заметка сохранена: '+note, 'ok'); }
   
-function closeCookProfile(){document.getElementById('cookProfileModal').classList.remove('show');}
+function closeCookProfile(){
+  const m = document.getElementById('cookProfileModal');
+  m?.classList.remove('show','active');
+  m?.style.display = 'none';
+}
 
 function openRequestForm(cookId, dateStr, record){
   // форма заявки на замену - заглушка пока
