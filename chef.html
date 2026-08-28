@@ -405,7 +405,10 @@ function openCookProfile(id){
     </div>
     <button onclick="window.closeCookProfile()" style="width:100%;margin-top:12px;background:transparent;color:#ff6a00;border:1.5px solid #ff6a00;padding:13px;border-radius:12px;font-weight:800;cursor:pointer">Закрыть</button>
   </div>`;
-  document.getElementById('cookProfileModal').classList.add('active');
+  const m = document.getElementById('cookProfileModal');
+m?.classList.remove('hidden');
+m?.classList.add('show','active');
+m.style.display = 'flex'; // форсируем показ
 }
 
 // ТОПОВЫЕ ФУНКЦИИ БЕЗ КОСТЫЛЕЙ - вставь сразу после openCookProfile
