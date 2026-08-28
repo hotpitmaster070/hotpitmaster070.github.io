@@ -336,12 +336,17 @@ function renderTotal(cookId){
   let total=0;
   const cook=povaraCache.find(c=>c.id===cookId);
   recs.forEach(r=>{
-    if(r.status==='present'||r.status==='late'||r.status==='in'||r.status==='done'){
-      total+=cook?.salary_type==='hourly'?12*(cook?.salary||0):(cook?.salary||0);
+    if(['present','late','done'].includes(r.status)){
+      const h = Number(r.hours_worked)||0;
+      if(cook?.salary_type==='hourly'){
+        total+= h * (cook?.salary||0);
+      } else {
+        if(h>0) total+= (cook?.salary||0);
+      }
     }
   });
   const el=document.getElementById(`total-${cookId}`);
-  if(el) el.textContent=`${total}₽ за месяц`;
+  if(el) el.textContent=`${Math.round(total)}₽ за месяц`;
 }
 
 function createBtn(container, text, color, onClick){
