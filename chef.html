@@ -129,6 +129,12 @@ input,select{width:100%;padding:12px;background:var(--card-2);border:1px solid #
     <label>Время начала смены</label>
     <input type="time" id="startTime" style="margin-bottom:16px">
     <button class="btn" onclick="saveSettings()" style="width:100%">Сохранить</button>
+    <hr style="margin:16px 0;border-color:#333">
+<label>Почта бухгалтерии (куда слать выплаты)</label>
+<input type="email" id="acc_email" placeholder="buh@restoran.ru" style="margin-bottom:8px">
+<label>Телеграм бухгалтера (необязательно)</label>
+<input type="text" id="acc_tg" placeholder="@buhgalter" style="margin-bottom:8px">
+<label><input type="checkbox" id="acc_auto" checked> Авто-отправка</label>
     <p id="settingsMsg" style="color:#22c55e; text-align:center; margin-top:10px"></p>
   </div>
 </div>
