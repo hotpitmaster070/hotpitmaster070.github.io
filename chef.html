@@ -301,10 +301,14 @@ document.getElementById('genInviteBtn').addEventListener('click', genInvite);
 
 // 2. Табель - смена статусов
 async function setStatus(cookId, dateStr, status){
-  const now = new Date().toTimeString().slice(0,8);
   let payload = { restaurant_id:myRestaurantId, profile_id:cookId, work_date:dateStr, status:status };
-  if(status==='present' || status==='late') { payload.time_in = now; payload.time_out = null; }
-  if(status==='done') { payload.time_out = now; }
+  if(status==='present' || status==='late') {
+    payload.time_in = new Date().toISOString(); // полный timestamp
+    payload.time_out = null;
+  }
+  if(status==='done') {
+    payload.time_out = new Date().toISOString();
+  }
   const {error}=await supabase.from('attendance').upsert(payload,{onConflict:'profile_id,work_date'});
   if(error){ showToast(error.message,'error'); return; }
   closeStatusModal(); await loadAttendance(); await loadStaff();
