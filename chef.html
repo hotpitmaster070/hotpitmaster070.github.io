@@ -690,6 +690,48 @@ window.closeCookProfile = closeCookProfile;
 window.fireCook = fireCook;
 window.closeStatusModal = closeStatusModal;
 window.openStatusModal = openStatusModal;
+
+async function loadAccSettings(){
+  const {data} = await supabase.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).maybeSingle();
+  if(data){
+    document.getElementById('acc_email').value = data.accountant_email||'';
+    document.getElementById('acc_tg').value = data.accountant_telegram||'';
+    document.getElementById('acc_auto').checked = data.auto_send;
+  }
+}
+async function saveSettings(){
+  const newTime = document.getElementById('startTime').value;
+  const email = document.getElementById('acc_email')?.value || null;
+  const tg = document.getElementById('acc_tg')?.value || null;
+  const auto = document.getElementById('acc_auto')?.checked || false;
+  const {error: e1} = await supabase.from('restaurants').update({start_time: newTime}).eq('id',myRestaurantId);
+  const {error: e2} = await supabase.from('restaurant_settings').upsert({restaurant_id:myRestaurantId, accountant_email:email, accountant_telegram:tg, auto_send:auto});
+  if(e1||e2) showToast((e1||e2).message,'error');
+  else { showToast('Сохранено ✅','ok'); document.getElementById('settingsMsg').textContent='Сохранено!'; }
+}
+window.payCook = async function(cookId, totalPay){
+  if(!totalPay || totalPay<=0) return showToast('Нечего выплачивать','error');
+  const cook = povaraCache.find(c=>c.id===cookId);
+  const {data:settings} = await supabase.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).maybeSingle();
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text(`${cook.full_name} - ${totalPay}₽ - ${new Date().toLocaleDateString('ru-RU')}`,20,20);
+    doc.text(`Ресторан: ${document.getElementById('restName').textContent}`,20,30);
+    const blob = doc.output('blob');
+    const fileName = `${myRestaurantId}/${cookId}_${Date.now()}.pdf`;
+    await supabase.storage.from('payouts').upload(fileName, blob);
+    const {data:signed} = await supabase.storage.from('payouts').createSignedUrl(fileName, 604800);
+    await supabase.from('payouts').insert({restaurant_id:myRestaurantId, profile_id:cookId, amount:totalPay, file_url:signed.signedUrl});
+    const days = attendanceCache[cookId]?.days.filter(d=>!d.is_paid && (d.hours_worked>0 || ['present','late','done'].includes(d.status)))||[];
+    if(days.length) await supabase.from('attendance').update({is_paid:true}).in('id', days.map(d=>d.id));
+    if(settings?.auto_send && settings?.accountant_email){
+      await supabase.functions.invoke('send-payout', {body:{email:settings.accountant_email, url:signed.signedUrl, total:totalPay, cook:cook.full_name}});
+    }
+    showToast(`Улетело: ${totalPay}₽ в ${settings?.accountant_email||'файл'} ✅`,'ok');
+    closeCookProfile(); await loadStaff();
+  }catch(e){ showToast(e.message,'error'); }
+} 
   
 loadData();
 </script></body></html>
