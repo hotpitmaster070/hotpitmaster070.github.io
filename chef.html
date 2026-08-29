@@ -479,16 +479,6 @@ const {data: rest} = await supabase.from('restaurants').select('start_time').eq(
   if(rest && document.getElementById('startTime')) document.getElementById('startTime').value = rest.start_time || '10:00';
 }
 
-async function saveSettings(){
-  const newTime = document.getElementById('startTime').value;
-  const {error} = await supabase.from('restaurants').update({start_time: newTime}).eq('id',myRestaurantId);
-  if(error) showToast(error.message, 'error');
-  else {
-    const el=document.getElementById('settingsMsg'); if(el) el.textContent = 'Сохранено!';
-    setTimeout(()=>{ if(el) el.textContent=''},2000)
-  }
-}
-
 async function loadDashboard(){
   if(!myRestaurantId) return;
   try {
