@@ -36,14 +36,6 @@ input,select{width:100%;padding:12px 14px;background:#111;border:1px solid #333;
 .toggle:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
 .toggle.active:after{transform:translateX(18px)}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.burger,.close-sidebar{display:none}}
-.topbar>div{flex-shrink:0}
-@media(max-width:600px){
-  .topbar{flex-wrap:nowrap}
-  .topbar>div svg{width:42px!important;height:42px!important}
-  .topbar>div div div:first-child{font-size:20px!important}
-  .topbar>div div div:nth-child(2){font-size:10px!important;letter-spacing:3px!important}
-  .topbar>div div div:last-child{font-size:10px!important;padding:3px 12px!important}
-}
 </style></head><body><div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
@@ -83,8 +75,8 @@ input,select{width:100%;padding:12px 14px;background:#111;border:1px solid #333;
 <main class="content">
   <div class="topbar">
     <button class="burger" id="burgerBtn">☰</button>
-        <div style="display:flex;align-items:center;gap:14px">
-      <svg width="54" height="54" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
         <g fill="#FF6A00">
           <path d="M50 0C49 3 45 7 47 12C48 9 50 7 52 5C56 9 59 14 57 19C55 22 52 22 50 20C50 26 56 27 59 23C62 19 60 13 56 9C60 12 64 18 63 25C61 28 58 28 56 26C57 32 63 35 67 30C69 26 65 20 62 17C66 20 70 26 70 33C70 38 67 42 63 40C65 45 70 50 68 58C67 62 62 66 56 66C58 61 61 55 64 50C62 52 59 55 56 62C52 68 46 69 42 65C38 61 37 55 39 49C36 52 33 58 35 65C30 63 26 58 25 52C25 46 29 41 32 38C30 40 27 42 27 37C27 32 31 28 36 28C37 28 39 29 40 30C42 24 47 20 50 0Z"/>
           <path d="M32 38C26 38 20 41 20 47C20 51 24 54 28 54V64C28 64 72 67 72 64V54C76 54 80 51 80 47C80 41 74 38 68 38C65 33 57 32 50 32C43 32 35 33 32 38Z" fill="none" stroke="#FF6A00" stroke-width="5" stroke-linejoin="round"/>
@@ -92,11 +84,12 @@ input,select{width:100%;padding:12px 14px;background:#111;border:1px solid #333;
         </g>
       </svg>
       <div style="line-height:1">
-        <div style="color:#FF6A00;font-weight:900;font-size:26px;letter-spacing:-0.5px;line-height:0.9">HotPit</div>
-        <div style="color:#FFFFFF;font-weight:300;letter-spacing:5px;font-size:12px;margin-top:2px">KITCHEN</div>
-        <div style="margin-top:7px;background:#FF6A00;color:#fff;font-weight:800;font-size:12px;padding:4px 16px;border-radius:14px;display:inline-block">ChefOS</div>
+        <div style="color:#FF6A00;font-weight:900;font-size:18px;line-height:0.9">HotPit</div>
+        <div style="color:#FFFFFF;font-weight:300;letter-spacing:3px;font-size:10px;margin-top:1px">KITCHEN</div>
+        <div style="margin-top:4px;background:#FF6A00;color:#fff;font-weight:800;font-size:9px;padding:2px 10px;border-radius:10px;display:inline-block">ChefOS</div>
       </div>
-        </div>
+    </div>
+  </div>
 <div id="tab-content">
 <div data-tab-content="settings" style="display:block">
   <h2 style="font-size:28px;font-weight:700;margin-bottom:4px">Settings</h2>
@@ -109,7 +102,7 @@ input,select{width:100%;padding:12px 14px;background:#111;border:1px solid #333;
         <div><label style="font-size:12px;color:var(--muted)">Shift Start Time</label><input type="time" id="startTime" value="08:00"></div>
         <div><label style="font-size:12px;color:var(--muted)">Shift End Time</label><input type="time" value="16:00"></div>
         <div><label style="font-size:12px;color:var(--muted)">Break Duration (minutes)</label><input type="number" value="30" style="margin-top:24px"></div>
-        <div><label style="font-size:12px;color:var(--muted)"> </label></div>
+        <div><label style="font-size:12px;color:var(--muted)"> </label></div>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:16px;border-top:1px solid #333">
         <div><div style="font-weight:600;font-size:14px">Enable Overtime Approvals</div><div style="font-size:12px;color:var(--muted)">Allow managers to approve overtime for staff beyond scheduled shift.</div></div>
