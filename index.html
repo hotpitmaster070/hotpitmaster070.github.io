@@ -4,76 +4,78 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit Kitchen</title>
 <style>
-  body{margin:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff}
+body{margin:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff}
 .wrap{max-width:390px;margin:0 auto;padding:16px 16px 40px;box-sizing:border-box}
-.lang-pill{display:flex;justify-content:space-between;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:999px;padding:4px 8px;margin-bottom:22px;overflow:hidden}
+.lang-pill{display:flex;justify-content:space-between;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:999px;padding:4px 8px;margin-bottom:20px}
 .lang-pill button{flex:1;background:transparent;border:none;color:#888;font-size:13px;font-weight:700;padding:7px 0;border-radius:999px;cursor:pointer}
 .lang-pill button.active{background:#ff6b00;color:#fff}
-.logo-row{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:10px}
-.logo-icon{width:78px;height:78px;flex-shrink:0}
-.hot{color:#ff6b00;font-weight:900;font-size:42px;line-height:1;letter-spacing:-1px}
-.kit{color:#fff;font-size:17px;letter-spacing:6px;font-weight:500;margin-top:1px}
-.sub{color:rgba(255,255,255,.75);font-weight:200;font-size:11px;letter-spacing:.8px;margin-top:4px;width:182px;white-space:nowrap;overflow:hidden}
-.welcome{text-align:center;color:#aaa;font-size:13px;margin:18px 0}
-.card{background:#171717;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:12px;position:relative;overflow:hidden;border:1px solid #262626;cursor:pointer;transition:.2s}
+.logo-row{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:8px}
+.hot{color:#ff6b00;font-weight:900;font-size:38px;line-height:1;letter-spacing:-1px}
+.kit{color:#fff;font-size:15px;letter-spacing:5.5px;font-weight:500;margin-top:2px}
+.sub{color:rgba(255,255,255,.7);font-weight:300;font-size:11px;letter-spacing:.6px;margin-top:4px;width:178px;white-space:nowrap}
+.welcome{text-align:center;color:#aaa;font-size:13px;margin:16px 0}
+.card{background:#171717;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:12px;position:relative;overflow:hidden;border:1px solid #262626;cursor:pointer}
 .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;background:#ff6b00}
 .card.active{border-color:#ff6b00;background:#1f1a16}
-.card.ic{width:42px;height:42px;border-radius:50%;background:#1e1e1e;border:1px solid #333;display:flex;align-items:center;justify-content:center;margin-left:16px;font-size:18px;flex-shrink:0}
+.card.ic{width:36px;height:36px;border-radius:50%;background:#1e1e1e;border:1px solid #333;display:flex;align-items:center;justify-content:center;margin-left:14px;font-size:18px}
 .card h3{margin:0;font-size:16px}
-.card p{margin:3px 0 0;color:#aaa;font-size:11px;line-height:1.2}
+.card p{margin:3px 0 0;color:#aaa;font-size:11px}
 .btn{width:100%;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;border:none;margin-top:10px}
 .btn-orange{background:#ff6b00;color:#000}
 .btn-outline{background:transparent;border:1px solid #ff6b00;color:#ff6b00}
 .form-box{background:#111;border-radius:18px;padding:16px;margin-top:16px;display:none}
 .form-box.show{display:block}
-  input,select{width:100%;padding:13px 14px;margin-bottom:10px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:11px;color:#fff;font-size:14px;box-sizing:border-box}
-  input:focus,select:focus{outline:none;border-color:#ff6b00}
+input,select{width:100%;padding:13px 14px;margin-bottom:10px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:11px;color:#fff;font-size:14px;box-sizing:border-box}
+input:focus,select:focus{outline:none;border-color:#ff6b00}
 .switch{color:#777;text-align:center;font-size:13px;margin-top:12px}
 .switch a{color:#ff6b00;cursor:pointer}
-  #msg{text-align:center;font-size:13px;margin-top:8px}
+#msg{text-align:center;font-size:13px;margin-top:8px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="lang-pill" id="langBar">
-    <button data-lang="ru">RU</button><button data-lang="en" class="active">EN</button><button data-lang="az">AZ</button><button data-lang="es">ES</button><button data-lang="de">DE</button><button data-lang="it">IT</button><button data-lang="ar">SA</button>
+    <button data-lang="ru" class="active">RU</button><button data-lang="en">EN</button><button data-lang="az">AZ</button><button data-lang="es">ES</button><button data-lang="de">DE</button><button data-lang="it">IT</button><button data-lang="ar">SA</button>
   </div>
 
-  <!-- ЖИВОЙ КОЛПАК С ОГНЕМ -->
+  <!-- ФИКС ЛОГО - ПРОСТОЙ РАБОЧИЙ КОЛПАК С ОГНЕМ -->
   <div class="logo-row">
-    <svg class="logo-icon" viewBox="0 0 100 110" fill="none">
-      <!-- колпак объемный оранжевый -->
-      <path fill="#ff6b00" d="M50 18 C42 22, 36 26, 34 34 C30 32, 26 36, 30 42 C26 40, 20 44, 19 52 C25 50, 33 53, 36 59 L36 62 C36 62, 28 60, 18 65 C9 71, 12 86, 23 87 C20 83, 23 76, 32 76 C30 82, 32 88, 28 95 C22 101, 18 110, 34 111 L66 111 C82 110, 78 101, 72 95 C68 88, 70 82, 68 76 C77 76, 80 83, 77 87 C88 86, 91 71, 82 65 C72 60, 64 62, 64 62 L64 59 C67 53, 75 50, 81 52 C80 44, 74 40, 70 42 C74 36, 70 32, 66 34 C64 26, 58 22, 50 18 Z M32 77 L32 98 L68 98 L68 77 Q50 82 32 77 Z"/>
-      <!-- огонь над колпаком - живой -->
-      <path fill="#ff6b00" d="M50 2 Q54 12 60 16 Q56 12 53 6 Q51 12 47 16 Q52 12 50 2 Z M42 8 Q44 14 48 18 Q45 13 42 8 Z M58 8 Q60 14 64 18 Q61 13 58 8 Z"/>
-      <path fill="#ff8c33" d="M50 6 Q52 11 55 14 Q52 11 50 6 Q48 11 45 14 Q48 11 50 6 Z" opacity="0.9"/>
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+      <!-- огонь сверху - 3 язычка -->
+      <path fill="#ff6b00" d="M32 2 C33 6, 35 9, 37 10 C35 9, 33 6, 32 2 Z"/>
+      <path fill="#ff6b00" d="M32 0 C30 5, 30 9, 33 12 C31 9, 30 5, 32 0 Z"/>
+      <path fill="#ff8c00" d="M32 3 C32.5 7, 34 10, 35 11 C33.5 9, 32 6, 32 3 Z"/>
+      <!-- колпак - оживленный, пухлый -->
+      <path fill="#ff6b00" d="M32 12 C24 13, 18 18, 20 26 C16 25, 12 29, 14 34 C17 37, 22 36, 25 34 C25 38, 27 42, 32 42 C37 42, 39 38, 39 34 C42 36, 47 37, 50 34 C52 29, 48 25, 44 26 C46 18, 40 13, 32 12 Z"/>
+      <!-- лента колпака -->
+      <path fill="#ff6b00" d="M18 38 Q32 44 46 38 L44 52 Q32 56 20 52 Z"/>
+      <!-- нижняя линия ленты -->
+      <rect x="20" y="48" width="24" height="3" rx="1.5" fill="#cc5500"/>
     </svg>
     <div>
       <div class="hot">HotPit</div>
-      <div class="kit" id="kitchenWord">KITCHEN</div>
-      <div class="sub" id="logoSub">management system</div>
+      <div class="kit">KITCHEN</div>
+      <div class="sub" id="logoSub">система управления</div>
     </div>
   </div>
 
-  <div class="welcome" id="welcome">Welcome to HotPit Kitchen</div>
+  <div class="welcome" id="welcome">Добро пожаловать в HotPit Kitchen</div>
 
-  <div class="card active" id="cardOwner" data-role="owner"><div class="ic">👤</div><div><h3 id="tOwner">Owner</h3><p id="dOwner">Manage kitchens, staff & operations</p></div></div>
-  <div class="card" id="cardChef" data-role="chef"><div class="ic">👨‍🍳</div><div><h3 id="tChef">Chef</h3><p id="dChef">Recipes, stock & daily tasks</p></div></div>
+  <div class="card active" id="cardOwner"><div class="ic">👤</div><div><h3 id="tOwner">Овнер</h3><p id="dOwner">Управление кухнями, персоналом</p></div></div>
+  <div class="card" id="cardChef"><div class="ic">👨‍🍳</div><div><h3 id="tChef">Шеф</h3><p id="dChef">Рецепты, склад и задачи</p></div></div>
 
-  <button class="btn btn-orange" id="btnShowLogin">Log in</button>
-  <button class="btn btn-outline" id="btnShowReg">Create account</button>
+  <button class="btn btn-orange" id="btnShowLogin">Войти</button>
+  <button class="btn btn-outline" id="btnShowReg">Создать аккаунт</button>
 
   <div class="form-box" id="regForm">
-    <select id="role"><option value="owner" id="opt_owner">I am Owner. Create my restaurant</option><option value="chef" id="opt_chef">I am Chef. Create my restaurant</option></select>
-    <input id="full_name" placeholder="Your full name"><input id="rest_name" placeholder="Restaurant name"><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Password 6+">
-    <button class="btn btn-orange" id="btnReg">Create account</button><div class="switch"><span id="tHave">Already have account?</span> <a id="toLogin">Log in</a></div>
+    <select id="role"><option value="owner" id="opt_owner">Я Овнер. Создать свой ресторан</option><option value="chef" id="opt_chef">Я Шеф. Создать свой ресторан</option></select>
+    <input id="full_name" placeholder="Ваше ФИО"><input id="rest_name" placeholder="Название ресторана"><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Пароль 6+">
+    <button class="btn btn-orange" id="btnReg">Создать аккаунт</button><div class="switch"><span id="tHave">Уже есть аккаунт?</span> <a id="toLogin">Войти</a></div>
   </div>
-
   <div class="form-box" id="loginForm">
-    <input id="emailLogin" type="email" placeholder="Email"><input id="passwordLogin" type="password" placeholder="Password">
-    <button class="btn btn-orange" id="btnLogin">Log in</button><div class="switch"><span id="tNo">No account?</span> <a id="toReg">Create account</a></div>
+    <input id="emailLogin" type="email" placeholder="Email"><input id="passwordLogin" type="password" placeholder="Пароль">
+    <button class="btn btn-orange" id="btnLogin">Войти</button><div class="switch"><span id="tNo">Нет аккаунта?</span> <a id="toReg">Создать аккаунт</a></div>
   </div>
-
   <div id="msg"></div>
   <div style="text-align:center;color:#555;font-size:10px;margin-top:20px">v1.0 • itmaster070.github.io • © 2024 HotPit Kitchen</div>
 </div>
@@ -82,16 +84,16 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
 const dict={ru:{welcome:"Добро пожаловать в HotPit Kitchen",owner:"Овнер",ownerD:"Управление кухнями, персоналом",chef:"Шеф",chefD:"Рецепты, склад и задачи",sub:"система управления",optO:"Я Овнер. Создать свой ресторан",optC:"Я Шеф. Создать свой ресторан",fio:"Ваше ФИО",rest:"Название ресторана",create:"Создать аккаунт",login:"Войти",have:"Уже есть аккаунт?",no:"Нет аккаунта?"},en:{welcome:"Welcome to HotPit Kitchen",owner:"Owner",ownerD:"Manage kitchens, staff & operations",chef:"Chef",chefD:"Recipes, stock & daily tasks",sub:"management system",optO:"I am Owner. Create my restaurant",optC:"I am Chef. Create my restaurant",fio:"Your full name",rest:"Restaurant name",create:"Create account",login:"Log in",have:"Already have account?",no:"No account?"},az:{welcome:"HotPit Kitchen-ə xoş gəlmisiniz",owner:"Sahib",ownerD:"Mətbəxləri, heyəti idarə et",chef:"Şef",chefD:"Reseptlər, anbar və tapşırıqlar",sub:"idarəetmə sistemi",optO:"Mən Sahibəm. Restoran yarat",optC:"Mən Şefəm. Restoran yarat",fio:"Ad Soyad",rest:"Restoran adı",create:"Hesab yarat",login:"Giriş",have:"Hesabın var?",no:"Hesabın yoxdur?"},es:{welcome:"Bienvenido a HotPit Kitchen",owner:"Dueño",ownerD:"Gestiona cocinas, personal y operaciones",chef:"Chef",chefD:"Recetas, stock y tareas diarias",sub:"sistema de gestión",optO:"Soy Dueño. Crear mi restaurante",optC:"Soy Chef. Crear mi restaurante",fio:"Nombre completo",rest:"Nombre restaurante",create:"Crear cuenta",login:"Entrar",have:"¿Ya tienes cuenta?",no:"¿Sin cuenta?"},de:{welcome:"Willkommen bei HotPit Kitchen",owner:"Inhaber",ownerD:"Küchen, Personal und Betrieb verwalten",chef:"Chef",chefD:"Rezepte, Lager & Aufgaben",sub:"Managementsystem",optO:"Ich bin Inhaber. Restaurant erstellen",optC:"Ich bin Chef. Restaurant erstellen",fio:"Vollname",rest:"Restaurantname",create:"Konto erstellen",login:"Anmelden",have:"Bereits ein Konto?",no:"Kein Konto?"},it:{welcome:"Benvenuto in HotPit Kitchen",owner:"Proprietario",ownerD:"Gestisci cucine, personale e operazioni",chef:"Chef",chefD:"Ricette, magazzino e attività",sub:"sistema di gestione",optO:"Sono Proprietario. Crea ristorante",optC:"Sono Chef. Crea ristorante",fio:"Nome completo",rest:"Nome ristorante",create:"Crea account",login:"Accedi",have:"Hai già un account?",no:"Nessun account?"},ar:{welcome:"مرحبا بكم في HotPit Kitchen",owner:"المالك",ownerD:"إدارة المطابخ والموظفين والعمليات",chef:"الشيف",chefD:"الوصفات والمخزون والمهام",sub:"نظام الإدارة",optO:"أنا مالك. أنشئ مطعمي",optC:"أنا شيف. أنشئ مطعمي",fio:"الاسم الكامل",rest:"اسم المطعم",create:"إنشاء حساب",login:"دخول",have:"لديك حساب؟",no:"ليس لديك حساب؟"}}
-let curRole='owner',curLang=localStorage.getItem('hp_lang')||'en'
+let curLang=localStorage.getItem('hp_lang')||'ru'
 function applyLang(l){curLang=l;localStorage.setItem('hp_lang',l);document.body.dir=l==='ar'?'rtl':'ltr';const t=dict[l];document.getElementById('welcome').textContent=t.welcome;document.getElementById('tOwner').textContent=t.owner;document.getElementById('dOwner').textContent=t.ownerD;document.getElementById('tChef').textContent=t.chef;document.getElementById('dChef').textContent=t.chefD;document.getElementById('logoSub').textContent=t.sub;document.getElementById('opt_owner').textContent=t.optO;document.getElementById('opt_chef').textContent=t.optC;document.getElementById('full_name').placeholder=t.fio;document.getElementById('rest_name').placeholder=t.rest;document.getElementById('btnReg').textContent=t.create;document.getElementById('btnLogin').textContent=t.login;document.getElementById('btnShowLogin').textContent=t.login;document.getElementById('btnShowReg').textContent=t.create;document.getElementById('tHave').textContent=t.have;document.getElementById('tNo').textContent=t.no;document.querySelectorAll('#langBar button').forEach(b=>b.classList.toggle('active',b.dataset.lang===l))}
 document.getElementById('langBar').onclick=e=>{if(e.target.dataset.lang) applyLang(e.target.dataset.lang)}
 applyLang(curLang)
-function selectRole(r){curRole=r;document.getElementById('role').value=r;document.getElementById('cardOwner').classList.toggle('active',r==='owner');document.getElementById('cardChef').classList.toggle('active',r==='chef')}
+function selectRole(r){document.getElementById('role').value=r;document.getElementById('cardOwner').classList.toggle('active',r==='owner');document.getElementById('cardChef').classList.toggle('active',r==='chef')}
 document.getElementById('cardOwner').onclick=()=>selectRole('owner')
 document.getElementById('cardChef').onclick=()=>selectRole('chef')
 document.getElementById('role').onchange=e=>selectRole(e.target.value)
-document.getElementById('btnShowReg').onclick=()=>{document.getElementById('regForm').classList.add('show');document.getElementById('loginForm').classList.remove('show');window.scrollTo(0,document.body.scrollHeight)}
-document.getElementById('btnShowLogin').onclick=()=>{document.getElementById('loginForm').classList.add('show');document.getElementById('regForm').classList.remove('show');window.scrollTo(0,document.body.scrollHeight)}
+document.getElementById('btnShowReg').onclick=()=>{document.getElementById('regForm').classList.add('show');document.getElementById('loginForm').classList.remove('show')}
+document.getElementById('btnShowLogin').onclick=()=>{document.getElementById('loginForm').classList.add('show');document.getElementById('regForm').classList.remove('show')}
 document.getElementById('toLogin').onclick=()=>{document.getElementById('regForm').classList.remove('show');document.getElementById('loginForm').classList.add('show')}
 document.getElementById('toReg').onclick=()=>{document.getElementById('loginForm').classList.remove('show');document.getElementById('regForm').classList.add('show')}
 selectRole('owner')
@@ -100,4 +102,4 @@ document.getElementById('btnReg').onclick=async()=>{const b=document.getElementB
 document.getElementById('btnLogin').onclick=async()=>{const b=document.getElementById('btnLogin');b.disabled=true;msg.textContent='...';try{await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(),password:document.getElementById('passwordLogin').value});const user=(await sb.auth.getUser()).data.user;const {data:prof}=await sb.from('profiles').select('role').eq('id',user.id).single();location.href=prof?.role==='chef'?'/chef.html':prof?.role==='owner'?'/owner.html':'/cook.html'}catch(e){msg.style.color='#f87171';msg.textContent=e.message;b.disabled=false}}
 </script>
 </body>
-</html>
+  </html>
