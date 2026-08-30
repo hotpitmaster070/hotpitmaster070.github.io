@@ -94,4 +94,4 @@ document.getElementById('btnReg').onclick=async()=>{const b=document.getElementB
 document.getElementById('btnLogin').onclick=async()=>{const b=document.getElementById('btnLogin');b.disabled=true;msg.textContent='...';try{await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(),password:document.getElementById('passwordLogin').value});const user=(await sb.auth.getUser()).data.user;const {data:prof}=await sb.from('profiles').select('role').eq('id',user.id).single();location.href=prof?.role==='chef'?'/chef.html':prof?.role==='owner'?'/owner.html':'/cook.html'}catch(e){msg.style.color='#f87171';msg.textContent=e.message;b.disabled=false}}
 </script>
 </body>
-  </html>
+</html>
