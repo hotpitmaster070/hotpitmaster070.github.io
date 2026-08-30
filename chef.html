@@ -3,57 +3,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap');
 :root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--in:#06b6d4;--out:#ec4899;--off:#555;--danger:#ef4444}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;font-weight:300;letter-spacing:0.2px;min-height:100vh}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-weight:300;letter-spacing:0.2px;min-height:100vh}
 .app{display:flex;min-height:100vh}
 .sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform.3s}
 .sidebar.open{transform:translateX(0)}
 .sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.sidebar h2{color:var(--accent);font-size:22px;font-weight:900;letter-spacing:-0.5px}
-.close-sidebar{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0 4px}
+.close-sidebar{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
 .menu{display:flex;flex-direction:column;gap:6px;margin-top:16px}
 .menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font-weight:400;font-size:15px;transition:all .2s}
-.menu button.active,.menu button:hover{background:var(--card-2);color:#fff}
-
-/* ChefOS ОРАНЖЕВЫЙ ПРЕМИУМ - НЕ КОЛХОЗ */
-.menu-parent{font-weight:800!important; color:#fff!important; background:var(--accent)!important; border-radius:12px!important; display:flex; justify-content:space-between; align-items:center; padding:12px 14px!important; letter-spacing:0.3px}
-.menu-item.has-submenu > .menu-parent::after{content:'▼'; font-size:10px; transition:transform .2s; color:#000}
-.menu-item.has-submenu.open > .menu-parent::after{transform:rotate(180deg)}
-.menu-item .submenu{max-height:0; overflow:hidden; transition:max-height .3s ease; padding-left:14px; border-left:2px solid #f9731640; margin-left:12px; margin-top:10px; display:flex; flex-direction:column; gap:2px}
+.menu button.active,.menu button:hover{background:var(--card-2)}
+.menu-parent{font-weight:800!important;color:#fff!important;background:var(--accent)!important;border-radius:12px!important;display:flex;justify-content:space-between;align-items:center}
+.menu-item.has-submenu>.menu-parent::after{content:'▼';font-size:10px;transition:transform .2s;color:#000}
+.menu-item.has-submenu.open>.menu-parent::after{transform:rotate(180deg)}
+.menu-item .submenu{max-height:0;overflow:hidden;transition:max-height .3s ease;padding-left:14px;border-left:2px solid #f9731640;margin-left:12px;margin-top:10px;display:flex;flex-direction:column;gap:2px}
 .menu-item.open .submenu{max-height:600px}
-.submenu button{font-size:13.5px; color:var(--muted); padding:10px 12px; font-weight:300; border-radius:8px}
-.submenu button:hover{color:var(--accent); background:rgba(249,115,22,0.08)}
-.submenu button .badge-soon{background:var(--accent); color:#000; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; margin-left:8px; vertical-align:middle}
-
-/* НАСТРОЙКИ АККОРДЕОН - ТОНКИЙ ШРИФТ */
-.acc-card{cursor:pointer; transition:all .2s; border-left:3px solid transparent; border:1px solid #262626}
-.acc-card.open{border-left-color:var(--accent); background:#1e1e1e; border-color:#2a2a2a}
-.acc-head{display:flex; justify-content:space-between; align-items:center; font-weight:500; font-size:17px; letter-spacing:0.2px}
-.acc-head .arrow{transition:transform .2s; font-size:12px; color:var(--accent)}
-.acc-card.open .arrow{transform:rotate(180deg)}
-.acc-body{max-height:0; overflow:hidden; transition:max-height .35s ease; margin-top:0; opacity:0}
-.acc-card.open .acc-body{max-height:500px; margin-top:18px; opacity:1}
-
+.submenu button{font-size:13.5px;color:var(--muted);padding:10px 12px;font-weight:300}
+.submenu button:hover{color:var(--accent);background:rgba(249,115,22,0.08)}
+.badge-soon{background:var(--accent);color:#000;font-size:9px;padding:2px 6px;border-radius:10px;font-weight:800;margin-left:8px}
 .content{flex:1;padding:24px;margin-left:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
-.burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:20px;line-height:1}
+.burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:20px}
 .povar-card{background:var(--card);padding:20px;border-radius:16px;margin-bottom:14px;border:1px solid #262626}
 .povar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;color:#000;font-size:20px}
-
-/* ЕДИНЫЙ СТИЛЬ КНОПОК - ВСЕ ОРАНЖЕВЫЕ */
 .btn{padding:14px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;cursor:pointer;width:100%;font-size:14.5px;letter-spacing:0.3px;transition:all .2s}
 .btn:hover{background:#ff8c42;transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,115,22,0.25)}
-.btn-outline{background:transparent;border:1px solid #333;color:var(--muted);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.btn-outline{background:transparent;border:1px solid #333;color:var(--muted);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500}
 .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
 .btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
-.btn-danger:hover{background:var(--danger);color:#fff}
-
-input,select{width:100%;padding:12px 14px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-weight:300;font-size:14px;transition:border-color .2s}
-input:focus,select:focus{outline:none;border-color:var(--accent);background:#2a2a2a}
+input,select{width:100%;padding:12px 14px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-weight:300;font-size:14px}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
-.day-header{font-size:11px;color:var(--muted);text-align:center;font-weight:500;padding-bottom:6px;letter-spacing:0.5px}
-.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:500;transition:all .15s;position:relative}
+.day-header{font-size:11px;color:var(--muted);text-align:center;font-weight:500;padding-bottom:6px}
+.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:500;transition:all .15s}
 .day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}
 .day.in{background:var(--in);color:#000}.day.out{background:var(--out);color:#fff}.day.off{background:var(--off);color:#aaa}
 .day.done{background:linear-gradient(135deg,var(--in) 50%,var(--out) 50%);color:#000}
@@ -61,13 +44,20 @@ input:focus,select:focus{outline:none;border-color:var(--accent);background:#2a2
 .day.past{opacity:0.25;pointer-events:none}
 .total{margin-top:16px;padding-top:16px;border-top:1px solid #2a2a2a;font-weight:700;font-size:15px;color:var(--accent)}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
 .status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
 .sidebar-chef{padding:12px;border-radius:12px;background:var(--card-2);margin-bottom:20px;border:1px solid #2a2a2a}
-.muted{color:var(--muted);font-size:12px;margin-top:8px;font-weight:300;letter-spacing:0.2px}
+.muted{color:var(--muted);font-size:12px;margin-top:8px;font-weight:300}
 .ok{color:#22c55e}.err{color:var(--danger);padding:20px}
 .link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px;border:1px solid #262626}
 #qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
+.acc-card{cursor:pointer;transition:all .2s;border-left:3px solid transparent;border:1px solid #262626;border-radius:16px;margin-bottom:12px}
+.acc-card.open{border-left-color:var(--accent);background:#1e1e1e}
+.acc-head{display:flex;justify-content:space-between;align-items:center;font-weight:500;font-size:17px;padding:16px}
+.acc-head .arrow{transition:transform .2s;font-size:12px;color:var(--accent)}
+.acc-card.open .arrow{transform:rotate(180deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease;opacity:0;padding:0 16px}
+.acc-card.open .acc-body{max-height:500px;opacity:1;padding:0 16px 16px}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:0;flex:1}.burger,.close-sidebar{display:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
