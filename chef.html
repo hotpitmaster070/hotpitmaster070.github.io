@@ -1,265 +1,133 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit KITCHEN - ChefOS</title><style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&display=swap');
-:root{--bg:#0a0a0a;--card:#171717;--card-2:#262626;--text:#f5f5f5;--muted:#a3a3a3;--accent:#f97316;--work:#22c55e;--sick:#f59e0b;--vac:#3b82f6;--in:#06b6d4;--out:#ec4899;--off:#555;--danger:#ef4444}
+:root{--bg:#0a0a0a;--card:#171717;--card-2:#1e1e1e;--text:#f5f5f5;--muted:#a3a3a3;--accent:#ff6b00;--border:#262626}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:radial-gradient(1200px 600px at 80% -20%,rgba(249,115,22,0.12),transparent),var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-weight:300;letter-spacing:0.2px;min-height:100vh}
+body{background:radial-gradient(1200px 600px at 80% -20%,rgba(255,107,0,0.12),transparent),var(--bg);color:var(--text);font-family:'Inter',-apple-system,sans-serif;font-weight:300;min-height:100vh}
 .app{display:flex;min-height:100vh}
-.sidebar{width:260px;background:var(--card);border-right:1px solid #262626;padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform.3s}
+.sidebar{width:280px;background:var(--card);border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);z-index:95;transition:transform .3s}
 .sidebar.open{transform:translateX(0)}
 .sidebar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
 .close-sidebar{background:transparent;border:none;color:var(--muted);font-size:24px;cursor:pointer}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;z-index:90}.overlay.show{display:block}
-.menu{display:flex;flex-direction:column;gap:6px;margin-top:16px}
-.menu button{width:100%;background:transparent;border:none;color:var(--text);text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font-weight:400;font-size:15px;transition:all .2s}
-.menu button.active,.menu button:hover{background:var(--card-2)}
-.menu-parent{font-weight:800!important;color:#fff!important;background:var(--accent)!important;border-radius:12px!important;display:flex;justify-content:space-between;align-items:center}
-.menu-item.has-submenu>.menu-parent::after{content:'▼';font-size:10px;transition:transform .2s;color:#000}
-.menu-item.has-submenu.open>.menu-parent::after{transform:rotate(180deg)}
-.menu-item .submenu{max-height:0;overflow:hidden;transition:max-height .3s ease;padding-left:14px;border-left:2px solid #f9731640;margin-left:12px;margin-top:10px;display:flex;flex-direction:column;gap:2px}
+.menu{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.menu button{width:100%;background:transparent;border:none;color:#9f9f9f;text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font-weight:400;font-size:14px;transition:all .2s;display:flex;align-items:center;gap:12px;letter-spacing:0.2px;border-left:3px solid transparent}
+.menu button.active,.menu button:hover{background:rgba(255,107,0,0.08);color:#fff;border-left-color:var(--accent)}
+.menu button.active svg{color:var(--accent)}
+.menu-parent{font-weight:700!important;color:#fff!important;background:rgba(255,107,0,0.12)!important;border-radius:12px!important}
+.menu-item.has-submenu>.menu-parent::after{content:'▼';font-size:10px;color:var(--accent)}
+.menu-item .submenu{max-height:0;overflow:hidden;transition:max-height .3s ease;padding-left:14px;border-left:2px solid #ff6b0040;margin-left:12px;margin-top:8px;display:flex;flex-direction:column;gap:2px}
 .menu-item.open .submenu{max-height:600px}
-.submenu button{font-size:13.5px;color:var(--muted);padding:10px 12px;font-weight:300}
-.submenu button:hover{color:var(--accent);background:rgba(249,115,22,0.08)}
-.badge-soon{background:var(--accent);color:#000;font-size:9px;padding:2px 6px;border-radius:10px;font-weight:800;margin-left:8px}
-.content{flex:1;padding:24px;margin-left:0}
+.submenu button{font-size:13px;color:var(--muted);padding:9px 12px}
+.badge-soon{background:var(--accent);color:#000;font-size:8px;padding:2px 6px;border-radius:10px;font-weight:900;margin-left:auto}
+.content{flex:1;padding:24px}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
 .burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:10px 16px;border-radius:10px;cursor:pointer;font-size:20px}
-.povar-card{background:var(--card);padding:20px;border-radius:16px;margin-bottom:14px;border:1px solid #262626}
-.povar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;color:#000;font-size:20px}
-.btn{padding:14px 20px;border:none;border-radius:12px;background:var(--accent);color:#000;font-weight:700;cursor:pointer;width:100%;font-size:14.5px;letter-spacing:0.3px;transition:all .2s}
-.btn:hover{background:#ff8c42;transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,115,22,0.25)}
-.btn-outline{background:transparent;border:1px solid #333;color:var(--muted);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
-input,select{width:100%;padding:12px 14px;background:var(--card-2);border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-weight:300;font-size:14px}
-input:focus,select:focus{outline:none;border-color:var(--accent)}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
-.day-header{font-size:11px;color:var(--muted);text-align:center;font-weight:500;padding-bottom:6px}
-.day{aspect-ratio:1;border-radius:10px;background:var(--card-2);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;font-weight:500;transition:all .15s}
-.day.work{background:var(--work);color:#000}.day.sick{background:var(--sick);color:#000}.day.vac{background:var(--vac);color:#fff}
-.day.in{background:var(--in);color:#000}.day.out{background:var(--out);color:#fff}.day.off{background:var(--off);color:#aaa}
-.day.done{background:linear-gradient(135deg,var(--in) 50%,var(--out) 50%);color:#000}
-.day.today{border:2px solid var(--accent);font-weight:700}
-.day.past{opacity:0.25;pointer-events:none}
-.total{margin-top:16px;padding-top:16px;border-top:1px solid #2a2a2a;font-weight:700;font-size:15px;color:var(--accent)}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
-.modal.show{display:flex}.modal-card{background:var(--card);padding:24px;border-radius:20px;width:100%;max-width:420px;border:1px solid #262626}
-.status-btn{padding:14px;border:none;border-radius:12px;width:100%;margin-top:8px;font-weight:700;cursor:pointer}
-.sidebar-chef{padding:12px;border-radius:12px;background:var(--card-2);margin-bottom:20px;border:1px solid #2a2a2a}
-.muted{color:var(--muted);font-size:12px;margin-top:8px;font-weight:300}
-.ok{color:#22c55e}.err{color:var(--danger);padding:20px}
-.link-box{word-break:break-all;background:#000;padding:10px;border-radius:8px;margin-top:8px;font-size:12px;border:1px solid #262626}
-#qrcode{margin-top:12px;padding:12px;background:#fff;border-radius:12px;display:inline-block}
-.acc-card{cursor:pointer;transition:all .2s;border-left:3px solid transparent;border:1px solid #262626;border-radius:16px;margin-bottom:12px}
-.acc-card.open{border-left-color:var(--accent);background:#1e1e1e}
-.acc-head{display:flex;justify-content:space-between;align-items:center;font-weight:500;font-size:17px;padding:16px}
-.acc-head .arrow{transition:transform .2s;font-size:12px;color:var(--accent)}
-.acc-card.open .arrow{transform:rotate(180deg)}
-.acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease;opacity:0;padding:0 16px}
-.acc-card.open .acc-body{max-height:500px;opacity:1;padding:0 16px 16px}
-@media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.content{margin-left:0;flex:1}.burger,.close-sidebar{display:none}}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head><body><div class="app"><div class="overlay" id="overlay"></div>
+.acc-card{cursor:pointer;border:1px solid var(--border);border-radius:16px;margin-bottom:12px;background:var(--card-2);border-left:3px solid transparent}
+.acc-card.open{border-left-color:var(--accent);background:#242424}
+.acc-head{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:16px;padding:18px 20px}
+.acc-body{max-height:0;overflow:hidden;transition:all .35s ease;opacity:0;padding:0 20px}
+.acc-card.open .acc-body{max-height:800px;opacity:1;padding:0 20px 20px}
+.save-bar{position:sticky;bottom:0;background:var(--bg);padding:16px 0;margin-top:20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.btn{padding:12px 20px;border:none;border-radius:20px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:14px}
+input,select{width:100%;padding:12px 14px;background:#111;border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px;font-size:14px}
+.toggle{width:44px;height:26px;background:#333;border-radius:20px;position:relative;cursor:pointer;transition:.2s}
+.toggle.active{background:var(--accent)}
+.toggle:after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s}
+.toggle.active:after{transform:translateX(18px)}
+@media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.burger,.close-sidebar{display:none}}
+</style></head><body><div class="app"><div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar">
-  <div class="sidebar-header" style="display:flex;justify-content:space-between;align-items:center;padding:14px">
-  <div style="display:flex;align-items:center;gap:14px">
-    <svg width="56" height="56" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
-      <g fill="#FF6A00">
-        <path d="M50 0C49 3 45 7 47 12C48 9 50 7 52 5C56 9 59 14 57 19C55 22 52 22 50 20C50 26 56 27 59 23C62 19 60 13 56 9C60 12 64 18 63 25C61 28 58 28 56 26C57 32 63 35 67 30C69 26 65 20 62 17C66 20 70 26 70 33C70 38 67 42 63 40C65 45 70 50 68 58C67 62 62 66 56 66C58 61 61 55 64 50C62 52 59 55 56 62C52 68 46 69 42 65C38 61 37 55 39 49C36 52 33 58 35 65C30 63 26 58 25 52C25 46 29 41 32 38C30 40 27 42 27 37C27 32 31 28 36 28C37 28 39 29 40 30C42 24 47 20 50 0Z"/>
-        <path d="M32 38C26 38 20 41 20 47C20 51 24 54 28 54C28 55 28 64 28 64C28 64 72 67 72 64C72 64 72 55 72 54C76 54 80 51 80 47C80 41 74 38 68 38C65 33 57 32 50 32C43 32 35 33 32 38Z" fill="none" stroke="#FF6A00" stroke-width="5" stroke-linejoin="round"/>
-        <path d="M29 56L71 58L71 63C71 63 50 65 29 62L29 56Z" fill="#FF6A00"/>
-      </g>
-    </svg>
-    <div style="line-height:1">
-      <div style="color:#FF6A00;font-weight:900;font-size:28px;letter-spacing:-0.5px;font-family:Inter,sans-serif;line-height:0.9">HotPit</div>
-      <div style="color:#FFFFFF;font-weight:400;letter-spacing:6px;font-size:14px;font-family:Inter,sans-serif;margin-top:2px">KITCHEN</div>
-      <div style="margin-top:7px;background:#FF6A00;color:#fff;font-weight:800;font-size:14px;padding:5px 18px;border-radius:14px;display:inline-block;font-family:Inter,sans-serif">ChefOS</div>
+  <div class="sidebar-header">
+    <div style="display:flex;align-items:center;gap:14px">
+      <svg width="54" height="54" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <g fill="#FF6A00">
+          <path d="M50 0C49 3 45 7 47 12C48 9 50 7 52 5C56 9 59 14 57 19C55 22 52 22 50 20C50 26 56 27 59 23C62 19 60 13 56 9C60 12 64 18 63 25C61 28 58 28 56 26C57 32 63 35 67 30C69 26 65 20 62 17C66 20 70 26 70 33C70 38 67 42 63 40C65 45 70 50 68 58C67 62 62 66 56 66C58 61 61 55 64 50C62 52 59 55 56 62C52 68 46 69 42 65C38 61 37 55 39 49C36 52 33 58 35 65C30 63 26 58 25 52C25 46 29 41 32 38C30 40 27 42 27 37C27 32 31 28 36 28C37 28 39 29 40 30C42 24 47 20 50 0Z"/>
+          <path d="M32 38C26 38 20 41 20 47C20 51 24 54 28 54C28 55 28 64 28 64C28 64 72 67 72 64C72 64 72 55 72 54C76 54 80 51 80 47C80 41 74 38 68 38C65 33 57 32 50 32C43 32 35 33 32 38Z" fill="none" stroke="#FF6A00" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M29 56L71 58L71 63C71 63 50 65 29 62L29 56Z" fill="#FF6A00"/>
+        </g>
+      </svg>
+      <div style="line-height:1">
+        <div style="color:#FF6A00;font-weight:900;font-size:26px;letter-spacing:-0.5px;line-height:0.9">HotPit</div>
+        <div style="color:#FFFFFF;font-weight:300;letter-spacing:5px;font-size:12px;margin-top:2px">KITCHEN</div>
+        <div style="margin-top:7px;background:#FF6A00;color:#fff;font-weight:800;font-size:12px;padding:4px 16px;border-radius:14px;display:inline-block">ChefOS</div>
+      </div>
+    </div>
+    <button class="close-sidebar" id="closeSidebarBtn">×</button>
+  </div>
+<div id="sidebarChef" class="sidebar-chef" style="display:none"></div>
+<div id="restName" style="color:var(--muted);font-size:11px;margin-bottom:16px;letter-spacing:0.5px">HOTPIT SYSTEM</div>
+<nav class="menu">
+  <button class="tab-btn active" data-tab="dashboard"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg> Home</button>
+  <button class="tab-btn" data-tab="personal"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg> Personnel</button>
+  <button class="tab-btn" data-tab="tabel"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg> Timetable</button>
+  <div class="menu-item has-submenu open">
+    <button class="menu-parent">🍳 ChefOS</button>
+    <div class="submenu">
+      <button class="tab-btn" data-tab="items">Dashboard</button>
+      <button class="tab-btn" data-tab="stock">My Stock</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
     </div>
   </div>
-  <button class="close-sidebar" id="closeSidebarBtn">×</button>
-  </div>
-  <button class="close-sidebar" id="closeSidebarBtn">×</button>
-  </div>
-<div id="sidebarChef" class="sidebar-chef" style="display:none"><div style="font-size:12px;color:var(--muted)" id="sidebarRole">Шеф-повар</div><div id="sidebarChefName" style="font-weight:700"></div></div>
-<div id="restName" style="color:var(--muted);font-size:12px;margin-bottom:16px">Загрузка...</div>
-<nav class="menu">
-  <button class="tab-btn active" data-tab="dashboard">🏠 Главная</button>
-  <button class="tab-btn" data-tab="personal">👥 Персонал</button>
-  <button class="tab-btn" data-tab="tabel">📋 Табель</button>
-
-  <!-- НОВОЕ МЕНЮ ChefOS -->
-<div class="menu-item has-submenu open">
-  <button class="menu-parent">🍳 ChefOS</button>
-  <div class="submenu">
-    <button class="tab-btn" data-tab="items" style="text-align:left">1. Приход товара</button>
-    <button class="tab-btn" data-tab="tasks" style="text-align:left;opacity:0.5">2. Создать задание (скоро)</button>
-    <button class="tab-btn" data-tab="stock" style="text-align:left">4. Мой склад</button>
-    <button class="tab-btn" data-tab="zagotovki" style="text-align:left;opacity:0.5">5. Заготовки (скоро)</button>
-    <button class="tab-btn" data-tab="spisanie" style="text-align:left;opacity:0.5">6. Списание (скоро)</button>
-    <button class="tab-btn" data-tab="otchet-spis" style="text-align:left;opacity:0.5">7. Отчет по списанию (скоро)</button>
-    <button class="tab-btn" data-tab="otchet-mes" style="text-align:left;opacity:0.5">8. Отчет за месяц (скоро)</button>
-    <button class="tab-btn" data-tab="invent" style="text-align:left;opacity:0.5">9. Инвентаризация (скоро)</button>
-  </div>
-</div>
-
-  <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
-  <button id="logoutBtn">🚪 Выйти</button>
+  <button class="tab-btn" data-tab="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 12.9c.1-.3.1-.6.1-.9s0-.6-.1-.9l2.1-1.6c.2-.1.2-.4.1-.6l-2-3.4c-.1-.2-.3-.3-.5-.2l-2.5 1c-.5-.4-1.1-.7-1.7-.9L14.5 2H10.5l-.4 2.5c-.6.2-1.1.5-1.7.9l-2.5-1c-.2-.1-.5 0-.6.2l-2 3.4c-.1.2 0 .4.1.6l2.1 1.6c-.1.3-.1.6-.1.9s0 .6.1.9L2.4 14.5c-.2.1-.2.4-.1.6l2 3.4c.1.2.3.3.5.2l2.5-1c.5.4 1.1.7 1.7.9l.4 2.5h4l.4-2.5c.6-.2 1.1-.5 1.7-.9l2.5 1c.2.1.5 0 .6-.2l2-3.4c.1-.2 0-.4-.1-.6l-2.1-1.6zM12 15.5c-1.9 0-3.5-1.6-3.5-3.5S10.1 8.5 12 8.5s3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5z"/></svg> Settings</button>
+  <button id="logoutBtn" style="margin-top:20px">🚪 Выйти</button>
 </nav></aside>
 <main class="content">
   <div class="topbar">
-  <button class="burger" id="burgerBtn">☰</button>
-  <div style="display:flex;align-items:center;gap:14px">
-    <svg width="42" height="42" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
-      <g fill="#FF6A00">
-        <path d="M50 0C49 3 45 7 47 12C48 9 50 7 52 5C56 9 59 14 57 19C55 22 52 22 50 20C50 26 56 27 59 23C62 19 60 13 56 9C60 12 64 18 63 25C61 28 58 28 56 26C57 32 63 35 67 30C69 26 65 20 62 17C66 20 70 26 70 33C70 38 67 42 63 40C65 45 70 50 68 58C67 62 62 66 56 66C58 61 61 55 64 50C62 52 59 55 56 62C52 68 46 69 42 65C38 61 37 55 39 49C36 52 33 58 35 65C30 63 26 58 25 52C25 46 29 41 32 38C30 40 27 42 27 37C27 32 31 28 36 28C37 28 39 29 40 30C42 24 47 20 50 0Z"/>
-        <path d="M32 38C26 38 20 41 20 47C20 51 24 54 28 54C28 55 28 64 28 64C28 64 72 67 72 64C72 64 72 55 72 54C76 54 80 51 80 47C80 41 74 38 68 38C65 33 57 32 50 32C43 32 35 33 32 38Z" fill="none" stroke="#FF6A00" stroke-width="5" stroke-linejoin="round"/>
-        <path d="M29 56L71 58L71 63C71 63 50 65 29 62L29 56Z" fill="#FF6A00"/>
-      </g>
-    </svg>
-    <div style="line-height:1">
-      <div style="color:#FF6A00;font-weight:900;font-size:22px;line-height:0.9">HotPit</div>
-      <div style="color:#fff;font-weight:400;letter-spacing:4px;font-size:11px">KITCHEN</div>
+    <button class="burger" id="burgerBtn">☰</button>
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="36" height="36" viewBox="0 0 100 100"><g fill="#FF6A00"><path d="M50 0C49 3 45 7 47 12C48 9 50 7 52 5C56 9 59 14 57 19C55 22 52 22 50 20C50 26 56 27 59 23C62 19 60 13 56 9C60 12 64 18 63 25C61 28 58 28 56 26C57 32 63 35 67 30C69 26 65 20 62 17C66 20 70 26 70 33C70 38 67 42 63 40C65 45 70 50 68 58C67 62 62 66 56 66C58 61 61 55 64 50C62 52 59 55 56 62C52 68 46 69 42 65C38 61 37 55 39 49C36 52 33 58 35 65C30 63 26 58 25 52C25 46 29 41 32 38C30 40 27 42 27 37C27 32 31 28 36 28C37 28 39 29 40 30C42 24 47 20 50 0Z"/><path d="M32 38C26 38 20 41 20 47C20 51 24 54 28 54V64C28 64 72 67 72 64V54C76 54 80 51 80 47C80 41 74 38 68 38C65 33 57 32 50 32C43 32 35 33 32 38Z" fill="none" stroke="#FF6A00" stroke-width="5"/></g></svg>
+      <div style="line-height:1"><div style="color:#FF6A00;font-weight:900;font-size:18px">HotPit</div><div style="color:#fff;letter-spacing:3px;font-size:10px">KITCHEN</div></div>
     </div>
-  </div>
   </div>
 <div id="tab-content">
+<div data-tab-content="settings" style="display:block">
+  <h2 style="font-size:28px;font-weight:700;margin-bottom:4px">Settings</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Settings • Restaurant Configuration<br>Configure operations, scheduling, accounting, and notification preferences for HotPit KITCHEN.</p>
+  
+  <div class="acc-card open">
+    <div class="acc-head">⏱ 1. Shift Settings <span style="color:var(--accent)">⌃</span></div>
+    <div class="acc-body" style="max-height:800px;opacity:1">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div><label style="font-size:12px;color:var(--muted)">Shift Start Time</label><input type="time" id="startTime" value="08:00"></div>
+        <div><label style="font-size:12px;color:var(--muted)">Shift End Time</label><input type="time" value="16:00"></div>
+        <div><label style="font-size:12px;color:var(--muted)">Break Duration (minutes)</label><input type="number" value="30" style="margin-top:24px"></div>
+        <div><label style="font-size:12px;color:var(--muted)"> </label></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:16px;border-top:1px solid #333">
+        <div><div style="font-weight:600;font-size:14px">Enable Overtime Approvals</div><div style="font-size:12px;color:var(--muted)">Allow managers to approve overtime for staff beyond scheduled shift.</div></div>
+        <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+      </div>
+    </div>
+  </div>
 
-<div data-tab-content="dashboard">
-  <h3 style="margin-bottom:20px">Сегодня на кухне</h3>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-    <div class="povar-card" onclick="document.querySelector('[data-tab=personal]').click()" style="cursor:pointer">
-      <h4>👥 Персонал</h4>
-      <b style="font-size:28px" id="dTeam">0</b> <span class="muted">человек</span>
-      <div class="muted" id="dTeamStatus" style="font-size:12px;margin-top:4px">Загрузка...</div>
-    </div>
-    <div class="povar-card" onclick="document.querySelector('[data-tab=tabel]').click()" style="cursor:pointer">
-      <h4>📋 Табель</h4>
-      <b style="font-size:28px" id="dOpoz">0</b> <span class="muted">опоздали</span>
-      <div class="muted" id="dTabelStatus" style="font-size:12px;margin-top:4px">За сегодня</div>
+  <div class="acc-card">
+    <div class="acc-head">✉️ 2. Accounting <span style="color:var(--muted)">﹥</span></div>
+    <div class="acc-body">
+      <label style="font-size:12px;color:var(--muted)">Accounting Email</label><input type="email" id="acc_email" placeholder="accounting@hotpitkitchen.com">
+      <label style="font-size:12px;color:var(--muted)">Telegram</label><input type="text" id="acc_tg" placeholder="@buhgalter">
+      <div style="margin-top:12px"><label style="font-size:13px"><input type="checkbox" id="acc_auto" checked> Auto-send</label></div>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    <div class="povar-card" style="cursor:default;opacity:0.6">
-      <h4>📦 Склад</h4>
-      <b style="font-size:28px">0</b> <span class="muted">мало</span>
-      <div class="muted" style="font-size:12px;margin-top:4px">Подключим позже</div>
-    </div>
-    <div class="povar-card" style="cursor:default;opacity:0.6">
-      <h4>📅 График</h4>
-      <b style="font-size:28px">0</b> <span class="muted">в смене</span>
-      <div class="muted" style="font-size:12px;margin-top:4px">Подключим позже</div>
-    </div>
-  </div>
-</div>
 
-<div data-tab-content="personal" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <h3 style="margin:0">Персонал</h3>
-    <button class="btn" id="addBtn" style="width:auto;padding:10px 16px;background:#ff6b00;color:#000;font-weight:700;border-radius:20px">+ Пригласить</button>
-  </div>
-  <div id="povaraList">Загрузка...</div>
-</div>
-<div data-tab-content="tabel" style="display:none"><div style="display:flex;gap:10px;margin-bottom:20px"><button class="btn-outline" id="prevMonthT" style="width:auto"><</button><div id="monthYearT" style="flex:1;text-align:center;font-weight:700"></div><button class="btn-outline" id="nextMonthT" style="width:auto">></button></div><div id="tabelList">Загрузка...</div></div>
-<div data-tab-content="settings" style="display:none">
-  <h3>Настройки ресторана</h3>
-  <div class="povar-card" style="max-width:500px">
-    <p class="muted" style="margin-bottom:16px">Это время используется для проверки опозданий поваров</p>
-    <label>Время начала смены</label>
-    <input type="time" id="startTime" style="margin-bottom:16px">
-    <button class="btn" onclick="saveSettings()" style="width:100%">Сохранить</button>
-    <hr style="margin:16px 0;border-color:#333">
-<label>Почта бухгалтерии (куда слать выплаты)</label>
-<input type="email" id="acc_email" placeholder="buh@restoran.ru" style="margin-bottom:8px">
-<label>Телеграм бухгалтера (необязательно)</label>
-<input type="text" id="acc_tg" placeholder="@buhgalter" style="margin-bottom:8px">
-<label><input type="checkbox" id="acc_auto" checked> Авто-отправка</label>
-    <p id="settingsMsg" style="color:#22c55e; text-align:center; margin-top:10px"></p>
-  </div>
-</div>
-  <!-- Вкладка 1. Приход товара -->
-<div data-tab-content="items" style="display:none">
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="margin:0">Приход товара</h3>
-      <button class="btn" id="openAddItemBtn" style="width:auto;padding:10px 16px;background:#ff6b00;color:#000;font-weight:700;border-radius:20px">+ Добавить товар</button>
+  <div class="acc-card">
+    <div class="acc-head">🔔 3. Notifications <span style="color:var(--muted)">﹥</span></div>
+    <div class="acc-body">
+      <p style="color:var(--muted);font-size:13px">Push notifications for late arrivals, stock alerts.</p>
     </div>
-    <div id="itemsList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
   </div>
-</div>
 
-<!-- Вкладка 4. Мой склад -->
-<div data-tab-content="stock" style="display:none">
-  <div class="card">
-    <h3>Движения склада</h3>
-    <div id="stockList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
-  </div>
+  <div class="save-bar"><button class="btn" onclick="saveSettings()" style="background:#ff6b00;padding:10px 28px;border-radius:20px">≡ Save Changes</button></div>
+  <p id="settingsMsg" style="color:#22c55e;text-align:right;margin-top:8px"></p>
 </div>
 </div></main></div>
-
-<div class="modal" id="addModal"><div class="modal-card"><h3>Пригласить повара</h3>
-<input id="cookEmail" type="email" placeholder="Email повара">
-<select id="cookJob"><option>Су-шеф</option><option>Повар</option><option>Повар горячего цеха</option><option>Повар холодного цеха</option><option>Повар-универсал</option><option>Повар-кондитер</option><option>Пиццайоло</option><option>Сушист</option><option>Мойщик посуды</option></select>
-<select id="cookSalaryType"><option value="hourly">Почасовая ₽/час</option><option value="daily">Фикс за день ₽/день</option></select>
-<input id="cookSalary" type="number" placeholder="Ставка">
-<input id="cookAvatarFile" type="file" accept="image/*" style="margin-top:10px">
-<p class="muted" style="font-size:11px">📷 Фото повара (не обязательно)</p>
-<button class="btn" id="genInviteBtn">Сгенерировать ссылку</button>
-<div id="inviteLink" class="muted"></div><div id="qrcode"></div>
-<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addModal').classList.remove('show')">Закрыть</button>
-</div></div>
-
-<div class="modal" id="statusModal"><div class="modal-card"><h3>На <span id="statusDate"></span></h3>
-<div id="statusHint" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
-<div id="modalButtons"></div>
-<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('statusModal').classList.remove('show')">Отмена</button></div></div>
-
-  <div class="modal" id="requestModal"><div class="modal-card"><h3>Запрос для <span id="requestCookName"></span></h3>
-<p class="muted">Дата: <span id="requestDate"></span></p>
-<select id="reqStatus"><option value="work">Был на работе</option><option value="sick">Больничный</option><option value="vac">Отпуск</option><option value="off">Выходной</option></select>
-<label class="muted" style="font-size:12px;margin-top:8px;">Время прихода</label>
-<input id="reqTimeIn" type="time">
-<label class="muted" style="font-size:12px;margin-top:8px;">Время ухода</label>
-<input id="reqTimeOut" type="time">
-<input id="reqReason" type="text" placeholder="Причина: Ошибка в табеле" style="margin-top:8px;">
-<button class="btn" id="sendRequestBtn">Отправить запрос повару</button>
-<button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('requestModal').classList.remove('show')">Отмена</button>
-</div></div>
-
-  <div class="modal" id="addItemModal"><div class="modal-card">
-  <h3>Добавить продукт</h3>
-  <label>Название <span style="color:#ff6b00">*</span></label>
-  <input id="itemName" type="text" placeholder="Напр: Курица филе">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-    <div><label>Кол-во <span style="color:#ff6b00">*</span></label><input id="itemQty" type="number" value="1" step="0.1"></div>
-    <div><label>Ед.изм</label>
-      <select id="itemUnit">
-        <option value="кг">кг</option>
-        <option value="л">л</option>
-        <option value="шт">шт</option>
-        <option value="г">г</option>
-        <option value="уп">уп</option>
-      </select>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
-    <div><label>Мин. ост.</label><input id="itemMin" type="number" placeholder="2"></div>
-    <div><label>Закупка</label><input id="itemPrice" type="number" placeholder="350"></div>
-  </div>
-  <label style="margin-top:12px">Заметка</label>
-  <input id="itemNote" type="text" placeholder="Поставщик...">
-  <button class="btn" id="saveItemBtn" style="width:100%;margin-top:16px">Сохранить на склад</button>
-  <button class="btn-outline" style="margin-top:12px;width:100%" onclick="document.getElementById('addItemModal').classList.remove('show')">Отмена</button>
-  <p class="muted" style="font-size:11px;margin-top:10px"><span style="color:#ff6b00">*</span> - обязательно</p>
-</div></div>
-
-  <div class="modal" id="cookProfileModal" onclick="if(event.target===this) closeCookProfile()">
-  <div class="modal-card" style="max-width:420px;background:transparent;border:0;padding:0;box-shadow:none">
-    <div id="cookProfileContent">Загрузка...</div>
-  </div>
-  </div>
+<script>
+// аккордеон как на первом фото
+document.querySelectorAll('.acc-head').forEach(h=>{
+  h.addEventListener('click',()=>h.parentElement.classList.toggle('open'))
+});
+</script>
+</body></html>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
