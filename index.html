@@ -1,123 +1,97 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HotPit Kitchen</title>
 <style>
-  body{margin:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff;min-height:100vh;display:flex;justify-content:center;padding:24px 16px;box-sizing:border-box}
- .wrap{width:100%;max-width:380px}
-  /* ЯЗЫКИ */
- .lang-pill{display:flex;justify-content:space-between;align-items:center;background:#141414;border:1px solid #2a2a2a;border-radius:999px;padding:6px 10px;margin-bottom:28px}
- .lang-pill button{background:transparent;border:none;color:#888;font-size:13px;font-weight:600;cursor:pointer;padding:6px 8px;border-radius:999px}
+  body{margin:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#fff}
+ .wrap{max-width:390px;margin:0 auto;padding:16px 16px 40px;box-sizing:border-box}
+ .lang-pill{display:flex;justify-content:space-between;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:999px;padding:4px 8px;margin-bottom:22px;overflow:hidden}
+ .lang-pill button{flex:1;background:transparent;border:none;color:#888;font-size:13px;font-weight:700;padding:7px 0;border-radius:999px;cursor:pointer}
  .lang-pill button.active{background:#ff6b00;color:#fff}
-  /* ЛОГО */
- .logo-row{display:flex;align-items:center;gap:14px;margin-bottom:18px}
- .logo-icon{width:74px;height:74px;flex-shrink:0}
- .logo-text{line-height:1}
- .logo-text.hot{color:#ff6b00;font-weight:900;font-size:42px;letter-spacing:-1px;margin:0}
- .logo-text.kit{color:#fff;font-size:18px;letter-spacing:6px;font-weight:500;margin:2px 0 0 2px}
- .logo-text.sub{color:rgba(255,255,255,.75);font-weight:200;font-size:13px;letter-spacing:1px;margin:8px 0 0 2px;text-transform:lowercase}
-  /* КАРТОЧКИ */
- .card{background:#171717;border-radius:16px;padding:18px 18px 18px 0;display:flex;gap:14px;align-items:center;margin-bottom:14px;position:relative;overflow:hidden}
+ .logo-row{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:10px}
+ .logo-icon{width:64px;height:64px;flex-shrink:0}
+ .hot{color:#ff6b00;font-weight:900;font-size:36px;line-height:1;letter-spacing:-1px}
+ .kit{color:#fff;font-size:16px;letter-spacing:6px;margin-top:2px}
+ .sub{color:rgba(255,255,255,.75);font-weight:200;font-size:12px;letter-spacing:1px;margin-top:6px}
+ .welcome{text-align:center;color:#aaa;font-size:13px;margin:18px 0}
+ .card{background:#171717;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:12px;position:relative;overflow:hidden;border:1px solid #262626;cursor:pointer;transition:.2s}
  .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;background:#ff6b00}
- .card.ic{width:48px;height:48px;border-radius:50%;background:#1e1e1e;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;margin-left:20px;color:#888;flex-shrink:0}
- .card h3{margin:0;font-size:18px;font-weight:700}
- .card p{margin:4px 0 0;color:#aaa;font-size:12px;line-height:1.3}
-  /* ИНПУТЫ */
- .form-box{background:#111;border-radius:20px;padding:20px;margin-top:22px}
-  input,select{width:100%;padding:14px 16px;margin-bottom:10px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:12px;color:#fff;font-size:14px;box-sizing:border-box}
+ .card.active{border-color:#ff6b00;background:#1f1a16}
+ .card.ic{width:42px;height:42px;border-radius:50%;background:#1e1e1e;border:1px solid #333;display:flex;align-items:center;justify-content:center;margin-left:16px;font-size:18px;flex-shrink:0}
+ .card h3{margin:0;font-size:16px}
+ .card p{margin:3px 0 0;color:#aaa;font-size:11px;line-height:1.2}
+ .btn{width:100%;padding:14px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;border:none;margin-top:10px}
+ .btn-orange{background:#ff6b00;color:#000}
+ .btn-outline{background:transparent;border:1px solid #ff6b00;color:#ff6b00}
+ .form-box{background:#111;border-radius:18px;padding:16px;margin-top:16px;display:none}
+ .form-box.show{display:block}
+  input,select{width:100%;padding:13px 14px;margin-bottom:10px;background:#1e1e1e;border:1px solid #2a2a2a;border-radius:11px;color:#fff;font-size:14px;box-sizing:border-box}
   input:focus,select:focus{outline:none;border-color:#ff6b00}
-  button.main{width:100%;padding:14px;border:none;border-radius:12px;background:#ff6b00;color:#000;font-weight:800;font-size:16px;cursor:pointer}
-  button.outline{width:100%;padding:14px;border:1px solid #ff6b00;border-radius:12px;background:transparent;color:#ff6b00;font-weight:700;font-size:15px;cursor:pointer;margin-top:10px}
-  button:disabled{opacity:.5}
- .switch{color:#777;text-align:center;font-size:13px;margin-top:14px}
- .switch a{color:#ff6b00;cursor:pointer;text-decoration:none}
-  #msg{text-align:center;font-size:13px;margin-top:10px;white-space:pre-wrap}
+ .switch{color:#777;text-align:center;font-size:13px;margin-top:12px}
+ .switch a{color:#ff6b00;cursor:pointer}
+  #msg{text-align:center;font-size:13px;margin-top:8px}
  .hidden{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="lang-pill" id="langBar">
-    <button data-lang="ru">RU</button><button data-lang="en">EN</button><button data-lang="az">AZ</button><button data-lang="es">ES</button><button data-lang="de">DE</button><button data-lang="it">IT</button><button data-lang="ar">SA</button>
+    <button data-lang="ru">RU</button><button data-lang="en" class="active">EN</button><button data-lang="az">AZ</button><button data-lang="es">ES</button><button data-lang="de">DE</button><button data-lang="it">IT</button><button data-lang="ar">SA</button>
   </div>
 
   <div class="logo-row">
-    <!-- ТВОЙ ЛОГО ОДИН В ОДИН -->
-    <svg class="logo-icon" viewBox="0 0 100 110" fill="#ff6b00"><path d="M50 2 C 45 15, 38 18, 35 28 C 32 22, 28 28, 32 36 C 30 32, 22 35, 20 44 C 28 40, 35 44, 38 50 L 38 52 C 38 52, 28 48, 18 54 C 8 60, 12 75, 22 76 C 18 70, 22 62, 32 62 C 30 68, 32 75, 28 82 C 20 88, 15 102, 30 108 L 50 108 L 70 108 C 85 102, 80 88, 72 82 C 68 75, 70 68, 68 62 C 78 62, 82 70, 78 76 C 88 75, 92 60, 82 54 C 72 48, 62 52, 62 52 L 62 50 C 65 44, 72 40, 80 44 C 78 35, 70 32, 68 36 C 72 28, 68 22, 65 28 C 62 18, 55 15, 50 2 Z M 25 58 C 25 58, 15 58, 15 66 C 15 72, 22 73, 26 69 M 75 58 C 75 58, 85 58, 85 66 C 85 72, 78 73, 74 69 M 30 63 L 30 88 L 70 88 L 70 63 Q 50 70 30 63" /></svg>
-    <div class="logo-text">
+    <svg class="logo-icon" viewBox="0 0 100 100" fill="#ff6b00"><path d="M50 8 C44 20,40 22,36 30 C33 26,29 30,32 37 C30 34,23 36,21 44 C27 41,34 44,37 50 L37 52 C37 52,28 49,19 54 C10 59,12 72,21 73 C18 68,21 61,30 61 C28 67,30 73,27 80 C20 86,16 98,30 100 L70 100 C84 98,80 86,73 80 C70 73,72 67,70 61 C79 61,82 68,79 73 C88 72,90 59,81 54 C72 49,63 52,63 52 L63 50 C66 44,73 41,79 44 C77 36,70 34,68 37 C71 30,67 26,64 30 C60 22,56 20,50 8 Z M30 62 L30 85 L70 85 L70 62 Q50 68 30 62"/></svg>
+    <div>
       <div class="hot">HotPit</div>
       <div class="kit">KITCHEN</div>
       <div class="sub" id="logoSub">management system</div>
     </div>
   </div>
 
-  <div style="text-align:center;color:#aaa;font-size:13px;margin:8px 0 18px" id="welcome">Welcome to HotPit Kitchen</div>
+  <div class="welcome" id="welcome">Welcome to HotPit Kitchen</div>
 
-  <div class="card"><div class="ic">◍</div><div><h3 id="cOwnerT">Owner</h3><p id="cOwnerD">Manage kitchens, staff & operations</p></div></div>
-  <div class="card"><div class="ic">♨</div><div><h3 id="cChefT">Chef</h3><p id="cChefD">Recipes, stock & daily tasks</p></div></div>
+  <div class="card active" id="cardOwner" data-role="owner"><div class="ic">👤</div><div><h3 id="tOwner">Owner</h3><p id="dOwner">Manage kitchens, staff & operations</p></div></div>
+  <div class="card" id="cardChef" data-role="chef"><div class="ic">👨‍🍳</div><div><h3 id="tChef">Chef</h3><p id="dChef">Recipes, stock & daily tasks</p></div></div>
 
-  <div class="form-box">
-    <div id="regForm">
-      <select id="role"><option value="chef" id="opt_chef">Я Шеф. Создать свой ресторан</option><option value="owner" id="opt_owner">Я Овнер. Создать свой ресторан</option></select>
-      <input id="full_name" placeholder="Ваше ФИО">
-      <input id="rest_name" placeholder="Название ресторана">
-      <input id="email" type="email" placeholder="Email">
-      <input id="password" type="password" placeholder="Пароль 6+">
-      <button id="btnReg" class="main">Create account</button>
-      <button id="btnToLogin" class="outline">Log in</button>
-    </div>
-    <div id="loginForm" class="hidden">
-      <input id="emailLogin" type="email" placeholder="Email">
-      <input id="passwordLogin" type="password" placeholder="Password">
-      <button id="btnLogin" class="main">Log in</button>
-      <div class="switch"><span id="t_no">No account?</span> <a id="toReg">Create account</a></div>
-    </div>
-    <div id="msg"></div>
+  <button class="btn btn-orange" id="btnShowLogin">Log in</button>
+  <button class="btn btn-outline" id="btnShowReg">Create account</button>
+
+  <div class="form-box" id="regForm">
+    <select id="role"><option value="owner" id="opt_owner">I am Owner. Create my restaurant</option><option value="chef" id="opt_chef">I am Chef. Create my restaurant</option></select>
+    <input id="full_name" placeholder="Your full name"><input id="rest_name" placeholder="Restaurant name"><input id="email" type="email" placeholder="Email"><input id="password" type="password" placeholder="Password 6+">
+    <button class="btn btn-orange" id="btnReg">Create account</button><div class="switch"><span id="tHave">Already have account?</span> <a id="toLogin">Log in</a></div>
   </div>
+
+  <div class="form-box" id="loginForm">
+    <input id="emailLogin" type="email" placeholder="Email"><input id="passwordLogin" type="password" placeholder="Password">
+    <button class="btn btn-orange" id="btnLogin">Log in</button><div class="switch"><span id="tNo">No account?</span> <a id="toReg">Create account</a></div>
+  </div>
+
+  <div id="msg"></div>
+  <div style="text-align:center;color:#555;font-size:10px;margin-top:20px">v1.0 • itmaster070.github.io • © 2024 HotPit Kitchen</div>
 </div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-const sb = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
-
-const dict={
-  ru:{welcome:"Добро пожаловать в HotPit Kitchen", ownerT:"Овнер", ownerD:"Основная учетная запись • Полный доступ", chefT:"Шеф", chefD:"Кулинарная команда • Управление кухней", sub:"система управления", optC:"Я Шеф. Создать свой ресторан", optO:"Я Овнер. Создать свой ресторан", fio:"Ваше ФИО", rest:"Название ресторана/цеха", create:"Создать аккаунт", login:"Войти", no:"Нет аккаунта?", email:"Email", pass:"Пароль 6+"},
-  en:{welcome:"Welcome to HotPit Kitchen", ownerT:"Owner", ownerD:"Manage kitchens, staff & operations", chefT:"Chef", chefD:"Recipes, stock & daily tasks", sub:"management system", optC:"I am Chef. Create my restaurant", optO:"I am Owner. Create my restaurant", fio:"Your full name", rest:"Restaurant name", create:"Create account", login:"Log in", no:"No account?", email:"Email", pass:"Password 6+"},
-  az:{welcome:"HotPit Kitchen-ə xoş gəlmisiniz", ownerT:"Sahib", ownerD:"Əsas hesab • Tam giriş", chefT:"Şef", chefD:"Mətbəx komandası • İdarəetmə", sub:"idarəetmə sistemi", optC:"Mən Şefəm. Restoranımı yarat", optO:"Mən Sahibəm. Restoranımı yarat", fio:"Ad Soyad", rest:"Restoran adı", create:"Hesab yarat", login:"Giriş", no:"Hesabın yoxdur?", email:"Email", pass:"Şifrə 6+"},
-  es:{welcome:"Bienvenido a HotPit Kitchen", ownerT:"Dueño", ownerD:"Cuenta principal • Acceso total", chefT:"Chef", chefD:"Equipo de cocina • Gestión", sub:"sistema de gestión", optC:"Soy Chef. Crear mi restaurante", optO:"Soy Dueño. Crear mi restaurante", fio:"Nombre completo", rest:"Nombre restaurante", create:"Crear cuenta", login:"Entrar", no:"¿Sin cuenta?", email:"Email", pass:"Contraseña 6+"},
-  de:{welcome:"Willkommen bei HotPit Kitchen", ownerT:"Inhaber", ownerD:"Hauptkonto • Vollzugriff", chefT:"Chef", chefD:"Küchenteam • Verwaltung", sub:"Managementsystem", optC:"Ich bin Chef. Restaurant erstellen", optO:"Ich bin Inhaber. Restaurant erstellen", fio:"Vollname", rest:"Restaurantname", create:"Konto erstellen", login:"Anmelden", no:"Kein Konto?", email:"Email", pass:"Passwort 6+"},
-  it:{welcome:"Benvenuto in HotPit Kitchen", ownerT:"Proprietario", ownerD:"Account principale • Accesso completo", chefT:"Chef", chefD:"Team cucina • Gestione", sub:"sistema di gestione", optC:"Sono Chef. Crea ristorante", optO:"Sono Proprietario. Crea ristorante", fio:"Nome completo", rest:"Nome ristorante", create:"Crea account", login:"Accedi", no:"Nessun account?", email:"Email", pass:"Password 6+"},
-  ar:{welcome:"مرحبا بكم في HotPit Kitchen", ownerT:"المالك", ownerD:"الحساب الرئيسي • وصول كامل", chefT:"الشيف", chefD:"فريق المطبخ • الإدارة", sub:"نظام الإدارة", optC:"أنا شيف. أنشئ مطعمي", optO:"أنا مالك. أنشئ مطعمي", fio:"الاسم الكامل", rest:"اسم المطعم", create:"إنشاء حساب", login:"دخول", no:"ليس لديك حساب؟", email:"البريد", pass:"كلمة السر 6+"},
-}
-let cur=localStorage.getItem('hp_lang')||'en';
-function apply(l){cur=l;localStorage.setItem('hp_lang',l);document.body.dir=l==='ar'?'rtl':'ltr';const t=dict[l];
- document.getElementById('welcome').textContent=t.welcome; document.getElementById('cOwnerT').textContent=t.ownerT; document.getElementById('cOwnerD').textContent=t.ownerD; document.getElementById('cChefT').textContent=t.chefT; document.getElementById('cChefD').textContent=t.chefD; document.getElementById('logoSub').textContent=t.sub; document.getElementById('opt_chef').textContent=t.optC; document.getElementById('opt_owner').textContent=t.optO; document.getElementById('full_name').placeholder=t.fio; document.getElementById('rest_name').placeholder=t.rest; document.getElementById('email').placeholder=t.email; document.getElementById('emailLogin').placeholder=t.email; document.getElementById('password').placeholder=t.pass; document.getElementById('passwordLogin').placeholder=t.pass; document.getElementById('btnReg').textContent=t.create; document.getElementById('btnToLogin').textContent=t.login; document.getElementById('btnLogin').textContent=t.login; document.getElementById('t_no').textContent=t.no; document.querySelectorAll('.lang-pill button').forEach(b=>b.classList.toggle('active',b.dataset.lang===l));
-}
-document.getElementById('langBar').onclick=e=>{if(e.target.dataset.lang) apply(e.target.dataset.lang)}
-apply(cur);
-
-const msg=document.getElementById('msg');
-document.getElementById('btnToLogin').onclick=()=>{document.getElementById('regForm').classList.add('hidden');document.getElementById('loginForm').classList.remove('hidden');}
-document.getElementById('toReg').onclick=()=>{document.getElementById('loginForm').classList.add('hidden');document.getElementById('regForm').classList.remove('hidden');}
-
-document.getElementById('btnReg').onclick=async()=>{
-  const b=document.getElementById('btnReg');b.disabled=true;msg.style.color='#aaa';msg.textContent='...';
-  try{
-    const email=document.getElementById('email').value.trim(), password=document.getElementById('password').value, full_name=document.getElementById('full_name').value.trim(), rest_name=document.getElementById('rest_name').value.trim(), role=document.getElementById('role').value;
-    const {data,error}=await sb.auth.signUp({email,password}); if(error) throw error; if(!data.user) throw new Error('User error');
-    await sb.auth.signInWithPassword({email,password}); const user=(await sb.auth.getUser()).data.user;
-    const {data:newRest,error:restErr}=await sb.from('restaurants').insert({owner_id:user.id,name:rest_name,subscription_type:role}).select('id').single(); if(restErr) throw restErr;
-    const {error:profErr}=await sb.from('profiles').insert({id:user.id,full_name,restaurant_id:newRest.id,role,is_active:true}); if(profErr) throw profErr;
-    await sb.from('restaurant_settings').insert({restaurant_id:newRest.id, language:cur, shift_start:'08:00', shift_end:'16:00'});
-    msg.style.color='#22c55e';msg.textContent='OK'; setTimeout(()=>{location.href=role==='chef'?'/chef.html':'/owner.html'},600)
-  }catch(e){msg.style.color='#f87171';msg.textContent='Ошибка: '+e.message;b.disabled=false}
-}
-document.getElementById('btnLogin').onclick=async()=>{
-  const b=document.getElementById('btnLogin');b.disabled=true;msg.textContent='...';
-  try{await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(),password:document.getElementById('passwordLogin').value}); const user=(await sb.auth.getUser()).data.user; const {data:prof}=await sb.from('profiles').select('role').eq('id',user.id).single(); location.href=prof?.role==='chef'?'/chef.html':prof?.role==='owner'?'/owner.html':'/cook.html'}catch(e){msg.style.color='#f87171';msg.textContent='Ошибка: '+e.message;b.disabled=false}
-}
+const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
+const dict={ru:{welcome:"Добро пожаловать в HotPit Kitchen",owner:"Овнер",ownerD:"Управление кухнями, персоналом",chef:"Шеф",chefD:"Рецепты, склад и задачи",sub:"система управления",optO:"Я Овнер. Создать свой ресторан",optC:"Я Шеф. Создать свой ресторан",fio:"Ваше ФИО",rest:"Название ресторана",create:"Создать аккаунт",login:"Войти",have:"Уже есть аккаунт?",no:"Нет аккаунта?"},en:{welcome:"Welcome to HotPit Kitchen",owner:"Owner",ownerD:"Manage kitchens, staff & operations",chef:"Chef",chefD:"Recipes, stock & daily tasks",sub:"management system",optO:"I am Owner. Create my restaurant",optC:"I am Chef. Create my restaurant",fio:"Your full name",rest:"Restaurant name",create:"Create account",login:"Log in",have:"Already have account?",no:"No account?"},az:{welcome:"HotPit Kitchen-ə xoş gəlmisiniz",owner:"Sahib",ownerD:"Mətbəxləri, heyəti idarə et",chef:"Şef",chefD:"Reseptlər, anbar və tapşırıqlar",sub:"idarəetmə sistemi",optO:"Mən Sahibəm. Restoran yarat",optC:"Mən Şefəm. Restoran yarat",fio:"Ad Soyad",rest:"Restoran adı",create:"Hesab yarat",login:"Giriş",have:"Hesabın var?",no:"Hesabın yoxdur?"},es:{welcome:"Bienvenido a HotPit Kitchen",owner:"Dueño",ownerD:"Gestiona cocinas, personal y operaciones",chef:"Chef",chefD:"Recetas, stock y tareas diarias",sub:"sistema de gestión",optO:"Soy Dueño. Crear mi restaurante",optC:"Soy Chef. Crear mi restaurante",fio:"Nombre completo",rest:"Nombre restaurante",create:"Crear cuenta",login:"Entrar",have:"¿Ya tienes cuenta?",no:"¿Sin cuenta?"},de:{welcome:"Willkommen bei HotPit Kitchen",owner:"Inhaber",ownerD:"Küchen, Personal und Betrieb verwalten",chef:"Chef",chefD:"Rezepte, Lager & Aufgaben",sub:"Managementsystem",optO:"Ich bin Inhaber. Restaurant erstellen",optC:"Ich bin Chef. Restaurant erstellen",fio:"Vollname",rest:"Restaurantname",create:"Konto erstellen",login:"Anmelden",have:"Bereits ein Konto?",no:"Kein Konto?"},it:{welcome:"Benvenuto in HotPit Kitchen",owner:"Proprietario",ownerD:"Gestisci cucine, personale e operazioni",chef:"Chef",chefD:"Ricette, magazzino e attività",sub:"sistema di gestione",optO:"Sono Proprietario. Crea ristorante",optC:"Sono Chef. Crea ristorante",fio:"Nome completo",rest:"Nome ristorante",create:"Crea account",login:"Accedi",have:"Hai già un account?",no:"Nessun account?"},ar:{welcome:"مرحبا بكم في HotPit Kitchen",owner:"المالك",ownerD:"إدارة المطابخ والموظفين والعمليات",chef:"الشيف",chefD:"الوصفات والمخزون والمهام",sub:"نظام الإدارة",optO:"أنا مالك. أنشئ مطعمي",optC:"أنا شيف. أنشئ مطعمي",fio:"الاسم الكامل",rest:"اسم المطعم",create:"إنشاء حساب",login:"دخول",have:"لديك حساب؟",no:"ليس لديك حساب؟"}}
+let curRole='owner',curLang=localStorage.getItem('hp_lang')||'en'
+function applyLang(l){curLang=l;localStorage.setItem('hp_lang',l);document.body.dir=l==='ar'?'rtl':'ltr';const t=dict[l];document.getElementById('welcome').textContent=t.welcome;document.getElementById('tOwner').textContent=t.owner;document.getElementById('dOwner').textContent=t.ownerD;document.getElementById('tChef').textContent=t.chef;document.getElementById('dChef').textContent=t.chefD;document.getElementById('logoSub').textContent=t.sub;document.getElementById('opt_owner').textContent=t.optO;document.getElementById('opt_chef').textContent=t.optC;document.getElementById('full_name').placeholder=t.fio;document.getElementById('rest_name').placeholder=t.rest;document.getElementById('btnReg').textContent=t.create;document.getElementById('btnLogin').textContent=t.login;document.getElementById('btnShowLogin').textContent=t.login;document.getElementById('btnShowReg').textContent=t.create;document.getElementById('tHave').textContent=t.have;document.getElementById('tNo').textContent=t.no;document.querySelectorAll('#langBar button').forEach(b=>b.classList.toggle('active',b.dataset.lang===l))}
+document.getElementById('langBar').onclick=e=>{if(e.target.dataset.lang) applyLang(e.target.dataset.lang)}
+applyLang(curLang)
+function selectRole(r){curRole=r;document.getElementById('role').value=r;document.getElementById('cardOwner').classList.toggle('active',r==='owner');document.getElementById('cardChef').classList.toggle('active',r==='chef')}
+document.getElementById('cardOwner').onclick=()=>selectRole('owner')
+document.getElementById('cardChef').onclick=()=>selectRole('chef')
+document.getElementById('role').onchange=e=>selectRole(e.target.value)
+document.getElementById('btnShowReg').onclick=()=>{document.getElementById('regForm').classList.add('show');document.getElementById('loginForm').classList.remove('show');window.scrollTo(0,document.body.scrollHeight)}
+document.getElementById('btnShowLogin').onclick=()=>{document.getElementById('loginForm').classList.add('show');document.getElementById('regForm').classList.remove('show');window.scrollTo(0,document.body.scrollHeight)}
+document.getElementById('toLogin').onclick=()=>{document.getElementById('regForm').classList.remove('show');document.getElementById('loginForm').classList.add('show')}
+document.getElementById('toReg').onclick=()=>{document.getElementById('loginForm').classList.remove('show');document.getElementById('regForm').classList.add('show')}
+selectRole('owner')
+const msg=document.getElementById('msg')
+document.getElementById('btnReg').onclick=async()=>{const b=document.getElementById('btnReg');b.disabled=true;msg.textContent='...';try{const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,full_name=document.getElementById('full_name').value.trim(),rest_name=document.getElementById('rest_name').value.trim(),role=document.getElementById('role').value;const {data,error}=await sb.auth.signUp({email,password});if(error) throw error;await sb.auth.signInWithPassword({email,password});const user=(await sb.auth.getUser()).data.user;const {data:newRest,error:restErr}=await sb.from('restaurants').insert({owner_id:user.id,name:rest_name,subscription_type:role}).select('id').single();if(restErr) throw restErr;await sb.from('profiles').insert({id:user.id,full_name,restaurant_id:newRest.id,role,is_active:true});await sb.from('restaurant_settings').insert({restaurant_id:newRest.id,language:curLang});location.href=role==='chef'?'/chef.html':'/owner.html'}catch(e){msg.style.color='#f87171';msg.textContent=e.message;b.disabled=false}}
+document.getElementById('btnLogin').onclick=async()=>{const b=document.getElementById('btnLogin');b.disabled=true;msg.textContent='...';try{await sb.auth.signInWithPassword({email:document.getElementById('emailLogin').value.trim(),password:document.getElementById('passwordLogin').value});const user=(await sb.auth.getUser()).data.user;const {data:prof}=await sb.from('profiles').select('role').eq('id',user.id).single();location.href=prof?.role==='chef'?'/chef.html':prof?.role==='owner'?'/owner.html':'/cook.html'}catch(e){msg.style.color='#f87171';msg.textContent=e.message;b.disabled=false}}
 </script>
 </body>
   </html>
