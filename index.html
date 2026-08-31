@@ -32,7 +32,6 @@
 input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:14px;color:#fff;margin-bottom:10px;outline:none}input:focus{border-color:#ff6b00}
 .btn-main{width:100%;background:#ff6b00;color:#000;border:none;padding:15px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;transition:.2s}.btn-main:disabled{opacity:.5;cursor:not-allowed}
 .login-link{text-align:center;color:#666;font-size:13px;margin-top:18px}.login-link span{color:#ff6b00;cursor:pointer;font-weight:700}
-/* ПРЕМИУМ ФУТЕР - убирает дешевизну */
 .footer{margin-top:56px;padding:24px 0 32px;border-top:1px solid #1e1e1e;text-align:center}
 .footer-top{color:#444;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px}
 .footer-mid{color:#666;font-size:11px;line-height:1.7}
@@ -51,13 +50,11 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 <div class="form" id="regBox"><input id="full_name" placeholder="ФИО"><input id="rest_name" placeholder="Название ресторана"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Пароль"><button class="btn-main" id="btnReg">Создать ресторан →</button><div id="msg" style="color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px"></div></div>
 <div class="form" id="loginBox"><input id="emailLogin" placeholder="Email"><input id="passwordLogin" type="password" placeholder="Пароль"><button class="btn-main" id="btnLogin">Войти →</button><div id="msg2" style="color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px"></div></div>
 <div class="login-link"><span id="toLogin">Уже есть аккаунт? Войти</span><span id="toReg" style="display:none">Нет аккаунта? Создать</span></div>
-
 <div class="footer">
-  <div class="footer-top">Professional Kitchen OS • Baku</div>
-  <div class="footer-mid">Автономная работа • Шифрование • Поддержка 24/7<br><b>Создано для кухонь, которые кормят город</b></div>
+  <div class="footer-top" id="fTop">Professional Kitchen OS • Baku</div>
+  <div class="footer-mid"><span id="fMid1">Быстрая работа • Защита данных • Поддержка 24/7</span><br><b id="fMid2">Создано для кухонь, которые кормят город</b></div>
   <div class="footer-bottom">HotPit KITCHEN v2.6</div>
 </div>
-
 </div>
 <script>
 const state = { role: null, mode: 'register' };
@@ -87,22 +84,40 @@ render();
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
-const dict={ru:{t1:"Кто вы?",t2:"Выберите роль, чтобы продолжить",owner:"Овнер",ownerD:"Полный контроль, финансы, персонал",chef:"Шеф",chefD:"Кухня, рецепты, склад",sub:"система управления",fio:"Ваше ФИО",rest:"Название ресторана",email:"Email",pass:"Пароль 6+",pass2:"Пароль",create:"Создать ресторан →",login:"Войти →",have:"Уже есть аккаунт? Войти",no:"Нет аккаунта? Создать"},en:{t1:"Who are you?",t2:"Choose your role",owner:"Owner",ownerD:"Full control, finance, staff",chef:"Chef",chefD:"Kitchen, recipes, stock",sub:"management system",fio:"Full name",rest:"Restaurant name",email:"Email",pass:"Password 6+",pass2:"Password",create:"Create restaurant →",login:"Log in →",have:"Have account? Log in",no:"No account? Create"},az:{t1:"Siz kimsiniz?",t2:"Rol seçin",owner:"Sahib",ownerD:"Tam nəzarət",chef:"Şef",chefD:"Mətbəx",sub:"idarəetmə sistemi",fio:"Ad Soyad",rest:"Restoran adı",email:"Email",pass:"Şifrə 6+",pass2:"Şifrə",create:"Yarat →",login:"Giriş →",have:"Hesabın var? Giriş",no:"Yarat"},es:{t1:"¿Quién eres?",t2:"Elige tu rol",owner:"Dueño",ownerD:"Control total",chef:"Chef",chefD:"Cocina",sub:"sistema de gestión",fio:"Nombre",rest:"Restaurante",email:"Email",pass:"Contraseña",pass2:"Contraseña",create:"Crear →",login:"Entrar →",have:"¿Tienes cuenta?",no:"Crear"},de:{t1:"Wer bist du?",t2:"Rolle wählen",owner:"Inhaber",ownerD:"Volle Kontrolle",chef:"Chef",chefD:"Küche",sub:"verwaltungssystem",fio:"Name",rest:"Restaurant",email:"Email",pass:"Passwort",pass2:"Passwort",create:"Erstellen →",login:"Login →",have:"Konto?",no:"Erstellen"},it:{t1:"Chi sei?",t2:"Scegli ruolo",owner:"Proprietario",ownerD:"Controllo totale",chef:"Chef",chefD:"Cucina",sub:"sistema di gestione",fio:"Nome",rest:"Ristorante",email:"Email",pass:"Password",pass2:"Password",create:"Crea →",login:"Accedi →",have:"Hai account?",no:"Crea"},ar:{t1:"من أنت؟",t2:"اختر دورك",owner:"المالك",ownerD:"تحكم كامل",chef:"الشيف",chefD:"المطبخ",sub:"نظام الإدارة",fio:"اسمك",rest:"اسم المطعم",email:"البريد",pass:"كلمة المرور",pass2:"كلمة المرور",create:"إنشاء →",login:"دخول →",have:"لديك حساب؟",no:"إنشاء"}}
+const dict={
+ru:{t1:"Кто вы?",t2:"Выберите роль, чтобы продолжить",owner:"Овнер",ownerD:"Полный контроль, финансы, персонал",chef:"Шеф",chefD:"Кухня, рецепты, склад",sub:"система управления",fio:"Ваше ФИО",rest:"Название ресторана",email:"Email",pass:"Пароль 6+",pass2:"Пароль",create:"Создать ресторан →",login:"Войти →",have:"Уже есть аккаунт? Войти",no:"Нет аккаунта? Создать",fTop:"Professional Kitchen OS • Baku",fMid1:"Быстрая работа • Защита данных • Поддержка 24/7",fMid2:"Создано для кухонь, которые кормят город"},
+en:{t1:"Who are you?",t2:"Choose your role",owner:"Owner",ownerD:"Full control, finance, staff",chef:"Chef",chefD:"Kitchen, recipes, stock",sub:"management system",fio:"Full name",rest:"Restaurant name",email:"Email",pass:"Password 6+",pass2:"Password",create:"Create restaurant →",login:"Log in →",have:"Have account? Log in",no:"No account? Create",fTop:"Professional Kitchen OS • Baku",fMid1:"Fast • Secure • 24/7 Support",fMid2:"Built for kitchens that feed the city"},
+az:{t1:"Siz kimsiniz?",t2:"Rol seçin",owner:"Sahib",ownerD:"Tam nəzarət",chef:"Şef",chefD:"Mətbəx",sub:"idarəetmə sistemi",fio:"Ad Soyad",rest:"Restoran adı",email:"Email",pass:"Şifrə 6+",pass2:"Şifrə",create:"Yarat →",login:"Giriş →",have:"Hesabın var? Giriş",no:"Yarat",fTop:"Professional Kitchen OS • Baku",fMid1:"Sürətli iş • Məlumatların qorunması • 24/7 Dəstək",fMid2:"Şəhəri yedirdən mətbəxlər üçün yaradılıb"},
+es:{t1:"¿Quién eres?",t2:"Elige tu rol",owner:"Dueño",ownerD:"Control total",chef:"Chef",chefD:"Cocina",sub:"sistema de gestión",fio:"Nombre",rest:"Restaurante",email:"Email",pass:"Contraseña",pass2:"Contraseña",create:"Crear →",login:"Entrar →",have:"¿Tienes cuenta?",no:"Crear",fTop:"Professional Kitchen OS • Baku",fMid1:"Rápido • Seguro • Soporte 24/7",fMid2:"Creado para cocinas que alimentan la ciudad"},
+de:{t1:"Wer bist du?",t2:"Rolle wählen",owner:"Inhaber",ownerD:"Volle Kontrolle",chef:"Chef",chefD:"Küche",sub:"verwaltungssystem",fio:"Name",rest:"Restaurant",email:"Email",pass:"Passwort",pass2:"Passwort",create:"Erstellen →",login:"Login →",have:"Konto?",no:"Erstellen",fTop:"Professional Kitchen OS • Baku",fMid1:"Schnell • Sicher • 24/7 Support",fMid2:"Für Küchen gebaut, die die Stadt ernähren"},
+it:{t1:"Chi sei?",t2:"Scegli ruolo",owner:"Proprietario",ownerD:"Controllo totale",chef:"Chef",chefD:"Cucina",sub:"sistema di gestione",fio:"Nome",rest:"Ristorante",email:"Email",pass:"Password",pass2:"Password",create:"Crea →",login:"Accedi →",have:"Hai account?",no:"Crea",fTop:"Professional Kitchen OS • Baku",fMid1:"Veloce • Sicuro • Supporto 24/7",fMid2:"Creato per cucine che nutrono la città"},
+ar:{t1:"من أنت؟",t2:"اختر دورك",owner:"المالك",ownerD:"تحكم كامل",chef:"الشيف",chefD:"المطبخ",sub:"نظام الإدارة",fio:"اسمك",rest:"اسم المطعم",email:"البريد",pass:"كلمة المرور",pass2:"كلمة المرور",create:"إنشاء →",login:"دخول →",have:"لديك حساب؟",no:"إنشاء",fTop:"Professional Kitchen OS • Baku",fMid1:"سريع • آمن • دعم 24/7",fMid2:"صُنع للمطابخ التي تطعم المدينة"}
+}
 let curLang=localStorage.getItem('hp_lang')||'ru';
-function apply(l){curLang=l;localStorage.setItem('hp_lang',l);const d=dict[l]||dict.en;t1.textContent=d.t1;t2.textContent=d.t2;hOwner.textContent=d.owner;dOwner.textContent=d.ownerD;hChef.textContent=d.chef;dChef.textContent=d.chefD;subText.textContent=d.sub;full_name.placeholder=d.fio;rest_name.placeholder=d.rest;email.placeholder=d.email;emailLogin.placeholder=d.email;password.placeholder=d.pass;passwordLogin.placeholder=d.pass2;btnReg.textContent=d.create;btnLogin.textContent=d.login;toLogin.textContent=d.have;toReg.textContent=d.no;document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));document.documentElement.dir=l==='ar'?'rtl':'ltr'}
+function apply(l){
+  curLang=l;localStorage.setItem('hp_lang',l);const d=dict[l]||dict.en;
+  t1.textContent=d.t1;t2.textContent=d.t2;hOwner.textContent=d.owner;dOwner.textContent=d.ownerD;hChef.textContent=d.chef;dChef.textContent=d.chefD;subText.textContent=d.sub;
+  full_name.placeholder=d.fio;rest_name.placeholder=d.rest;email.placeholder=d.email;emailLogin.placeholder=d.email;password.placeholder=d.pass;passwordLogin.placeholder=d.pass2;
+  btnReg.textContent=d.create;btnLogin.textContent=d.login;toLogin.textContent=d.have;toReg.textContent=d.no;
+  document.getElementById('fTop').textContent=d.fTop;
+  document.getElementById('fMid1').textContent=d.fMid1;
+  document.getElementById('fMid2').textContent=d.fMid2;
+  document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
+  document.documentElement.dir=l==='ar'?'rtl':'ltr'
+}
 langBar.onclick=e=>{if(e.target.dataset.l) apply(e.target.dataset.l)};apply(curLang);
 btnReg.onclick=async()=>{
   const msgEl=document.getElementById('msg'); const b=btnReg;
   const role = document.getElementById('cOwner').classList.contains('active')? 'owner' : document.getElementById('cChef').classList.contains('active')? 'chef' : null;
-  if(!role){msgEl.textContent='Пожалуйста, выберите роль — Овнер или Шеф';return}
+  if(!role){msgEl.textContent='Пожалуйста, выберите роль';return}
   const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,full_name=document.getElementById('full_name').value.trim(),rest_name=document.getElementById('rest_name').value.trim();
   if(!full_name||!rest_name||!email||!password){msgEl.textContent='Заполните все поля';return}
   if(password.length<6){msgEl.textContent='Пароль минимум 6 символов';return}
-  b.disabled=true;msgEl.textContent='Создаем ваш ресторан...';
+  b.disabled=true;msgEl.textContent='...';
   try{
     const {error:signErr}=await sb.auth.signUp({email,password}); if(signErr) throw signErr;
     const {error:loginErr}=await sb.auth.signInWithPassword({email,password}); if(loginErr) throw loginErr;
-    const {data:{user}}=await sb.auth.getUser(); if(!user) throw new Error('Не удалось получить пользователя');
+    const {data:{user}}=await sb.auth.getUser(); if(!user) throw new Error('No user');
     const {data:nr,error:re}=await sb.from('restaurants').insert({owner_id:user.id,name:rest_name,subscription_type:role}).select('id').single(); if(re) throw re;
     const {error:pe}=await sb.from('profiles').insert({id:user.id,full_name,restaurant_id:nr.id,role,is_active:true}); if(pe) throw pe;
     await sb.from('restaurant_settings').insert({restaurant_id:nr.id,language:curLang});
@@ -113,7 +128,7 @@ btnLogin.onclick=async()=>{
   const b=btnLogin; const m=document.getElementById('msg2');
   const email=document.getElementById('emailLogin').value.trim(),password=document.getElementById('passwordLogin').value;
   if(!email||!password){m.textContent='Заполните поля';return}
-  b.disabled=true; m.textContent='Входим...';
+  b.disabled=true; m.textContent='...';
   try{
     const {error}=await sb.auth.signInWithPassword({email,password}); if(error) throw error;
     const {data:{user}}=await sb.auth.getUser();
