@@ -15,7 +15,7 @@
 .hero-bottom{position:relative;z-index:2;max-width:320px;width:100%}
 .hero-btn{border:1px solid rgba(255,107,0,.3);background:rgba(255,107,0,.12);color:#ff8c00;padding:12px;border-radius:30px}
 .hero.hide{transform:translateY(-110%);opacity:0;pointer-events:none}
-.wrap{max-width:400px;margin:0 auto;padding:20px 18px}
+.wrap{max-width:400px;margin:0 auto;padding:20px 18px 0}
 .lang{display:flex;gap:6px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
 .lang button{background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:6px 12px;border-radius:20px;font-weight:800;cursor:pointer}
 .lang button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
@@ -32,6 +32,12 @@
 input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:14px;color:#fff;margin-bottom:10px;outline:none}input:focus{border-color:#ff6b00}
 .btn-main{width:100%;background:#ff6b00;color:#000;border:none;padding:15px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;transition:.2s}.btn-main:disabled{opacity:.5;cursor:not-allowed}
 .login-link{text-align:center;color:#666;font-size:13px;margin-top:18px}.login-link span{color:#ff6b00;cursor:pointer;font-weight:700}
+/* ПРЕМИУМ ФУТЕР - убирает дешевизну */
+.footer{margin-top:56px;padding:24px 0 32px;border-top:1px solid #1e1e1e;text-align:center}
+.footer-top{color:#444;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:12px}
+.footer-mid{color:#666;font-size:11px;line-height:1.7}
+.footer-mid b{color:#888;font-weight:500}
+.footer-bottom{color:#333;font-size:10px;margin-top:8px;letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -45,14 +51,19 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 <div class="form" id="regBox"><input id="full_name" placeholder="ФИО"><input id="rest_name" placeholder="Название ресторана"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Пароль"><button class="btn-main" id="btnReg">Создать ресторан →</button><div id="msg" style="color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px"></div></div>
 <div class="form" id="loginBox"><input id="emailLogin" placeholder="Email"><input id="passwordLogin" type="password" placeholder="Пароль"><button class="btn-main" id="btnLogin">Войти →</button><div id="msg2" style="color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px"></div></div>
 <div class="login-link"><span id="toLogin">Уже есть аккаунт? Войти</span><span id="toReg" style="display:none">Нет аккаунта? Создать</span></div>
+
+<div class="footer">
+  <div class="footer-top">Professional Kitchen OS • Baku</div>
+  <div class="footer-mid">Автономная работа • Шифрование • Поддержка 24/7<br><b>Создано для кухонь, которые кормят город</b></div>
+  <div class="footer-bottom">HotPit KITCHEN v2.6</div>
+</div>
+
 </div>
 <script>
-// PREMIUM STATE - единый источник правды
 const state = { role: null, mode: 'register' };
 const hero = document.getElementById('hero');
 hero.onclick = () => hero.classList.add('hide');
 document.getElementById('mainLogo').onclick = () => hero.classList.remove('hide');
-
 function render(){
   document.getElementById('cOwner').classList.toggle('active', state.role==='owner');
   document.getElementById('cChef').classList.toggle('active', state.role==='chef');
@@ -69,8 +80,8 @@ function render(){
 }
 document.getElementById('cOwner').onclick=()=>{state.role='owner';render()};
 document.getElementById('cChef').onclick=()=>{state.role='chef';render()};
-document.getElementById('toLogin').onclick=()=>{state.mode='login';document.getElementById('toLogin').style.display='none';document.getElementById('toReg').style.display='inline';render()};
-document.getElementById('toReg').onclick=()=>{state.mode='register';document.getElementById('toReg').style.display='none';document.getElementById('toLogin').style.display='inline';render()};
+document.getElementById('toLogin').onclick=()=>{state.mode='login';toLogin.style.display='none';toReg.style.display='inline';render()};
+document.getElementById('toReg').onclick=()=>{state.mode='register';toReg.style.display='none';toLogin.style.display='inline';render()};
 render();
 </script>
 <script type="module">
@@ -80,13 +91,11 @@ const dict={ru:{t1:"Кто вы?",t2:"Выберите роль, чтобы пр
 let curLang=localStorage.getItem('hp_lang')||'ru';
 function apply(l){curLang=l;localStorage.setItem('hp_lang',l);const d=dict[l]||dict.en;t1.textContent=d.t1;t2.textContent=d.t2;hOwner.textContent=d.owner;dOwner.textContent=d.ownerD;hChef.textContent=d.chef;dChef.textContent=d.chefD;subText.textContent=d.sub;full_name.placeholder=d.fio;rest_name.placeholder=d.rest;email.placeholder=d.email;emailLogin.placeholder=d.email;password.placeholder=d.pass;passwordLogin.placeholder=d.pass2;btnReg.textContent=d.create;btnLogin.textContent=d.login;toLogin.textContent=d.have;toReg.textContent=d.no;document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));document.documentElement.dir=l==='ar'?'rtl':'ltr'}
 langBar.onclick=e=>{if(e.target.dataset.l) apply(e.target.dataset.l)};apply(curLang);
-// Надежная регистрация
 btnReg.onclick=async()=>{
   const msgEl=document.getElementById('msg'); const b=btnReg;
-  if(!window.state ||!window.state?.role){ const s=document.querySelector('script:not([type])'); /* fallback */ }
   const role = document.getElementById('cOwner').classList.contains('active')? 'owner' : document.getElementById('cChef').classList.contains('active')? 'chef' : null;
   if(!role){msgEl.textContent='Пожалуйста, выберите роль — Овнер или Шеф';return}
-  const email=emailEl=document.getElementById('email').value.trim(),password=document.getElementById('password').value,full_name=document.getElementById('full_name').value.trim(),rest_name=document.getElementById('rest_name').value.trim();
+  const email=document.getElementById('email').value.trim(),password=document.getElementById('password').value,full_name=document.getElementById('full_name').value.trim(),rest_name=document.getElementById('rest_name').value.trim();
   if(!full_name||!rest_name||!email||!password){msgEl.textContent='Заполните все поля';return}
   if(password.length<6){msgEl.textContent='Пароль минимум 6 символов';return}
   b.disabled=true;msgEl.textContent='Создаем ваш ресторан...';
@@ -114,4 +123,4 @@ btnLogin.onclick=async()=>{
 };
 </script>
 </body>
-                                 </html>
+  </html>
