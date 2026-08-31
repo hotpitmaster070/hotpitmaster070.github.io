@@ -61,7 +61,7 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 <div class="footer">
   <div class="footer-top" id="fTop">Professional Kitchen OS • Baku</div>
   <div class="footer-mid"><span id="fMid1">Быстрая работа • Защита данных • Поддержка 24/7</span><br><b id="fMid2">Создано для кухонь, которые кормят город</b></div>
-  <div class="footer-bottom">HotPit KITCHEN v3.0 GLOBAL • Built to help children</div>
+  <div class="footer-bottom">HotPit KITCHEN v3.1 GLOBAL ATOMIC • Built to help children</div>
 </div>
 </div>
 
@@ -134,34 +134,23 @@ btnReg.onclick=async()=>{
   try{
     const {data:sign, error:signErr}=await sb.auth.signUp({email:emailV,password:passwordV});
     if(signErr) throw signErr;
-    // login to get user
     const {error:loginErr}=await sb.auth.signInWithPassword({email:emailV,password:passwordV}); if(loginErr) throw loginErr;
     const {data:{user}}=await sb.auth.getUser(); if(!user) throw new Error('Auth failed');
 
-    // GLOBAL ARCHITECTURE: restaurant is a tenant
-    const {data:nr,error:re}=await sb.from('restaurants').insert({
-      owner_id:user.id,
-      name:rest_nameV,
-      plan:'trial'
-    }).select('id').single();
-    if(re) throw re;
-
-    const {error:pe}=await sb.from('profiles').insert({
-      id:user.id,
-      full_name:full_nameV,
-      restaurant_id:nr.id,
-      role:role,
-      preferred_language:curLang,
-      is_active:true
+    // ✅ GLOBAL ATOMIC - 1 вызов = все создано атомарно для 10k
+    const { data: res, error: funcError } = await sb.functions.invoke('create-restaurant-v2', {
+      body: {
+        restaurant_name: rest_nameV,
+        full_name: full_nameV,
+        role: role,
+        lang: curLang
+      }
     });
-    if(pe) throw pe;
+    if(funcError) throw new Error(funcError.message);
+    if(res?.error) throw new Error(res.error);
 
-    // IMPORTANT: default_language for whole restaurant
-    const {error:se}=await sb.from('restaurant_settings').insert({
-      restaurant_id:nr.id,
-      default_language:curLang
-    });
-    if(se) throw se;
+    // ID приходит сам из функции - автомат, руками писать не надо
+    localStorage.setItem('restaurant_id', res.restaurant_id);
 
     location.href=role==='chef'?'/chef.html':'/owner.html';
   }catch(e){
@@ -179,8 +168,9 @@ btnLogin.onclick=async()=>{
   try{
     const {error}=await sb.auth.signInWithPassword({email:emailV,password:passwordV}); if(error) throw error;
     const {data:{user}}=await sb.auth.getUser();
-    const {data:p,error:pe}=await sb.from('profiles').select('role, preferred_language').eq('id',user.id).single(); if(pe) throw pe;
+    const {data:p,error:pe}=await sb.from('profiles').select('role, preferred_language, restaurant_id').eq('id',user.id).single(); if(pe) throw pe;
     if(p.preferred_language) localStorage.setItem('hp_lang', p.preferred_language);
+    if(p.restaurant_id) localStorage.setItem('restaurant_id', p.restaurant_id);
     location.href=p.role==='chef'?'/chef.html':'/owner.html';
   }catch(e){m.textContent=e.message; b.disabled=false}
 };
