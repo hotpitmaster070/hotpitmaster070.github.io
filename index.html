@@ -12,7 +12,7 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
 .lang button{background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:800;cursor:pointer}
 .lang button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
 .logo{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:32px}
-.logo-svg{width:68px;height:68px;filter:drop-shadow(0 0 18px rgba(255,107,0,.6))}
+.logo-img{width:68px;height:68px;filter:drop-shadow(0 0 18px rgba(255,107,0,.7));object-fit:contain;border-radius:12px}
 .hot{font-size:38px;font-weight:800;color:#ff6b00;line-height:1;letter-spacing:-1.5px}.kit{font-size:14px;letter-spacing:6px;color:#fff;margin-top:2px;font-weight:500}.sub{font-size:11px;color:#aaa;letter-spacing:1px;margin-top:3px;width:175px;white-space:nowrap}
 .title{font-size:28px;font-weight:800;text-align:center;margin-bottom:8px}.subtitle{color:#777;font-size:13px;text-align:center;margin-bottom:28px}
 .role-card{background:linear-gradient(180deg,#1c1c1c 0%, #121212 100%);border:1px solid #2a2a2a;border-radius:20px;padding:18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:14px;transition:.25s}
@@ -30,13 +30,8 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 <div class="lang" id="langBar"><button data-l="ru">RU</button><button data-l="en">EN</button><button data-l="az">AZ</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button><button data-l="ar">SA</button></div>
 
 <div class="logo">
-<!-- ТОПОВЫЙ ЛОГО 3 ОГНЯ - ПЛАМЕННЫЕ БАШНИ -->
-<svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-<defs><linearGradient id="g1" x1="0" y1="100%" x2="0" y2="0%"><stop offset="0%" stop-color="#ff6b00"/><stop offset="100%" stop-color="#ffad4a"/></linearGradient><linearGradient id="g2" x1="0" y1="100%" x2="0" y2="0%"><stop offset="0%" stop-color="#ff7a18"/><stop offset="100%" stop-color="#ffbf6b"/></linearGradient><linearGradient id="g3" x1="0" y1="100%" x2="0" y2="0%"><stop offset="0%" stop-color="#ff8c1f"/><stop offset="100%" stop-color="#ffd089"/></linearGradient></defs>
-<path fill="url(#g1)" d="M22 88 C 10 70, 14 45, 32 15 C 28 35, 46 50, 42 78 C 40 86, 28 92, 22 88 Z"/>
-<path fill="url(#g2)" d="M50 90 C 40 75, 44 55, 60 28 C 56 44, 71 58, 68 80 C 66 87, 56 93, 50 90 Z"/>
-<path fill="url(#g3)" d="M74 92 C 67 80, 69 65, 82 44 C 80 57, 91 66, 89 82 C 88 89, 79 94, 74 92 Z"/>
-</svg>
+<!-- ТОПОВЫЙ ЛОГО 3 ОГНЯ - ТВОЙ logo.png -->
+<img src="logo.png" alt="HotPit Logo" class="logo-img">
 <div><div class="hot">HotPit</div><div class="kit">KITCHEN</div><div class="sub" id="subText">система управления</div></div>
 </div>
 
@@ -59,7 +54,7 @@ function sel(r){curRole=r;document.getElementById('cOwner').classList.toggle('ac
 document.getElementById('cOwner').onclick=()=>sel('owner');document.getElementById('cChef').onclick=()=>sel('chef')
 document.getElementById('toLogin').onclick=()=>{regBox.classList.remove('show');loginBox.classList.add('show');toLogin.style.display='none';toReg.style.display='inline'}
 document.getElementById('toReg').onclick=()=>{loginBox.classList.remove('show');regBox.classList.add('show');toReg.style.display='none';toLogin.style.display='inline'}
-document.getElementById('btnReg').onclick=async()=>{const b=btnReg;b.disabled=true;msg.textContent='...';try{const email=email.value.trim(),password=password.value,full_name=full_name.value.trim(),rest_name=rest_name.value.trim();const {error}=await sb.auth.signUp({email,password});if(error) throw error;await sb.auth.signInWithPassword({email,password});const user=(await sb.auth.getUser()).data.user;const {data:nr,error:re}=await sb.from('restaurants').insert({owner_id:user.id,name:rest_name,subscription_type:curRole}).select('id').single();if(re) throw re;await sb.from('profiles').insert({id:user.id,full_name,restaurant_id:nr.id,role:curRole,is_active:true});await sb.from('restaurant_settings').insert({restaurant_id:nr.id,language:curLang});location.href=curRole==='chef'?'/chef.html':'/owner.html'}catch(e){msg.textContent=e.message;b.disabled=false}}
+document.getElementById('btnReg').onclick=async()=>{const b=btnReg;b.disabled=true;msg.textContent='...';try{const emailEl=document.getElementById('email'),passEl=document.getElementById('password'),nameEl=document.getElementById('full_name'),restEl=document.getElementById('rest_name');const email=emailEl.value.trim(),password=passEl.value,full_name=nameEl.value.trim(),rest_name=restEl.value.trim();const {error}=await sb.auth.signUp({email,password});if(error) throw error;await sb.auth.signInWithPassword({email,password});const user=(await sb.auth.getUser()).data.user;const {data:nr,error:re}=await sb.from('restaurants').insert({owner_id:user.id,name:rest_name,subscription_type:curRole}).select('id').single();if(re) throw re;await sb.from('profiles').insert({id:user.id,full_name,restaurant_id:nr.id,role:curRole,is_active:true});await sb.from('restaurant_settings').insert({restaurant_id:nr.id,language:curLang});location.href=curRole==='chef'?'/chef.html':'/owner.html'}catch(e){msg.textContent=e.message;b.disabled=false}}
 document.getElementById('btnLogin').onclick=async()=>{const b=btnLogin;b.disabled=true;msg2.textContent='...';try{await sb.auth.signInWithPassword({email:emailLogin.value.trim(),password:passwordLogin.value});const user=(await sb.auth.getUser()).data.user;const {data:p}=await sb.from('profiles').select('role').eq('id',user.id).single();location.href=p?.role==='chef'?'/chef.html':'/owner.html'}catch(e){msg2.textContent=e.message;b.disabled=false}}
 </script>
 </body>
