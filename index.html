@@ -6,15 +6,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}body{margin:0;background:#080808;color:#fff;font-family:'Manrope',sans-serif;overflow-x:hidden}
-.hero{position:fixed;inset:0;z-index:100;background:#000 url('hero.jpg') center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:transform 0.8s cubic-bezier(0.8,0,0.2,1),opacity 0.6s;cursor:pointer}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 80%)}
+.hero{position:fixed;inset:0;z-index:100;background:#000 url('hero.jpg') top center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:60px 20px 24px 20px;transition:transform 0.8s cubic-bezier(0.8,0,0.2,1),opacity 0.6s;cursor:pointer;text-align:center}
+.hero::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.95) 88%);z-index:1}
+.hero-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1; animation:float 3s infinite ease-in-out}
+.hero-logo{width:92px;height:92px;border-radius:22px;filter:drop-shadow(0 0 28px rgba(255,107,0,.9));animation:flicker 2s infinite}
+.hero-title{font-size:46px;font-weight:800;margin:18px 0 0 0;color:#fff;letter-spacing:-1.2px; line-height:0.95}
+.hero-title.hot{font-weight:800;color:#fff}
+.hero-title.kitchen{font-weight:300;letter-spacing:1px;color:#fff}
+.hero-sub{font-size:11px;letter-spacing:7px;color:#aaa;margin-top:12px;font-weight:500;text-transform:uppercase}
+.hero-bottom{position:relative;z-index:2;width:100%;max-width:320px;margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.hero-btn{border:1px solid rgba(255,107,0,.35);background:rgba(255,107,0,.12);backdrop-filter:blur(8px);color:#ff8c00;padding:12px 18px;border-radius:30px;font-size:13px;letter-spacing:1px}
+.hero-note{color:#666;font-size:10px;letter-spacing:0.5px}
 .hero.hide{transform:translateY(-100%);opacity:0;pointer-events:none}
-.hero-content{position:relative;z-index:2;padding:20px;animation:float 3s infinite ease-in-out}
-.hero-logo{width:110px;height:110px;border-radius:24px;filter:drop-shadow(0 0 35px rgba(255,107,0,.9));animation:flicker 2s infinite}
-.hero-title{font-size:48px;font-weight:800;margin:16px 0 4px;color:#fff;letter-spacing:-1px}
-.hero-title span{color:#ff6b00;text-shadow:0 0 20px rgba(255,107,0,.8)}
-.hero-sub{font-size:14px;letter-spacing:6px;color:#fff;margin-top:2px;font-weight:500}
-.hero-hint{margin-top:28px;color:#ff8c00;font-size:12px;letter-spacing:1px;border:1px solid rgba(255,107,0,.3);padding:8px 18px;border-radius:20px;background:rgba(255,107,0,.1)}
 body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:800px;height:500px;background:radial-gradient(ellipse at center, rgba(255,107,0,0.18) 0%, transparent 70%);pointer-events:none}
 .wrap{max-width:400px;margin:0 auto;padding:20px 18px;position:relative;z-index:2}
 .lang{display:flex;gap:6px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
@@ -22,7 +25,7 @@ body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(
 .lang button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
 .logo{display:flex;align-items:center;gap:14px;justify-content:center;margin-bottom:32px;cursor:pointer}
 .logo-img{width:68px;height:68px;filter:drop-shadow(0 0 18px rgba(255,107,0,.7));object-fit:contain;border-radius:12px}
-.hot{font-size:38px;font-weight:800;color:#ff6b00;line-height:1;letter-spacing:-1.5px}.kit{font-size:14px;letter-spacing:6px;color:#fff;margin-top:2px;font-weight:500}.sub{font-size:11px;color:#aaa;letter-spacing:1px;margin-top:3px;width:175px;white-space:nowrap}
+.hot2{font-size:38px;font-weight:800;color:#ff6b00;line-height:1;letter-spacing:-1.5px}.kit2{font-size:14px;letter-spacing:6px;color:#fff;margin-top:2px;font-weight:500}.sub{font-size:11px;color:#aaa;letter-spacing:1px;margin-top:3px;width:175px;white-space:nowrap}
 .title{font-size:28px;font-weight:800;text-align:center;margin-bottom:8px}.subtitle{color:#777;font-size:13px;text-align:center;margin-bottom:28px}
 .role-card{background:linear-gradient(180deg,#1c1c1c 0%, #121212 100%);border:1px solid #2a2a2a;border-radius:20px;padding:18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:14px;transition:.25s}
 .role-card.active{border-color:#ff6b00;background:linear-gradient(180deg,#21180f 0%, #15100a 100%);box-shadow:0 0 0 1px #ff6b00, 0 10px 30px rgba(255,107,0,.2)}
@@ -33,7 +36,7 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 .btn-main{width:100%;background:#ff6b00;color:#000;border:none;padding:15px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer}
 .login-link{text-align:center;color:#666;font-size:13px;margin-top:18px}.login-link span{color:#ff6b00;cursor:pointer;font-weight:700}
 @keyframes flicker{0%,100%{transform:scale(1)}20%{transform:scale(1.03,0.98)}50%{transform:scale(0.98,1.02)}75%{transform:scale(1.02,0.99)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 </style>
 </head>
 <body>
@@ -41,19 +44,21 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 <div class="hero" id="hero" onclick="enter()">
   <div class="hero-content">
     <img src="logo.png" class="hero-logo" alt="HotPit">
-    <div class="hero-title"><span>HotPit</span> KITCHEN</div>
-    <div class="hero-sub">FLAME TOWERS EDITION</div>
-    <div class="hero-hint">Нажми — войти 🔥</div>
-    <div style="margin-top:14px;color:#777;font-size:10px">Часть прибыли — детям без родителей</div>
+    <div class="hero-title"><div class="hot">HotPit</div><div class="kitchen">KITCHEN</div></div>
+    <div class="hero-sub">Flame Towers Edition</div>
+  </div>
+  <div class="hero-bottom">
+    <div class="hero-btn">Нажми — войти 🔥</div>
+    <div class="hero-note">Часть прибыли — детям без родителей</div>
   </div>
 </div>
 
 <div class="wrap">
 <div class="lang" id="langBar"><button data-l="ru">RU</button><button data-l="en">EN</button><button data-l="az">AZ</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button><button data-l="ar">SA</button></div>
 
-<div class="logo" id="mainLogo" title="Нажми чтобы вернуться к огню">
+<div class="logo" id="mainLogo" title="Назад к огню">
 <img src="logo.png" alt="HotPit Logo" class="logo-img">
-<div><div class="hot">HotPit</div><div class="kit">KITCHEN</div><div class="sub" id="subText">система управления</div></div>
+<div><div class="hot2">HotPit</div><div class="kit2">KITCHEN</div><div class="sub" id="subText">система управления</div></div>
 </div>
 
 <div class="title" id="t1">Кто вы?</div><div class="subtitle" id="t2">Выберите роль</div>
@@ -66,12 +71,8 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 </div>
 
 <script>
-function enter(){
-  document.getElementById('hero').classList.add('hide');
-}
-function showHero(){
-  document.getElementById('hero').classList.remove('hide');
-}
+function enter(){document.getElementById('hero').classList.add('hide');}
+function showHero(){document.getElementById('hero').classList.remove('hide');}
 document.getElementById('mainLogo').onclick = () => showHero();
 </script>
 
