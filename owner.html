@@ -25,7 +25,8 @@
 .top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .top h2{margin:0;font-size:22px;font-weight:800}
 .card{background:#121212;border:1px solid #242424;border-radius:16px;padding:16px;margin-bottom:14px;border-left:4px solid #ff6b00}
-.input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px;outline:none}.input:focus{border-color:#ff6b00}
+.input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px;outline:none}
+.input:focus{border-color:#ff6b00}
 .btn{width:100%;border:1px solid #ff6b00;color:#ff6b00;background:transparent;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
 .btn-fill{width:100%;background:#ff6b00;color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
 .muted{color:#666;font-size:12px}
@@ -38,7 +39,7 @@
 <body>
 <div class="sidebar" id="sidebar">
   <div class="side-head">
-    <div class="logo" id="logoBtn"><img src="logo.png" onerror="this.style.display='none'"><div><b><span class="orange">HotPit</span><br><span class="white">KITCHEN</span></b><small id="logoSub">система управления</small></div></div>
+    <div class="logo" id="logoBtn"><img src="logo.png"><div><b><span class="orange">HotPit</span><br><span class="white">KITCHEN</span></b><small id="logoSub">система управления</small></div></div>
     <button class="x-btn" id="xBtn">✕</button>
   </div>
   <div class="lang-bar" id="langBar"><button data-l="ru">RU</button><button data-l="az">AZ</button><button data-l="tr">TR</button><button data-l="en">EN</button><button data-l="ar">AR</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button></div>
@@ -51,33 +52,29 @@
     <button data-tab="history">📜 <span id="mHistory">История списаний</span></button>
     <button data-tab="settings">⚙️ <span id="mSettings">Настройки</span></button>
   </div>
-  <div class="owner-card" id="ownerCard"><img id="ownerImg" src="logo.png"><div style="flex:1"><div id="ownerName" style="font-weight:700;font-size:13px">Mubariz</div><div id="ownerRest" style="font-size:11px;color:#666">Land</div></div><div>›</div></div>
+  <div class="owner-card"><img id="ownerImg" src="logo.png"><div style="flex:1"><div id="ownerName" style="font-weight:700;font-size:13px">Mubariz</div><div id="ownerRest" style="font-size:11px;color:#666">Land</div></div><div>›</div></div>
   <button class="btn" id="logout" style="margin-top:10px;border-color:#2a2a2a;color:#666">Выйти</button>
 </div>
-
 <div class="main">
   <div class="top"><button id="burger" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:8px 12px;border-radius:12px;cursor:pointer">☰</button><h2 id="pageTitle">Персонал</h2></div>
   <div id="content"></div>
 </div>
-
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
-
 const dict={
- ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История списаний",settings:"Настройки",team:"Команда Кухни",noStaff:"Нет персонала - пригласи шефа ниже",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку и создаст аккаунт повара - без костылей для аренды",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен - введи в Настройках",goSettings:"Перейти в Настройки",sendPDF:"Отправить PDF в бухгалтерию →",left:"До лимита осталось",owner:"Владелец",logout:"Выйти",soon:"скоро",wasteHistory:"История списаний - отдельный раздел",noWaste:"Нет списаний",stockTitle:"Склад - списывает только овнер",settingsTitle:"Настройки для аренды",fotLimitPh:"ФОТ лимит в своей валюте, напр 5000",emailPh:"Email бухгалтера",tgPh:"Telegram @",save:"Сохранить",saved:"Сохранено без костылей"},
- az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabatlar",stock:"Anbar",history:"Silinmə Tarixçəsi",settings:"Tənzimləmələr",team:"Mətbəx Komandası",noStaff:"Heyət yoxdur - aşağıdan şefi dəvət et",invite:"Şefi dəvət et",invitePh:"email@nümunə.com",sendInvite:"Dəvət göndər",inviteHint:"Şef link alacaq və aşpaz hesabı yaradacaq",fotMonth:"Əmək Haqqı Fondu",limitNotSet:"Limit təyin edilməyib - Tənzimləmələrdə daxil et",goSettings:"Tənzimləmələrə keç",sendPDF:"PDF-i mühasibatlığa göndər →",left:"Limitə qədər qaldı",owner:"Sahib",logout:"Çıxış",soon:"tezliklə",wasteHistory:"Silinmə Tarixçəsi - ayrı bölmə",noWaste:"Silinmə yoxdur",stockTitle:"Anbar - yalnız sahib silir",settingsTitle:"Kirayə üçün tənzimləmələr",fotLimitPh:"FOT limiti, məs 5000",emailPh:"Mühasib email",tgPh:"Telegram @",save:"Yadda saxla",saved:"Yadda saxlandı"},
- tr:{sub:"yönetim sistemi",staff:"Personel",orders:"Siparişler",menu:"Menü",fot:"Raporlar",stock:"Depo",history:"Silme Geçmişi",settings:"Ayarlar",team:"Mutfak Ekibi",noStaff:"Personel yok - aşağıdan şef davet et",invite:"Şef Davet Et",invitePh:"email@örnek.com",sendInvite:"Davet Gönder",inviteHint:"Şef link alacak ve hesap oluşturacak",fotMonth:"Maaş Bütçesi",limitNotSet:"Limit belirlenmedi - Ayarlarda gir",goSettings:"Ayarlara Git",sendPDF:"PDF'i muhasebeye gönder →",left:"Limite kalan",owner:"Sahip",logout:"Çıkış",soon:"yakında",wasteHistory:"Silme Geçmişi - ayrı bölüm",noWaste:"Silme yok",stockTitle:"Depo - sadece sahip siler",settingsTitle:"Kiralama ayarları",fotLimitPh:"FOT limiti örn 5000",emailPh:"Muhasebe email",tgPh:"Telegram @",save:"Kaydet",saved:"Kaydedildi"},
- en:{sub:"management system",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"Waste History",settings:"Settings",team:"Kitchen Team",noStaff:"No staff - invite chef below",invite:"Invite Chef",invitePh:"email@example.com",sendInvite:"Send Invite",inviteHint:"Chef will get link and create cook account",fotMonth:"Payroll Month",limitNotSet:"Limit not set - enter in Settings",goSettings:"Go to Settings",sendPDF:"Send PDF to accounting →",left:"Left until limit",owner:"Owner",logout:"Logout",soon:"soon",wasteHistory:"Waste History - separate section",noWaste:"No waste",stockTitle:"Stock - owner only can waste",settingsTitle:"Settings for rental",fotLimitPh:"Payroll limit e.g. 5000",emailPh:"Accountant email",tgPh:"Telegram @",save:"Save",saved:"Saved"},
- ar:{sub:"نظام الإدارة",staff:"الطاقم",orders:"الطلبات",menu:"القائمة",fot:"التقارير",stock:"المخزون",history:"سجل الهدر",settings:"الإعدادات",team:"فريق المطبخ",noStaff:"لا يوجد طاقم",invite:"دعوة الشيف",invitePh:"البريد",sendInvite:"إرسال دعوة",inviteHint:"سيحصل الشيف على رابط",fotMonth:"ميزانية الرواتب",limitNotSet:"الحد غير محدد",goSettings:"الذهاب للإعدادات",sendPDF:"إرسال PDF للمحاسبة →",left:"المتبقي",owner:"المالك",logout:"خروج",soon:"قريبا",wasteHistory:"سجل الهدر - قسم منفصل",noWaste:"لا يوجد",stockTitle:"المخزون - المالك فقط",settingsTitle:"إعدادات الإيجار",fotLimitPh:"حد الميزانية",emailPh:"بريد المحاسب",tgPh:"تيليجرام",save:"حفظ",saved:"تم الحفظ"},
- es:{sub:"sistema de gestión",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo de Cocina",noStaff:"Sin personal - invita chef",invite:"Invitar Chef",invitePh:"email@ejemplo.com",sendInvite:"Enviar invitación",inviteHint:"El chef recibirá un enlace",fotMonth:"Presupuesto Mes",limitNotSet:"Límite no establecido",goSettings:"Ir a Ajustes",sendPDF:"Enviar PDF a contabilidad →",left:"Queda hasta límite",owner:"Dueño",logout:"Salir",soon:"pronto",wasteHistory:"Historial - sección separada",noWaste:"Sin bajas",stockTitle:"Almacén - solo dueño",settingsTitle:"Ajustes para alquiler",fotLimitPh:"Límite ej 5000",emailPh:"Email contador",tgPh:"Telegram @",save:"Guardar",saved:"Guardado"},
- de:{sub:"verwaltungssystem",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Küchenteam",noStaff:"Kein Personal",invite:"Chef einladen",invitePh:"email@beispiel.com",sendInvite:"Einladung senden",inviteHint:"Chef erhält Link",fotMonth:"Lohn Monat",limitNotSet:"Limit nicht gesetzt",goSettings:"Zu Einstellungen",sendPDF:"PDF an Buchhaltung senden →",left:"Bis Limit übrig",owner:"Inhaber",logout:"Abmelden",soon:"bald",wasteHistory:"Verlauf - separater Bereich",noWaste:"Kein Verbrauch",stockTitle:"Lager - nur Inhaber",settingsTitle:"Einstellungen für Vermietung",fotLimitPh:"Limit zB 5000",emailPh:"Buchhalter Email",tgPh:"Telegram @",save:"Speichern",saved:"Gespeichert"},
- it:{sub:"sistema di gestione",staff:"Personale",orders:"Ordini",menu:"Menu",fot:"Report",stock:"Magazzino",history:"Cronologia",settings:"Impostazioni",team:"Team Cucina",noStaff:"Nessun personale",invite:"Invita Chef",invitePh:"email@esempio.com",sendInvite:"Invia invito",inviteHint:"Lo chef riceverà un link",fotMonth:"Budget Mese",limitNotSet:"Limite non impostato",goSettings:"Vai a Impostazioni",sendPDF:"Invia PDF alla contabilità →",left:"Rimanente fino al limite",owner:"Proprietario",logout:"Esci",soon:"presto",wasteHistory:"Cronologia - sezione separata",noWaste:"Nessuno spreco",stockTitle:"Magazzino - solo proprietario",settingsTitle:"Impostazioni per noleggio",fotLimitPh:"Limite es 5000",emailPh:"Email contabile",tgPh:"Telegram @",save:"Salva",saved:"Salvato"}
+ ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История списаний",settings:"Настройки",team:"Команда Кухни",noStaff:"Нет персонала - пригласи шефа ниже",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку и создаст аккаунт - данные тянутся от шефа",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен - введи в Настройках",goSettings:"Перейти в Настройки",sendPDF:"Отправить PDF в бухгалтерию →",left:"До лимита осталось",owner:"Владелец",logout:"Выйти",soon:"скоро",wasteHistory:"История списаний - кто списал",noWaste:"Нет списаний",stockTitle:"Склад - видит овнер, списывает шеф",settingsTitle:"Настройки для аренды",fotLimitPh:"ФОТ лимит",emailPh:"Email бухгалтера",tgPh:"Telegram @",save:"Сохранить",saved:"Сохранено"},
+ az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabatlar",stock:"Anbar",history:"Silinmə Tarixçəsi",settings:"Tənzimləmələr",team:"Mətbəx Komandası",noStaff:"Heyət yoxdur",invite:"Şefi dəvət et",invitePh:"email",sendInvite:"Dəvət göndər",inviteHint:"Şefdən məlumatlar gəlir",fotMonth:"FOT Ay",limitNotSet:"Limit yoxdur",goSettings:"Tənzimləmələr",sendPDF:"PDF göndər →",left:"Qalıq",owner:"Sahib",logout:"Çıxış",soon:"tezliklə",wasteHistory:"Kim sildi - tarixçə",noWaste:"Yoxdur",stockTitle:"Anbar",settingsTitle:"Tənzimləmələr",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Saxla",saved:"Saxlandı"},
+ tr:{sub:"yönetim",staff:"Personel",orders:"Siparişler",menu:"Menü",fot:"Raporlar",stock:"Depo",history:"Geçmiş",settings:"Ayarlar",team:"Mutfak",noStaff:"Yok",invite:"Şef Davet",invitePh:"email",sendInvite:"Gönder",inviteHint:"Veriler şeften",fotMonth:"Maaş",limitNotSet:"Limit yok",goSettings:"Ayarlar",sendPDF:"PDF →",left:"Kalan",owner:"Sahip",logout:"Çıkış",soon:"yakında",wasteHistory:"Kim sildi",noWaste:"Yok",stockTitle:"Depo",settingsTitle:"Ayarlar",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Kaydet",saved:"Kaydedildi"},
+ en:{sub:"management",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"History",settings:"Settings",team:"Kitchen Team",noStaff:"No staff",invite:"Invite Chef",invitePh:"email",sendInvite:"Send",inviteHint:"Data from chef",fotMonth:"Payroll",limitNotSet:"No limit",goSettings:"Settings",sendPDF:"Send PDF →",left:"Left",owner:"Owner",logout:"Logout",soon:"soon",wasteHistory:"Who wasted - history",noWaste:"None",stockTitle:"Stock - chef writes, owner sees",settingsTitle:"Settings",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Save",saved:"Saved"},
+ ar:{sub:"نظام",staff:"الطاقم",orders:"الطلبات",menu:"القائمة",fot:"التقارير",stock:"المخزون",history:"السجل",settings:"الإعدادات",team:"فريق",noStaff:"لا يوجد",invite:"دعوة",invitePh:"بريد",sendInvite:"إرسال",inviteHint:"البيانات من الشيف",fotMonth:"الرواتب",limitNotSet:"لا حد",goSettings:"الإعدادات",sendPDF:"PDF →",left:"متبقي",owner:"المالك",logout:"خروج",soon:"قريبا",wasteHistory:"من حذف",noWaste:"لا يوجد",stockTitle:"المخزون",settingsTitle:"الإعدادات",fotLimitPh:"حد",emailPh:"بريد",tgPh:"تليجرام",save:"حفظ",saved:"تم"},
+ es:{sub:"sistema",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo",noStaff:"Sin",invite:"Invitar",invitePh:"email",sendInvite:"Enviar",inviteHint:"Datos del chef",fotMonth:"Presupuesto",limitNotSet:"Sin límite",goSettings:"Ajustes",sendPDF:"PDF →",left:"Queda",owner:"Dueño",logout:"Salir",soon:"pronto",wasteHistory:"Quién borró",noWaste:"Nada",stockTitle:"Almacén",settingsTitle:"Ajustes",fotLimitPh:"Límite",emailPh:"Email",tgPh:"Telegram",save:"Guardar",saved:"Guardado"},
+ de:{sub:"system",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Team",noStaff:"Kein",invite:"Einladen",invitePh:"email",sendInvite:"Senden",inviteHint:"Daten vom Chef",fotMonth:"Lohn",limitNotSet:"Kein Limit",goSettings:"Einstellungen",sendPDF:"PDF →",left:"Übrig",owner:"Inhaber",logout:"Abmelden",soon:"bald",wasteHistory:"Wer löschte",noWaste:"Kein",stockTitle:"Lager",settingsTitle:"Einstellungen",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Speichern",saved:"Gespeichert"},
+ it:{sub:"sistema",staff:"Personale",orders:"Ordini",menu:"Menu",fot:"Report",stock:"Magazzino",history:"Cronologia",settings:"Impostazioni",team:"Team",noStaff:"Nessuno",invite:"Invita",invitePh:"email",sendInvite:"Invia",inviteHint:"Dati dallo chef",fotMonth:"Budget",limitNotSet:"No limite",goSettings:"Impostazioni",sendPDF:"PDF →",left:"Rimane",owner:"Proprietario",logout:"Esci",soon:"presto",wasteHistory:"Chi ha sprecato",noWaste:"Niente",stockTitle:"Magazzino",settingsTitle:"Impostazioni",fotLimitPh:"Limite",emailPh:"Email",tgPh:"Telegram",save:"Salva",saved:"Salvato"}
 }
 let curLang=localStorage.getItem('hp_lang')||'ru';
 let myRestaurantId=null, settings=null, ownerId=null;
-
-function t(k){return (dict[curLang]||dict.en)[k]||dict.en[k];}
+function t(k){return (dict[curLang]||dict.en)[k]||k;}
 function applyLang(l){
   curLang=l; localStorage.setItem('hp_lang',l);
   document.documentElement.dir=l==='ar'?'rtl':'ltr';
@@ -90,17 +87,13 @@ function applyLang(l){
   document.getElementById('mHistory').textContent=t('history');
   document.getElementById('mSettings').textContent=t('settings');
   document.querySelectorAll('.lang-bar button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
-  // перерендер текущего таба
-  const active=document.querySelector('.nav button.active')?.dataset.tab||'staff';
-  if(active==='staff') renderStaff(); else if(active==='fot') renderFOT(); else if(active==='stock') renderStock(); else if(active==='history') renderHistory(); else if(active==='settings') renderSettings();
+  const ac=document.querySelector('.nav button.active')?.dataset.tab||'staff';
+  if(ac==='staff') renderStaff(); else if(ac==='fot') renderFOT(); else if(ac==='stock') renderStock(); else if(ac==='history') renderHistory(); else if(ac==='settings') renderSettings();
 }
-
 async function init(){
   const {data:{user}} = await sb.auth.getUser(); if(!user){location.href='/'; return}
   const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
-  // язык из профиля - как ты хотел при создании ресторана
   if(p.preferred_language) curLang=p.preferred_language;
-  else curLang=localStorage.getItem('hp_lang')||'ru';
   localStorage.setItem('hp_lang',curLang);
   myRestaurantId=p.restaurant_id||localStorage.getItem('restaurant_id');
   document.getElementById('ownerName').textContent=p.full_name||'Owner';
@@ -108,47 +101,8 @@ async function init(){
   document.getElementById('ownerRest').textContent=r?.name||'Restaurant';
   ownerId=r?.owner_id;
   const {data:s}=await sb.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).single(); settings=s;
-  applyLang(curLang);
-  renderStaff();
+  applyLang(curLang); renderStaff();
 }
-
 document.getElementById('langBar').onclick=e=>{if(e.target.dataset.l) applyLang(e.target.dataset.l)}
 document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
 document.getElementById('xBtn').onclick=()=>document.getElementById('sidebar').classList.add('hide');
-document.getElementById('logoBtn').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
-document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{
-  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  document.getElementById('pageTitle').textContent=b.textContent.trim();
-  if(b.dataset.tab==='staff') renderStaff(); else if(b.dataset.tab==='fot') renderFOT(); else if(b.dataset.tab==='stock') renderStock(); else if(b.dataset.tab==='history') renderHistory(); else if(b.dataset.tab==='settings') renderSettings(); else document.getElementById('content').innerHTML=`<div class="card">${b.textContent} - ${t('soon')}</div>`;
-  if(innerWidth<820) document.getElementById('sidebar').classList.add('hide');
-}});
-
-async function renderStaff(){
-  document.getElementById('pageTitle').textContent='👥 '+t('staff');
-  const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).neq('id',ownerId||'00000000-0000-0000-0000-000000000000');
-  const filtered=(data||[]).filter(u=>u.role!=='owner');
-  const team=filtered.map(u=>`<div class="person"><div class="avatar">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''}</div></div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
-  const fotLimit=settings?.fot_limit; const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString()); const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
-  document.getElementById('content').innerHTML=`
-    <div class="card"><div style="display:flex;gap:8px"><span>👥</span><b>${t('team')}</b></div><div style="margin-top:10px">${team}</div></div>
-    <div class="card"><div style="display:flex;gap:8px"><span>➕</span><b>${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}"><button class="btn" id="inviteBtn">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div>
-    <div class="card"><div style="display:flex;gap:8px"><span>💰</span><b>${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:8px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted">${Math.round(used/fotLimit*100)}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,Math.round(used/fotLimit*100))}%"></div></div><div class="muted">${t('left')} ${fotLimit-used}</div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:12px">${t('sendPDF')}</button></div>`;
-  document.getElementById('inviteBtn')?.addEventListener('click',()=>{const e=document.getElementById('inviteEmail').value.trim(); if(!e) return alert('Email'); alert(`Invite: ${e} - link: https://itmaster070.github.io/?invite=${myRestaurantId}`)});
-  document.getElementById('goSet')?.addEventListener('click',()=>document.querySelector('[data-tab=settings]').click());
-  document.getElementById('pdfBtn')?.addEventListener('click',closeMonthAndPDF);
-}
-async function renderFOT(){
-  document.getElementById('pageTitle').textContent='📊 '+t('fot');
-  const fotLimit=settings?.fot_limit; const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString()); const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('fotMonth')}</h3>${!fotLimit?`<div style="color:#ff8c00">${t('limitNotSet')}</div>`: `<div>${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,Math.round(used/fotLimit*100))}%"></div></div>`}<button class="btn-fill" id="pdfBtn2" style="margin-top:12px">${t('sendPDF')}</button></div><div class="card">${(payouts||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${p.profiles?.full_name||p.profile_id}</span><b>${p.amount}</b></div>`).join('')||'—'}</div>`;
-  document.getElementById('pdfBtn2')?.addEventListener('click',closeMonthAndPDF);
-}
-async function renderStock(){
-  document.getElementById('pageTitle').textContent='📦 '+t('stock');
-  const {data}=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId).order('name');
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('stockTitle')}</h3>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1a1a"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="window.doWaste('${p.id}')">Списать</button></div>`).join('')||'—'}</div>`;
-}
-window.doWaste=async(id)=>{const qty=prompt('Сколько? / How many?'); if(!qty) return; await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste'}); const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single(); const cur=parseFloat(prod?.qty??prod?.stock??0); await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id); renderHistory();};
-async function renderHistory(){
-  document.getElementById('pageTitle').textContent='📜 '+t('history');
-  const {data}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:fal
