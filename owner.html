@@ -159,4 +159,53 @@ window.doWaste=async(id)=>{
 async function renderHistory(){
   document.getElementById('pageTitle').textContent='📜 '+t('history');
   const {data}=await sb.from('stock_moves').select('*, products(name), profiles(full_name)').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(150);
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">Все списания от шеф-повара - кто и что списал</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">Все списания от шеф-повара - кто и что списал</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.item_id} — ${m.qty} ${m.type}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
+}
+
+async function renderSettings(){
+  document.getElementById('pageTitle').textContent='⚙️ '+t('settings');
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('settingsTitle')}</h3><div class="muted">${t('fotMonth')}</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="${t('fotLimitPh')}"><div class="muted">Accounting</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="${t('emailPh')}"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}"><button class="btn-fill" id="saveSet">${t('save')}</button></div>`;
+  document.getElementById('saveSet').onclick=async()=>{
+    const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value};
+    const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
+    if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
+  };
+}
+
+async function closeMonthAndPDF(){
+  const start=new Date(); start.setDate(1);
+  const {data:attend}=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]);
+  const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
+  const {data:wastes}=await sb.from('stock_moves').select('*,products(name),profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
+  const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  const {jsPDF}=window.jspdf; const doc=new jsPDF();
+
+  // === БЕЗ ХАРДКОДА — ИЗ БД И ПЕРЕВОДА ===
+  const restName = restNameCache || document.getElementById('ownerRest').textContent || 'Restaurant';
+  const motto = t('motto');
+  const title = t('pdfTitle');
+  const footer = t('pdfFooter');
+
+  doc.setFontSize(14);
+  doc.text(`${restName} - ${motto}`, 10, 15);
+  doc.setFontSize(10);
+  doc.text(`${title} ${start.toLocaleDateString(curLang)} | FOT ${fot_used}/${settings?.fot_limit||'-'}`, 10, 22);
+
+  let y=32;
+  doc.setFontSize(9);
+  (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked||0}h ${a.work_date}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+  y+=5;
+  (wastes||[]).forEach(w=>{doc.text(`WASTE ${w.products?.name||w.item_id} ${w.qty} by ${w.profiles?.full_name||'chef'}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+
+  doc.setFontSize(8);
+  doc.text(footer,10,285);
+  doc.text(`HotPit KITCHEN v3.2 • ${restName}`,10,290);
+
+  doc.save(`${restName}_${start.getMonth()+1}_${title}.pdf`);
+  if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=${restName} - ${title} ${start.getMonth()+1}`);
+}
+document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); localStorage.clear(); location.href='/';};
+init();
+</script>
+</body>
+</html>
