@@ -188,16 +188,27 @@ async function renderHistory(){
 
 async function renderSettings(){
   document.getElementById('pageTitle').textContent='⚙️ '+t('settings');
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('settingsTitle')}</h3><div class="muted">${t('fotMonth')}</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="${t('fotLimitPh')}"><div class="muted">Accounting</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="${t('emailPh')}"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}"><button class="btn-fill" id="saveSet">${t('save')}</button></div>`;
+  document.getElementById('content').innerHTML=`<div class="card">
+  <h3 style="margin:0 0 12px">${t('settingsTitle')}</h3>
+  <div class="muted">${t('fotMonth')}</div>
+  <input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="${t('fotLimitPh')}">
+  <div class="muted">Motto / Девиз (из БД)</div>
+  <input class="input" id="mottoInput" value="${settings?.motto||''}" placeholder="${t('motto')}">
+  <div class="muted">Accounting</div>
+  <input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="${t('emailPh')}">
+  <input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}">
+  <button class="btn-fill" id="saveSet">${t('save')}</button>
+</div>`;
+
   document.getElementById('saveSet').onclick=async()=>{
-    try{
-      const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value};
-      const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
-      if(error) throw error;
-      settings={...settings,...upd};
-      alert(t('saved'));
-      renderStaff();
-    }catch(e){alert(e.message)}
+    const upd={
+      fot_limit: document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,
+      motto: document.getElementById('mottoInput').value,
+      accountant_email: document.getElementById('accEmail').value,
+      accountant_telegram: document.getElementById('accTg').value
+    };
+    const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
+    if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
   };
 }
 
