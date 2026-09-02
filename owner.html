@@ -7,108 +7,118 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;display:flex;min-height:100vh}
-.sidebar{width:260px;background:#0f0f0f;border-right:1px solid #1e1e1e;padding:18px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:10;transform:translateX(0);transition:.3s}
-.sidebar.hide{transform:translateX(-100%)}
-.logo{display:flex;gap:10px;align-items:center;margin-bottom:28px}.logo-img{width:44px;height:44px;border-radius:10px}
-.nav{display:flex;flex-direction:column;gap:6px;flex:1}
-.nav button{background:transparent;border:1px solid transparent;color:#666;padding:11px 14px;border-radius:12px;text-align:left;font-weight:700;cursor:pointer;display:flex;gap:10px;align-items:center}
-.nav button.active{background:#1a1a1a;border-color:#2a2a2a;color:#fff}.nav button.active span{color:#ff6b00}
-.main{margin-left:260px;flex:1;padding:18px;max-width:600px;width:100%}
-@media(max-width:800px){.sidebar{width:85%}.main{margin-left:0}}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.card{background:#121212;border:1px solid #242424;border-radius:16px;padding:14px;margin-bottom:12px}
-.btn{background:#ff6b00;color:#000;border:none;padding:12px 16px;border-radius:12px;font-weight:800;cursor:pointer;width:100%}
-.btn-sec{background:#1a1a1a;color:#fff;border:1px solid #2a2a2a;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
-input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:12px;color:#fff;margin-bottom:10px;outline:none}
-.muted{color:#666;font-size:12px}
-.burger{display:none}@media(max-width:800px){.burger{display:block}}
+.sidebar{width:240px;background:#0a0a0a;border-right:1px solid #1a1a1a;padding:16px 12px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:20}
+.logo{margin-bottom:32px}.logo b{font-size:26px;font-weight:800;line-height:1}.logo b span{color:#ff6b00}.logo div{font-size:10px;color:#444;letter-spacing:1px;margin-top:2px}
+.nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.nav button{background:transparent;border:none;color:#555;padding:12px 12px;border-radius:12px;text-align:left;font-weight:500;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:13px}
+.nav button.active{background:#1c130a;color:#ff8c00}
+.owner-card{margin-top:auto;background:#151515;border:1px solid #242424;border-radius:14px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.owner-card img{width:32px;height:32px;border-radius:50%;background:#222}
+.main{margin-left:240px;flex:1;padding:16px;background:#080808}
+@media(max-width:800px){.sidebar{transform:translateX(-110%);width:85%;transition:.3s}.sidebar.show{transform:translateX(0)}.main{margin-left:0}}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}.top h1{margin:0;font-size:22px;font-weight:800}
+.card{background:#121212;border:1px solid #242424;border-radius:16px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
+.card.orange{border-left:4px solid #ff6b00}
+.person{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a1a}
+.avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#1e1e1e}
+.avatar.ak{background:#2a1a14;color:#ff6b00}.avatar.m{background:#1e1530;color:#8b5cf6}.avatar.d{background:#152030;color:#60a5fa}
+.badge{font-size:10px;padding:3px 8px;border-radius:10px;background:#1a2a1a;color:#22c55e;border:1px solid #22c55e33}
+.badge.off{background:#2a2a2a;color:#888;border-color:#333}
+.input{width:100%;background:#0a0a0a;border:1px solid #ff6b00;color:#fff;padding:12px;border-radius:10px;margin-bottom:10px;outline:none}
+.btn{width:100%;background:transparent;border:1px solid #ff6b00;color:#ff6b00;padding:12px;border-radius:10px;font-weight:800;cursor:pointer}
+.btn-fill{background:#ff6b00;color:#000;border:none;padding:12px 16px;border-radius:10px;font-weight:800;cursor:pointer;width:100%}
+.progress{height:8px;background:#1e1e1e;border-radius:10px;overflow:hidden;margin:10px 0}.progress div{height:100%;background:#ff6b00}
 </style>
 </head>
 <body>
 <div class="sidebar" id="sidebar">
-  <div class="logo"><img src="logo.png" class="logo-img"><div><div style="font-weight:800;color:#ff6b00">HotPit</div><div style="font-size:11px;letter-spacing:3px;color:#aaa">OWNER</div></div></div>
+  <div class="logo"><b>HotPit<br><span>KITCHEN</span></b><div>система управления</div></div>
   <div class="nav">
-    <button data-tab="dash" class="active"><span>📊</span> Дашборд</button>
-    <button data-tab="staff"><span>👥</span> Персонал</button>
-    <button data-tab="shifts"><span>⏰</span> Смены</button>
-    <button data-tab="fot"><span>💰</span> ФОТ</button>
-    <button data-tab="stock"><span>📦</span> Склад</button>
-    <button data-tab="history"><span>📜</span> История списаний</button>
-    <button data-tab="requests"><span>📩</span> Запросы</button>
-    <button data-tab="settings"><span>⚙️</span> Настройки</button>
+    <button data-tab="dash">📊 Дашборд</button>
+    <button data-tab="staff" class="active">👥 Персонал</button>
+    <button data-tab="orders">📋 Заказы</button>
+    <button data-tab="menu">🍽️ Меню</button>
+    <button data-tab="fot">📊 Отчёты</button>
+    <button data-tab="stock">📦 Склад</button>
+    <button data-tab="history">📜 История списаний</button>
+    <button data-tab="settings">⚙️ Настройки</button>
   </div>
-  <button class="btn-sec" id="logout">Выйти</button>
+  <div class="owner-card" id="ownerCard"><img id="ownerImg" src=""><div><div style="font-size:13px;font-weight:700" id="ownerName">Владелец</div><div class="muted" style="font-size:11px;color:#666" id="ownerRest">Загрузка...</div></div><div style="margin-left:auto">›</div></div>
 </div>
 <div class="main">
-  <div class="topbar"><button class="btn-sec burger" id="burger">☰</button><div id="restName" class="muted">Загрузка...</div></div>
-  <div id="tab-dash"></div><div id="tab-staff" style="display:none"></div><div id="tab-shifts" style="display:none"></div><div id="tab-fot" style="display:none"></div><div id="tab-stock" style="display:none"></div><div id="tab-history" style="display:none"></div><div id="tab-requests" style="display:none"></div><div id="tab-settings" style="display:none"></div>
+  <div class="top"><button id="burger" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:8px 12px;border-radius:10px">☰</button><h1 id="pageTitle">Персонал</h1></div>
+
+  <div id="tab-staff">
+    <div class="card orange"><div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><span style="color:#ff6b00">👥</span><b>Команда Кухни</b></div><div id="teamList"></div></div>
+    <div class="card orange"><div style="display:flex;gap:8px;margin-bottom:12px"><span style="color:#ff6b00">➕</span><b>Пригласить Шефа</b></div><input class="input" id="inviteEmail" placeholder="email@пример.com"><button class="btn" id="inviteBtn">Отправить приглашение</button><div class="muted" style="font-size:11px;color:#666;margin-top:8px">Шеф получит ссылку и создаст аккаунт повара - без костылей для аренды</div></div>
+    <div class="card orange" id="fotCard"></div>
+  </div>
+
+  <div id="tab-fot" style="display:none"></div>
+  <div id="tab-stock" style="display:none"></div>
+  <div id="tab-history" style="display:none"></div>
+  <div id="tab-settings" style="display:none"></div>
+  <div id="tab-dash" style="display:none"><div class="card">Дашборд в разработке - используй Персонал и ФОТ</div></div>
+  <div id="tab-orders" style="display:none"><div class="card">Заказы - скоро</div></div>
+  <div id="tab-menu" style="display:none"><div class="card">Меню - скоро</div></div>
 </div>
+
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
-let myRestaurantId=null, settings=null;
+let myRestaurantId=null, settings=null, ownerId=null, ownerProfile=null;
 async function init(){
   const {data:{user}} = await sb.auth.getUser(); if(!user){location.href='/'; return}
-  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single(); myRestaurantId=p.restaurant_id||localStorage.getItem('restaurant_id');
-  const {data:r}=await sb.from('restaurants').select('name').eq('id',myRestaurantId).single(); document.getElementById('restName').textContent=r?.name||'';
+  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single(); myRestaurantId=p.restaurant_id||localStorage.getItem('restaurant_id'); ownerProfile=p;
+  const {data:r}=await sb.from('restaurants').select('name,owner_id').eq('id',myRestaurantId).single(); ownerId=r?.owner_id;
+  document.getElementById('ownerRest').textContent=r?.name||'Ресторан'; document.getElementById('ownerName').textContent=p.full_name||'Владелец';
   const {data:s}=await sb.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).single(); settings=s;
-  renderDash(); renderStaff(); renderShifts(); renderFOT(); renderStock(); renderHistory(); renderRequests(); renderSettings();
+  renderTeam(); renderFOTCards(); renderStock(); renderHistory(); renderSettingsTab();
 }
-document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.toggle('hide');
-document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.querySelectorAll('[id^="tab-"]').forEach(d=>d.style.display='none'); document.getElementById('tab-'+b.dataset.tab).style.display='block'; if(innerWidth<800) document.getElementById('sidebar').classList.add('hide');}});
+document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.toggle('show');
+document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.getElementById('pageTitle').textContent=b.textContent.trim(); document.querySelectorAll('[id^="tab-"]').forEach(d=>d.style.display='none'); const tab=document.getElementById('tab-'+b.dataset.tab); if(tab) tab.style.display='block'; if(innerWidth<800) document.getElementById('sidebar').classList.remove('show');}});
 
-async function renderDash(){
-  const {data:profiles}=await sb.from('profiles').select('id').eq('restaurant_id',myRestaurantId).eq('is_active',true);
-  document.getElementById('tab-dash').innerHTML=`<div class="card"><h3 style="margin:0">Дашборд</h3><div class="muted">Команда: ${profiles?.length||0} • Ресторан ${myRestaurantId?.slice(0,8)}</div><div style="margin-top:12px"><button class="btn" id="btnPDFDash">Отправить отчет PDF в бухгалтерию →</button></div></div>`;
-  document.getElementById('btnPDFDash').onclick=closeMonthAndPDF;
+async function renderTeam(){
+  const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).neq('id',ownerId||'');
+  const filtered=(data||[]).filter(u=>u.role!=='owner');
+  const list=document.getElementById('teamList');
+  list.innerHTML=filtered.map((u,i)=>{
+    const initials=(u.full_name||'U').split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
+    const cls=i===0?'ak':i===1?'m':'d';
+    return `<div class="person"><div class="avatar ${cls}">${initials}</div><div style="flex:1"><div style="display:flex;gap:8px;align-items:center"><b>${u.full_name}</b><span class="badge">На смене</span></div><div style="color:#888;font-size:13px">${u.job_title||u.role||'Повар'}</div></div></div>`;
+  }).join('')||`<div style="color:#666">Нет персонала - пригласи шефа ниже</div>`;
 }
-async function renderStaff(){const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true); document.getElementById('tab-staff').innerHTML=`<div class="card"><h3>Персонал</h3>${(data||[]).map(u=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1a1a"><div><b>${u.full_name}</b><div class="muted">${u.job_title||u.role} • ${u.salary||''}</div></div></div>`).join('')}</div>`;}
-async function renderShifts(){const {data}=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).order('work_date',{ascending:false}).limit(50); document.getElementById('tab-shifts').innerHTML=`<div class="card"><h3>Смены / Часы</h3>${(data||[]).map(a=>`<div style="padding:6px 0;border-bottom:1px solid #1a1a1a"><b>${a.profiles.full_name}</b> ${a.work_date} ${a.hours_worked||0}ч</div>`).join('')||'<span class="muted">Нет данных</span>'}</div>`;}
-async function renderFOT(){
-  const fotLimit = settings?.fot_limit; // НЕТ ХАРДКОДА!
-  const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString());
+async function renderFOTCards(){
+  const limit=settings?.fot_limit; // без хардкода
+  const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString());
   const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
-  document.getElementById('tab-fot').innerHTML=`<div class="card"><h3>ФОТ месяца</h3>${!fotLimit?`<div style="color:#ff8c00">⚠️ ФОТ лимит не установлен. Зайди в Настройки → установи лимит.</div>`: `<div>Лимит: <b>${fotLimit}</b> • Использовано: <b style="color:${used>(fotLimit||0)?'#ff4444':'#00ff88'}">${used}</b> • Остаток: <b>${(fotLimit||0)-used}</b></div>`}<button class="btn" id="closeMonthBtn" style="margin-top:12px">Закрыть месяц и отправить PDF →</button><div class="muted" style="margin-top:8px">В PDF войдет: часы, выплаты, история списаний (отдельный раздел)</div></div><div class="card">${(payouts||[]).map(p=>`<div style="display:flex;justify-content:space-between"><span>${p.profiles?.full_name}</span><b>${p.amount}</b></div>`).join('')||'<span class="muted">Нет выплат</span>'}</div>`;
-  document.getElementById('closeMonthBtn').onclick=closeMonthAndPDF;
+  const percent=limit?Math.round(used/limit*100):0;
+  const left=limit?limit-used:0;
+  const html=`<div style="display:flex;gap:8px;margin-bottom:8px"><span style="color:#ff6b00">💰</span><b>ФОТ Месяц</b></div>${!limit?`<div style="color:#ff8c00">Лимит не установлен - введи в Настройках</div><button class="btn" onclick="document.querySelector('[data-tab=settings]').click()">Перейти в Настройки</button>`:`<div style="color:#888;font-size:13px">${percent}% • ${used} / ${limit} ${settings?.currency||'₽'}</div><div class="progress"><div style="width:${Math.min(100,percent)}%"></div></div><div style="display:flex;justify-content:space-between;color:#666;font-size:12px"><span>До лимита осталось ${left} ${settings?.currency||'₽'}</span><span>${percent}%</span></div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:12px">Отправить PDF в бухгалтерию →</button>`;
+  document.getElementById('fotCard').innerHTML=html;
+  document.getElementById('tab-fot').innerHTML=`<div class="card orange">${html}</div><div class="card">${(payouts||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${p.profile_id}</span><b>${p.amount}</b></div>`).join('')||'Нет выплат'}</div>`;
+  document.getElementById('pdfBtn')?.addEventListener('click',closeMonthAndPDF);
+  document.getElementById('tab-fot').querySelector('#pdfBtn')?.addEventListener('click',closeMonthAndPDF);
 }
-async function renderStock(){const {data}=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId); document.getElementById('tab-stock').innerHTML=`<div class="card"><h3>Склад</h3><div class="muted">Списание делает только овнер (защита)</div>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:8px 0"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn-sec" onclick="doWaste('${p.id}')">Списать</button></div>`).join('')}</div>`;}
-window.doWaste=async(id)=>{const qty=prompt('Сколько?'); if(!qty) return; await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste'}); const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single(); const cur=parseFloat(prod?.qty??prod?.stock??0); await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id); alert('Списано в Историю'); renderHistory(); renderStock();}
-async function renderHistory(){const {data}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100); document.getElementById('tab-history').innerHTML=`<div class="card"><h3>📜 История списаний - отдельный раздел</h3>${(data||[]).map(m=>`<div style="padding:8px 0;border-bottom:1px solid #1a1a1a"><b>${m.type}</b> • ${m.qty} • ${new Date(m.created_at).toLocaleString()}</div>`).join('')||'Нет списаний'}</div>`;}
-async function renderRequests(){const {data}=await sb.from('dismiss_requests').select('*').eq('restaurant_id',myRestaurantId).eq('status','pending'); document.getElementById('tab-requests').innerHTML=`<div class="card"><h3>Запросы от шефа</h3>${(data||[]).map(r=>`<div class="card" style="background:#1a1a1a"><div>${r.reason}</div><button class="btn-sec" onclick="approveDismiss('${r.id}','${r.user_id}')">Одобрить</button></div>`).join('')||'Нет запросов'}</div>`;}
-window.approveDismiss=async(id,uid)=>{await sb.from('dismiss_requests').update({status:'approved'}).eq('id',id); await sb.from('profiles').update({is_active:false}).eq('id',uid); alert('OK')};
-
-async function renderSettings(){
-  document.getElementById('tab-settings').innerHTML=`
-  <div class="card"><h3>⚙️ Настройки ресторана</h3>
-    <div class="muted">ФОТ лимит - ставишь сам, без хардкода</div><input id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="ФОТ лимит, напр 5000">
-    <div class="muted">Бухгалтерия</div><input id="accEmail" value="${settings?.accountant_email||''}" placeholder="Email бухгалтера"><input id="accTg" value="${settings?.accountant_telegram||''}" placeholder="Telegram бухгалтера">
-    <div class="muted">Смены</div><input id="shiftStart" value="${settings?.shift_start||''}" placeholder="Начало смены 09:00"><input id="shiftEnd" value="${settings?.shift_end||''}" placeholder="Конец смены 23:00">
-    <button class="btn" id="saveSettings">Сохранить все настройки</button>
-  </div>`;
-  document.getElementById('saveSettings').onclick=async()=>{
-    const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null, accountant_email:document.getElementById('accEmail').value, accountant_telegram:document.getElementById('accTg').value, shift_start:document.getElementById('shiftStart').value, shift_end:document.getElementById('shiftEnd').value};
-    const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
-    if(error) alert(error.message); else {settings={...settings,...upd}; alert('Сохранено'); renderFOT();}
-  };
+async function renderStock(){const {data}=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId); document.getElementById('tab-stock').innerHTML=`<div class="card orange"><h3>Склад - списывает только овнер</h3>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:8px 0"><div><b>${p.name}</b><div style="color:#666">${p.qty||p.stock||0}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="doWaste('${p.id}')">Списать</button></div>`).join('')}</div>`;}
+window.doWaste=async(id)=>{const qty=prompt('Сколько?'); if(!qty) return; await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste'}); const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single(); const cur=parseFloat(prod?.qty??prod?.stock??0); await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id); renderHistory();};
+async function renderHistory(){const {data}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100); document.getElementById('tab-history').innerHTML=`<div class="card orange"><h3>📜 История списаний - отдельный раздел</h3>${(data||[]).map(m=>`<div style="padding:8px 0;border-bottom:1px solid #1a1a1a">${m.type} ${m.qty} ${new Date(m.created_at).toLocaleString()}</div>`).join('')||'Нет'}</div>`;}
+async function renderSettingsTab(){
+  document.getElementById('tab-settings').innerHTML=`<div class="card orange"><h3>⚙️ Настройки для аренды</h3><div style="color:#666;font-size:12px">ФОТ лимит (своя валюта)</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="5000"><div style="color:#666;font-size:12px">Бухгалтерия</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="Email"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="Telegram"><button class="btn-fill" id="saveSettings">Сохранить</button></div>`;
+  document.getElementById('saveSettings').onclick=async()=>{const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value}; await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId); settings={...settings,...upd}; alert('Сохранено'); renderFOTCards();};
 }
+document.getElementById('inviteBtn').onclick=async()=>{
+  const email=document.getElementById('inviteEmail').value.trim(); if(!email){alert('Введи email'); return}
+  // Для аренды - создаем приглашение, можно через таблицу invites или просто показываем ссылку
+  alert(`Приглашение для ${email} - скинь ему ссылку: https://itmaster070.github.io/?invite=${myRestaurantId}. Он создаст аккаунт шефа в твоем ресторане`);
+};
 async function closeMonthAndPDF(){
   const start=new Date(); start.setDate(1);
   const {data:attend}=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]);
-  const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
+  const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
   const {data:wastes}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
-  const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
-  const fot_limit=settings?.fot_limit||'не установлен';
-  const {jsPDF}=window.jspdf; const doc=new jsPDF();
-  doc.text(`HotPit - ${document.getElementById('restName').textContent} - ${start.toLocaleDateString()}`,10,15);
-  doc.text(`FOT ${fot_used} / ${fot_limit}`,10,25);
-  let y=35; doc.text('--- Staff ---',10,y); y+=7; (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.work_date} ${a.hours_worked||0}h`,10,y); y+=6; if(y>270){doc.addPage(); y=15}});
-  y+=5; doc.text('--- Payouts ---',10,y); y+=7; (payouts||[]).forEach(p=>{doc.text(`${p.profiles?.full_name} ${p.amount}`,10,y); y+=6});
-  y+=5; doc.text('--- History waste (separate) ---',10,y); y+=7; (wastes||[]).forEach(w=>{doc.text(`${w.type} ${w.qty} ${new Date(w.created_at).toLocaleDateString()}`,10,y); y+=6});
-  doc.text('Built to help children',10,285);
-  doc.save(`HotPit_${myRestaurantId}_${start.getMonth()+1}.pdf`);
-  if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=HotPit Report&body=FOT ${fot_used}/${fot_limit}`);
+  const {jsPDF}=window.jspdf; const doc=new jsPDF(); doc.text(`HotPit ${start.toLocaleDateString()} FOT ${settings?.fot_limit||''}`,10,15); let y=25; (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked}h`,10,y); y+=6}); doc.save(`HotPit.pdf`); if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=Report`);
 }
-document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); localStorage.clear(); location.href='/';};
 init();
 </script>
 </body>
