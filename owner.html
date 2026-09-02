@@ -2,124 +2,153 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit Owner</title>
+<title>HotPit Owner - Global OS</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;display:flex;min-height:100vh}
-.sidebar{width:240px;background:#0a0a0a;border-right:1px solid #1a1a1a;padding:16px 12px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:20}
-.logo{margin-bottom:32px}.logo b{font-size:26px;font-weight:800;line-height:1}.logo b span{color:#ff6b00}.logo div{font-size:10px;color:#444;letter-spacing:1px;margin-top:2px}
+.sidebar{width:268px;background:#0a0a0a;border-right:1px solid #1e1e1e;padding:14px 12px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:30;transition:.32s}
+.sidebar.hide{transform:translateX(-110%)}
+.side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+.logo img{width:44px;height:44px;border-radius:10px;background:#111}
+.logo b{font-size:20px;line-height:1;font-weight:800}.logo b.orange{color:#ff6b00}.logo b.white{color:#fff}
+.logo small{font-size:10px;color:#555;letter-spacing:1px;display:block;margin-top:2px}
+.x-btn{width:36px;height:36px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;border-radius:12px;font-weight:800;cursor:pointer}
 .nav{display:flex;flex-direction:column;gap:4px;flex:1}
-.nav button{background:transparent;border:none;color:#555;padding:12px 12px;border-radius:12px;text-align:left;font-weight:500;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:13px}
+.nav button{background:transparent;border:none;color:#555;padding:12px 12px;border-radius:12px;text-align:left;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:13px;font-weight:600}
 .nav button.active{background:#1c130a;color:#ff8c00}
-.owner-card{margin-top:auto;background:#151515;border:1px solid #242424;border-radius:14px;padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer}
-.owner-card img{width:32px;height:32px;border-radius:50%;background:#222}
-.main{margin-left:240px;flex:1;padding:16px;background:#080808}
-@media(max-width:800px){.sidebar{transform:translateX(-110%);width:85%;transition:.3s}.sidebar.show{transform:translateX(0)}.main{margin-left:0}}
-.top{display:flex;align-items:center;gap:12px;margin-bottom:18px}.top h1{margin:0;font-size:22px;font-weight:800}
-.card{background:#121212;border:1px solid #242424;border-radius:16px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
-.card.orange{border-left:4px solid #ff6b00}
+.owner-card{margin-top:auto;background:#151515;border:1px solid #242424;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:center}
+.owner-card img{width:32px;height:32px;border-radius:50%;background:#222;object-fit:cover}
+.main{margin-left:268px;flex:1;padding:16px;max-width:640px;width:100%}
+@media(max-width:820px){.main{margin-left:0}.sidebar{width:86%}}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.top h2{margin:0;font-size:22px;font-weight:800}
+.card{background:#121212;border:1px solid #242424;border-radius:16px;padding:16px;margin-bottom:14px;border-left:4px solid #ff6b00}
+.input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px;outline:none}.input:focus{border-color:#ff6b00}
+.btn{width:100%;border:1px solid #ff6b00;color:#ff6b00;background:transparent;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
+.btn-fill{width:100%;background:#ff6b00;color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
+.muted{color:#666;font-size:12px}
 .person{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a1a}
-.avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#1e1e1e}
-.avatar.ak{background:#2a1a14;color:#ff6b00}.avatar.m{background:#1e1530;color:#8b5cf6}.avatar.d{background:#152030;color:#60a5fa}
-.badge{font-size:10px;padding:3px 8px;border-radius:10px;background:#1a2a1a;color:#22c55e;border:1px solid #22c55e33}
-.badge.off{background:#2a2a2a;color:#888;border-color:#333}
-.input{width:100%;background:#0a0a0a;border:1px solid #ff6b00;color:#fff;padding:12px;border-radius:10px;margin-bottom:10px;outline:none}
-.btn{width:100%;background:transparent;border:1px solid #ff6b00;color:#ff6b00;padding:12px;border-radius:10px;font-weight:800;cursor:pointer}
-.btn-fill{background:#ff6b00;color:#000;border:none;padding:12px 16px;border-radius:10px;font-weight:800;cursor:pointer;width:100%}
+.avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#1e1e1e;color:#fff}
 .progress{height:8px;background:#1e1e1e;border-radius:10px;overflow:hidden;margin:10px 0}.progress div{height:100%;background:#ff6b00}
+.lang-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.lang-bar button{background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:5px 10px;border-radius:20px;font-weight:800;font-size:11px;cursor:pointer}.lang-bar button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
 </style>
 </head>
 <body>
 <div class="sidebar" id="sidebar">
-  <div class="logo"><b>HotPit<br><span>KITCHEN</span></b><div>система управления</div></div>
+  <div class="side-head">
+    <div class="logo" id="logoBtn"><img src="logo.png" onerror="this.style.display='none'"><div><b><span class="orange">HotPit</span><br><span class="white">KITCHEN</span></b><small id="logoSub">система управления</small></div></div>
+    <button class="x-btn" id="xBtn">✕</button>
+  </div>
+  <div class="lang-bar" id="langBar"><button data-l="ru">RU</button><button data-l="az">AZ</button><button data-l="tr">TR</button><button data-l="en">EN</button><button data-l="ar">AR</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button></div>
   <div class="nav">
-    <button data-tab="dash">📊 Дашборд</button>
-    <button data-tab="staff" class="active">👥 Персонал</button>
-    <button data-tab="orders">📋 Заказы</button>
-    <button data-tab="menu">🍽️ Меню</button>
-    <button data-tab="fot">📊 Отчёты</button>
-    <button data-tab="stock">📦 Склад</button>
-    <button data-tab="history">📜 История списаний</button>
-    <button data-tab="settings">⚙️ Настройки</button>
+    <button data-tab="staff" class="active">👥 <span id="mStaff">Персонал</span></button>
+    <button data-tab="orders">📋 <span id="mOrders">Заказы</span></button>
+    <button data-tab="menu">🍽️ <span id="mMenu">Меню</span></button>
+    <button data-tab="fot">📊 <span id="mFot">Отчёты</span></button>
+    <button data-tab="stock">📦 <span id="mStock">Склад</span></button>
+    <button data-tab="history">📜 <span id="mHistory">История списаний</span></button>
+    <button data-tab="settings">⚙️ <span id="mSettings">Настройки</span></button>
   </div>
-  <div class="owner-card" id="ownerCard"><img id="ownerImg" src=""><div><div style="font-size:13px;font-weight:700" id="ownerName">Владелец</div><div class="muted" style="font-size:11px;color:#666" id="ownerRest">Загрузка...</div></div><div style="margin-left:auto">›</div></div>
+  <div class="owner-card" id="ownerCard"><img id="ownerImg" src="logo.png"><div style="flex:1"><div id="ownerName" style="font-weight:700;font-size:13px">Mubariz</div><div id="ownerRest" style="font-size:11px;color:#666">Land</div></div><div>›</div></div>
+  <button class="btn" id="logout" style="margin-top:10px;border-color:#2a2a2a;color:#666">Выйти</button>
 </div>
+
 <div class="main">
-  <div class="top"><button id="burger" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:8px 12px;border-radius:10px">☰</button><h1 id="pageTitle">Персонал</h1></div>
-
-  <div id="tab-staff">
-    <div class="card orange"><div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><span style="color:#ff6b00">👥</span><b>Команда Кухни</b></div><div id="teamList"></div></div>
-    <div class="card orange"><div style="display:flex;gap:8px;margin-bottom:12px"><span style="color:#ff6b00">➕</span><b>Пригласить Шефа</b></div><input class="input" id="inviteEmail" placeholder="email@пример.com"><button class="btn" id="inviteBtn">Отправить приглашение</button><div class="muted" style="font-size:11px;color:#666;margin-top:8px">Шеф получит ссылку и создаст аккаунт повара - без костылей для аренды</div></div>
-    <div class="card orange" id="fotCard"></div>
-  </div>
-
-  <div id="tab-fot" style="display:none"></div>
-  <div id="tab-stock" style="display:none"></div>
-  <div id="tab-history" style="display:none"></div>
-  <div id="tab-settings" style="display:none"></div>
-  <div id="tab-dash" style="display:none"><div class="card">Дашборд в разработке - используй Персонал и ФОТ</div></div>
-  <div id="tab-orders" style="display:none"><div class="card">Заказы - скоро</div></div>
-  <div id="tab-menu" style="display:none"><div class="card">Меню - скоро</div></div>
+  <div class="top"><button id="burger" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:8px 12px;border-radius:12px;cursor:pointer">☰</button><h2 id="pageTitle">Персонал</h2></div>
+  <div id="content"></div>
 </div>
 
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
-let myRestaurantId=null, settings=null, ownerId=null, ownerProfile=null;
+
+const dict={
+ ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История списаний",settings:"Настройки",team:"Команда Кухни",noStaff:"Нет персонала - пригласи шефа ниже",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку и создаст аккаунт повара - без костылей для аренды",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен - введи в Настройках",goSettings:"Перейти в Настройки",sendPDF:"Отправить PDF в бухгалтерию →",left:"До лимита осталось",owner:"Владелец",logout:"Выйти",soon:"скоро",wasteHistory:"История списаний - отдельный раздел",noWaste:"Нет списаний",stockTitle:"Склад - списывает только овнер",settingsTitle:"Настройки для аренды",fotLimitPh:"ФОТ лимит в своей валюте, напр 5000",emailPh:"Email бухгалтера",tgPh:"Telegram @",save:"Сохранить",saved:"Сохранено без костылей"},
+ az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabatlar",stock:"Anbar",history:"Silinmə Tarixçəsi",settings:"Tənzimləmələr",team:"Mətbəx Komandası",noStaff:"Heyət yoxdur - aşağıdan şefi dəvət et",invite:"Şefi dəvət et",invitePh:"email@nümunə.com",sendInvite:"Dəvət göndər",inviteHint:"Şef link alacaq və aşpaz hesabı yaradacaq",fotMonth:"Əmək Haqqı Fondu",limitNotSet:"Limit təyin edilməyib - Tənzimləmələrdə daxil et",goSettings:"Tənzimləmələrə keç",sendPDF:"PDF-i mühasibatlığa göndər →",left:"Limitə qədər qaldı",owner:"Sahib",logout:"Çıxış",soon:"tezliklə",wasteHistory:"Silinmə Tarixçəsi - ayrı bölmə",noWaste:"Silinmə yoxdur",stockTitle:"Anbar - yalnız sahib silir",settingsTitle:"Kirayə üçün tənzimləmələr",fotLimitPh:"FOT limiti, məs 5000",emailPh:"Mühasib email",tgPh:"Telegram @",save:"Yadda saxla",saved:"Yadda saxlandı"},
+ tr:{sub:"yönetim sistemi",staff:"Personel",orders:"Siparişler",menu:"Menü",fot:"Raporlar",stock:"Depo",history:"Silme Geçmişi",settings:"Ayarlar",team:"Mutfak Ekibi",noStaff:"Personel yok - aşağıdan şef davet et",invite:"Şef Davet Et",invitePh:"email@örnek.com",sendInvite:"Davet Gönder",inviteHint:"Şef link alacak ve hesap oluşturacak",fotMonth:"Maaş Bütçesi",limitNotSet:"Limit belirlenmedi - Ayarlarda gir",goSettings:"Ayarlara Git",sendPDF:"PDF'i muhasebeye gönder →",left:"Limite kalan",owner:"Sahip",logout:"Çıkış",soon:"yakında",wasteHistory:"Silme Geçmişi - ayrı bölüm",noWaste:"Silme yok",stockTitle:"Depo - sadece sahip siler",settingsTitle:"Kiralama ayarları",fotLimitPh:"FOT limiti örn 5000",emailPh:"Muhasebe email",tgPh:"Telegram @",save:"Kaydet",saved:"Kaydedildi"},
+ en:{sub:"management system",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"Waste History",settings:"Settings",team:"Kitchen Team",noStaff:"No staff - invite chef below",invite:"Invite Chef",invitePh:"email@example.com",sendInvite:"Send Invite",inviteHint:"Chef will get link and create cook account",fotMonth:"Payroll Month",limitNotSet:"Limit not set - enter in Settings",goSettings:"Go to Settings",sendPDF:"Send PDF to accounting →",left:"Left until limit",owner:"Owner",logout:"Logout",soon:"soon",wasteHistory:"Waste History - separate section",noWaste:"No waste",stockTitle:"Stock - owner only can waste",settingsTitle:"Settings for rental",fotLimitPh:"Payroll limit e.g. 5000",emailPh:"Accountant email",tgPh:"Telegram @",save:"Save",saved:"Saved"},
+ ar:{sub:"نظام الإدارة",staff:"الطاقم",orders:"الطلبات",menu:"القائمة",fot:"التقارير",stock:"المخزون",history:"سجل الهدر",settings:"الإعدادات",team:"فريق المطبخ",noStaff:"لا يوجد طاقم",invite:"دعوة الشيف",invitePh:"البريد",sendInvite:"إرسال دعوة",inviteHint:"سيحصل الشيف على رابط",fotMonth:"ميزانية الرواتب",limitNotSet:"الحد غير محدد",goSettings:"الذهاب للإعدادات",sendPDF:"إرسال PDF للمحاسبة →",left:"المتبقي",owner:"المالك",logout:"خروج",soon:"قريبا",wasteHistory:"سجل الهدر - قسم منفصل",noWaste:"لا يوجد",stockTitle:"المخزون - المالك فقط",settingsTitle:"إعدادات الإيجار",fotLimitPh:"حد الميزانية",emailPh:"بريد المحاسب",tgPh:"تيليجرام",save:"حفظ",saved:"تم الحفظ"},
+ es:{sub:"sistema de gestión",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo de Cocina",noStaff:"Sin personal - invita chef",invite:"Invitar Chef",invitePh:"email@ejemplo.com",sendInvite:"Enviar invitación",inviteHint:"El chef recibirá un enlace",fotMonth:"Presupuesto Mes",limitNotSet:"Límite no establecido",goSettings:"Ir a Ajustes",sendPDF:"Enviar PDF a contabilidad →",left:"Queda hasta límite",owner:"Dueño",logout:"Salir",soon:"pronto",wasteHistory:"Historial - sección separada",noWaste:"Sin bajas",stockTitle:"Almacén - solo dueño",settingsTitle:"Ajustes para alquiler",fotLimitPh:"Límite ej 5000",emailPh:"Email contador",tgPh:"Telegram @",save:"Guardar",saved:"Guardado"},
+ de:{sub:"verwaltungssystem",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Küchenteam",noStaff:"Kein Personal",invite:"Chef einladen",invitePh:"email@beispiel.com",sendInvite:"Einladung senden",inviteHint:"Chef erhält Link",fotMonth:"Lohn Monat",limitNotSet:"Limit nicht gesetzt",goSettings:"Zu Einstellungen",sendPDF:"PDF an Buchhaltung senden →",left:"Bis Limit übrig",owner:"Inhaber",logout:"Abmelden",soon:"bald",wasteHistory:"Verlauf - separater Bereich",noWaste:"Kein Verbrauch",stockTitle:"Lager - nur Inhaber",settingsTitle:"Einstellungen für Vermietung",fotLimitPh:"Limit zB 5000",emailPh:"Buchhalter Email",tgPh:"Telegram @",save:"Speichern",saved:"Gespeichert"},
+ it:{sub:"sistema di gestione",staff:"Personale",orders:"Ordini",menu:"Menu",fot:"Report",stock:"Magazzino",history:"Cronologia",settings:"Impostazioni",team:"Team Cucina",noStaff:"Nessun personale",invite:"Invita Chef",invitePh:"email@esempio.com",sendInvite:"Invia invito",inviteHint:"Lo chef riceverà un link",fotMonth:"Budget Mese",limitNotSet:"Limite non impostato",goSettings:"Vai a Impostazioni",sendPDF:"Invia PDF alla contabilità →",left:"Rimanente fino al limite",owner:"Proprietario",logout:"Esci",soon:"presto",wasteHistory:"Cronologia - sezione separata",noWaste:"Nessuno spreco",stockTitle:"Magazzino - solo proprietario",settingsTitle:"Impostazioni per noleggio",fotLimitPh:"Limite es 5000",emailPh:"Email contabile",tgPh:"Telegram @",save:"Salva",saved:"Salvato"}
+}
+let curLang=localStorage.getItem('hp_lang')||'ru';
+let myRestaurantId=null, settings=null, ownerId=null;
+
+function t(k){return (dict[curLang]||dict.en)[k]||dict.en[k];}
+function applyLang(l){
+  curLang=l; localStorage.setItem('hp_lang',l);
+  document.documentElement.dir=l==='ar'?'rtl':'ltr';
+  document.getElementById('logoSub').textContent=t('sub');
+  document.getElementById('mStaff').textContent=t('staff');
+  document.getElementById('mOrders').textContent=t('orders');
+  document.getElementById('mMenu').textContent=t('menu');
+  document.getElementById('mFot').textContent=t('fot');
+  document.getElementById('mStock').textContent=t('stock');
+  document.getElementById('mHistory').textContent=t('history');
+  document.getElementById('mSettings').textContent=t('settings');
+  document.querySelectorAll('.lang-bar button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
+  // перерендер текущего таба
+  const active=document.querySelector('.nav button.active')?.dataset.tab||'staff';
+  if(active==='staff') renderStaff(); else if(active==='fot') renderFOT(); else if(active==='stock') renderStock(); else if(active==='history') renderHistory(); else if(active==='settings') renderSettings();
+}
+
 async function init(){
   const {data:{user}} = await sb.auth.getUser(); if(!user){location.href='/'; return}
-  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single(); myRestaurantId=p.restaurant_id||localStorage.getItem('restaurant_id'); ownerProfile=p;
-  const {data:r}=await sb.from('restaurants').select('name,owner_id').eq('id',myRestaurantId).single(); ownerId=r?.owner_id;
-  document.getElementById('ownerRest').textContent=r?.name||'Ресторан'; document.getElementById('ownerName').textContent=p.full_name||'Владелец';
+  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
+  // язык из профиля - как ты хотел при создании ресторана
+  if(p.preferred_language) curLang=p.preferred_language;
+  else curLang=localStorage.getItem('hp_lang')||'ru';
+  localStorage.setItem('hp_lang',curLang);
+  myRestaurantId=p.restaurant_id||localStorage.getItem('restaurant_id');
+  document.getElementById('ownerName').textContent=p.full_name||'Owner';
+  const {data:r}=await sb.from('restaurants').select('name,owner_id').eq('id',myRestaurantId).single();
+  document.getElementById('ownerRest').textContent=r?.name||'Restaurant';
+  ownerId=r?.owner_id;
   const {data:s}=await sb.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).single(); settings=s;
-  renderTeam(); renderFOTCards(); renderStock(); renderHistory(); renderSettingsTab();
+  applyLang(curLang);
+  renderStaff();
 }
-document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.toggle('show');
-document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); document.getElementById('pageTitle').textContent=b.textContent.trim(); document.querySelectorAll('[id^="tab-"]').forEach(d=>d.style.display='none'); const tab=document.getElementById('tab-'+b.dataset.tab); if(tab) tab.style.display='block'; if(innerWidth<800) document.getElementById('sidebar').classList.remove('show');}});
 
-async function renderTeam(){
-  const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).neq('id',ownerId||'');
+document.getElementById('langBar').onclick=e=>{if(e.target.dataset.l) applyLang(e.target.dataset.l)}
+document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
+document.getElementById('xBtn').onclick=()=>document.getElementById('sidebar').classList.add('hide');
+document.getElementById('logoBtn').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
+document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  document.getElementById('pageTitle').textContent=b.textContent.trim();
+  if(b.dataset.tab==='staff') renderStaff(); else if(b.dataset.tab==='fot') renderFOT(); else if(b.dataset.tab==='stock') renderStock(); else if(b.dataset.tab==='history') renderHistory(); else if(b.dataset.tab==='settings') renderSettings(); else document.getElementById('content').innerHTML=`<div class="card">${b.textContent} - ${t('soon')}</div>`;
+  if(innerWidth<820) document.getElementById('sidebar').classList.add('hide');
+}});
+
+async function renderStaff(){
+  document.getElementById('pageTitle').textContent='👥 '+t('staff');
+  const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).neq('id',ownerId||'00000000-0000-0000-0000-000000000000');
   const filtered=(data||[]).filter(u=>u.role!=='owner');
-  const list=document.getElementById('teamList');
-  list.innerHTML=filtered.map((u,i)=>{
-    const initials=(u.full_name||'U').split(' ').map(s=>s[0]).join('').slice(0,2).toUpperCase();
-    const cls=i===0?'ak':i===1?'m':'d';
-    return `<div class="person"><div class="avatar ${cls}">${initials}</div><div style="flex:1"><div style="display:flex;gap:8px;align-items:center"><b>${u.full_name}</b><span class="badge">На смене</span></div><div style="color:#888;font-size:13px">${u.job_title||u.role||'Повар'}</div></div></div>`;
-  }).join('')||`<div style="color:#666">Нет персонала - пригласи шефа ниже</div>`;
-}
-async function renderFOTCards(){
-  const limit=settings?.fot_limit; // без хардкода
-  const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString());
-  const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
-  const percent=limit?Math.round(used/limit*100):0;
-  const left=limit?limit-used:0;
-  const html=`<div style="display:flex;gap:8px;margin-bottom:8px"><span style="color:#ff6b00">💰</span><b>ФОТ Месяц</b></div>${!limit?`<div style="color:#ff8c00">Лимит не установлен - введи в Настройках</div><button class="btn" onclick="document.querySelector('[data-tab=settings]').click()">Перейти в Настройки</button>`:`<div style="color:#888;font-size:13px">${percent}% • ${used} / ${limit} ${settings?.currency||'₽'}</div><div class="progress"><div style="width:${Math.min(100,percent)}%"></div></div><div style="display:flex;justify-content:space-between;color:#666;font-size:12px"><span>До лимита осталось ${left} ${settings?.currency||'₽'}</span><span>${percent}%</span></div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:12px">Отправить PDF в бухгалтерию →</button>`;
-  document.getElementById('fotCard').innerHTML=html;
-  document.getElementById('tab-fot').innerHTML=`<div class="card orange">${html}</div><div class="card">${(payouts||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${p.profile_id}</span><b>${p.amount}</b></div>`).join('')||'Нет выплат'}</div>`;
+  const team=filtered.map(u=>`<div class="person"><div class="avatar">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''}</div></div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
+  const fotLimit=settings?.fot_limit; const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString()); const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  document.getElementById('content').innerHTML=`
+    <div class="card"><div style="display:flex;gap:8px"><span>👥</span><b>${t('team')}</b></div><div style="margin-top:10px">${team}</div></div>
+    <div class="card"><div style="display:flex;gap:8px"><span>➕</span><b>${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}"><button class="btn" id="inviteBtn">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div>
+    <div class="card"><div style="display:flex;gap:8px"><span>💰</span><b>${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:8px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted">${Math.round(used/fotLimit*100)}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,Math.round(used/fotLimit*100))}%"></div></div><div class="muted">${t('left')} ${fotLimit-used}</div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:12px">${t('sendPDF')}</button></div>`;
+  document.getElementById('inviteBtn')?.addEventListener('click',()=>{const e=document.getElementById('inviteEmail').value.trim(); if(!e) return alert('Email'); alert(`Invite: ${e} - link: https://itmaster070.github.io/?invite=${myRestaurantId}`)});
+  document.getElementById('goSet')?.addEventListener('click',()=>document.querySelector('[data-tab=settings]').click());
   document.getElementById('pdfBtn')?.addEventListener('click',closeMonthAndPDF);
-  document.getElementById('tab-fot').querySelector('#pdfBtn')?.addEventListener('click',closeMonthAndPDF);
 }
-async function renderStock(){const {data}=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId); document.getElementById('tab-stock').innerHTML=`<div class="card orange"><h3>Склад - списывает только овнер</h3>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:8px 0"><div><b>${p.name}</b><div style="color:#666">${p.qty||p.stock||0}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="doWaste('${p.id}')">Списать</button></div>`).join('')}</div>`;}
-window.doWaste=async(id)=>{const qty=prompt('Сколько?'); if(!qty) return; await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste'}); const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single(); const cur=parseFloat(prod?.qty??prod?.stock??0); await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id); renderHistory();};
-async function renderHistory(){const {data}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100); document.getElementById('tab-history').innerHTML=`<div class="card orange"><h3>📜 История списаний - отдельный раздел</h3>${(data||[]).map(m=>`<div style="padding:8px 0;border-bottom:1px solid #1a1a1a">${m.type} ${m.qty} ${new Date(m.created_at).toLocaleString()}</div>`).join('')||'Нет'}</div>`;}
-async function renderSettingsTab(){
-  document.getElementById('tab-settings').innerHTML=`<div class="card orange"><h3>⚙️ Настройки для аренды</h3><div style="color:#666;font-size:12px">ФОТ лимит (своя валюта)</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="5000"><div style="color:#666;font-size:12px">Бухгалтерия</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="Email"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="Telegram"><button class="btn-fill" id="saveSettings">Сохранить</button></div>`;
-  document.getElementById('saveSettings').onclick=async()=>{const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value}; await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId); settings={...settings,...upd}; alert('Сохранено'); renderFOTCards();};
+async function renderFOT(){
+  document.getElementById('pageTitle').textContent='📊 '+t('fot');
+  const fotLimit=settings?.fot_limit; const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString()); const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('fotMonth')}</h3>${!fotLimit?`<div style="color:#ff8c00">${t('limitNotSet')}</div>`: `<div>${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,Math.round(used/fotLimit*100))}%"></div></div>`}<button class="btn-fill" id="pdfBtn2" style="margin-top:12px">${t('sendPDF')}</button></div><div class="card">${(payouts||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${p.profiles?.full_name||p.profile_id}</span><b>${p.amount}</b></div>`).join('')||'—'}</div>`;
+  document.getElementById('pdfBtn2')?.addEventListener('click',closeMonthAndPDF);
 }
-document.getElementById('inviteBtn').onclick=async()=>{
-  const email=document.getElementById('inviteEmail').value.trim(); if(!email){alert('Введи email'); return}
-  // Для аренды - создаем приглашение, можно через таблицу invites или просто показываем ссылку
-  alert(`Приглашение для ${email} - скинь ему ссылку: https://itmaster070.github.io/?invite=${myRestaurantId}. Он создаст аккаунт шефа в твоем ресторане`);
-};
-async function closeMonthAndPDF(){
-  const start=new Date(); start.setDate(1);
-  const {data:attend}=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]);
-  const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
-  const {data:wastes}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
-  const {jsPDF}=window.jspdf; const doc=new jsPDF(); doc.text(`HotPit ${start.toLocaleDateString()} FOT ${settings?.fot_limit||''}`,10,15); let y=25; (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked}h`,10,y); y+=6}); doc.save(`HotPit.pdf`); if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=Report`);
+async function renderStock(){
+  document.getElementById('pageTitle').textContent='📦 '+t('stock');
+  const {data}=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId).order('name');
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('stockTitle')}</h3>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1a1a"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="window.doWaste('${p.id}')">Списать</button></div>`).join('')||'—'}</div>`;
 }
-init();
-</script>
-</body>
-</html>
+window.doWaste=async(id)=>{const qty=prompt('Сколько? / How many?'); if(!qty) return; await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste'}); const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single(); const cur=parseFloat(prod?.qty??prod?.stock??0); await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id); renderHistory();};
+async function renderHistory(){
+  document.getElementById('pageTitle').textContent='📜 '+t('history');
+  const {data}=await sb.from('stock_moves').select('*').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:fal
