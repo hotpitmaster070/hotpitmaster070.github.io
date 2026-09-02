@@ -157,11 +157,18 @@ async function renderStock(){
 }
 
 window.doWaste=async(id)=>{
-  const qty=prompt(t('qtyAsk'));
-  if(!qty) return;
+  const qty=prompt(t('qtyAsk')); if(!qty) return;
   try{
     const {data:{user}}=await sb.auth.getUser();
-    await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste',profile_id:user.id});
+    // пишем в твою таблицу waste_logs
+    await sb.from('waste_logs').insert({
+      restaurant_id: myRestaurantId,
+      product_id: id, // у тебя в waste_logs колонка product_id, не item_id
+      qty: parseFloat(qty),
+      profile_id: user.id,
+      type: 'waste'
+    });
+    // уменьшаем склад
     const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single();
     const cur=parseFloat(prod?.qty??prod?.stock??0);
     await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id);
