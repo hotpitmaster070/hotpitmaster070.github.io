@@ -206,7 +206,7 @@ async function closeMonthAndPDF(){
   let attend=[], payouts=[], wastes=[];
   try{ const r=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]); attend=r.data||[]; }catch(_){}
   try{ const r=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); payouts=r.data||[]; }catch(_){}
-  try{ const r=await sb.from('stock_moves').select('*,products(name),profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); wastes=r.data||[]; }catch(_){}
+  try{ const r=await sb.from('waste_logs').select('*,products(name),profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); wastes=r.data||[]; }catch(_){}
   const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
   const {jsPDF}=window.jspdf; const doc=new jsPDF();
   const restName = restNameCache;
