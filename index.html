@@ -41,30 +41,17 @@ input{width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;
 </head>
 <body>
 <div class="hero" id="hero"><div class="hero-content"><img src="logo.png" class="hero-logo"><div class="hero-title">HotPit<div class="kitchen">KITCHEN</div></div><div class="hero-sub">Flame Towers Edition</div></div><div class="hero-bottom"><div class="hero-btn">Нажми — войти 🔥</div></div></div>
-
 <div class="wrap">
-<div class="lang" id="langBar">
-<button data-l="ru">RU</button><button data-l="tr">TR</button><button data-l="en">EN</button><button data-l="az">AZ</button><button data-l="ar">AR</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button>
-</div>
-
+<div class="lang" id="langBar"><button data-l="ru">RU</button><button data-l="tr">TR</button><button data-l="en">EN</button><button data-l="az">AZ</button><button data-l="ar">AR</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button></div>
 <div class="logo" id="mainLogo"><img src="logo.png" class="logo-img"><div><div class="hot2">HotPit</div><div class="kit2">KITCHEN</div><div class="sub" id="subText">система управления</div></div></div>
 <div class="title" id="t1">Кто вы?</div><div class="subtitle" id="t2">Выберите роль, чтобы продолжить</div>
-
 <div class="role-card" id="cOwner"><div class="left"><div class="icon">👑</div><div><h3 id="hOwner">Овнер</h3><p id="dOwner">Полный контроль, финансы, персонал</p></div></div><div>›</div></div>
 <div class="role-card" id="cChef"><div class="left"><div class="icon">🔥</div><div><h3 id="hChef">Шеф</h3><p id="dChef">Кухня, рецепты, склад</p></div></div><div>›</div></div>
-
 <div class="form" id="regBox"><input id="full_name" placeholder="ФИО"><input id="rest_name" placeholder="Название ресторана"><input id="email" placeholder="Email"><input id="password" type="password" placeholder="Пароль"><button class="btn-main" id="btnReg">Создать ресторан →</button><div id="msg" style="color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px"></div></div>
 <div class="form" id="loginBox"><input id="emailLogin" placeholder="Email"><input id="passwordLogin" type="password" placeholder="Пароль"><button class="btn-main" id="btnLogin">Войти →</button><div id="msg2" style="color:#ff6b6b;font-size:12px;text-align:center;margin-top:8px"></div></div>
-
 <div class="login-link"><span id="toLogin">Уже есть аккаунт? Войти</span><span id="toReg" style="display:none">Нет аккаунта? Создать</span></div>
-
-<div class="footer">
-  <div class="footer-top" id="fTop">Professional Kitchen OS • Baku</div>
-  <div class="footer-mid"><span id="fMid1">Быстрая работа • Защита данных • Поддержка 24/7</span><br><b id="fMid2">Создано для кухонь, которые кормят город</b></div>
-  <div class="footer-bottom">HotPit KITCHEN v3.2 GLOBAL 8 LANG • Built to help children</div>
+<div class="footer"><div class="footer-top" id="fTop">Professional Kitchen OS • Baku</div><div class="footer-mid"><span id="fMid1">Быстрая работа • Защита данных • Поддержка 24/7</span><br><b id="fMid2">Создано для кухонь, которые кормят город</b></div><div class="footer-bottom">HotPit KITCHEN v3.2 GLOBAL 8 LANG • Built to help children</div></div>
 </div>
-</div>
-
 <script>
 const state = { role: null, mode: 'register' };
 const hero = document.getElementById('hero');
@@ -90,13 +77,11 @@ document.getElementById('toLogin').onclick=()=>{state.mode='login';toLogin.style
 document.getElementById('toReg').onclick=()=>{state.mode='register';toReg.style.display='none';toLogin.style.display='inline';render()};
 render();
 </script>
-
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const SUPABASE_URL = 'https://xljogkyropyocvuuodfl.supabase.co'
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs'
 const sb=createClient(SUPABASE_URL, SUPABASE_ANON)
-
 const dict={
 ru:{t1:"Кто вы?",t2:"Выберите роль, чтобы продолжить",owner:"Овнер",ownerD:"Полный контроль, финансы, персонал",chef:"Шеф",chefD:"Кухня, рецепты, склад",sub:"система управления",fio:"Ваше ФИО",rest:"Название ресторана",email:"Email",pass:"Пароль 6+",pass2:"Пароль",create:"Создать ресторан →",login:"Войти →",have:"Уже есть аккаунт? Войти",no:"Нет аккаунта? Создать",creating:"Создаем...",fill:"Заполните все поля",passMin:"Пароль минимум 6 символов",roleNeed:"Выберите роль",loginLoad:"Входим...",fTop:"Professional Kitchen OS • Baku",fMid1:"Быстрая работа • Защита данных • Поддержка 24/7",fMid2:"Создано для кухонь, которые кормят город"},
 az:{t1:"Siz kimsiniz?",t2:"Rol seçin",owner:"Sahib",ownerD:"Tam nəzarət, maliyyə, heyət",chef:"Şef",chefD:"Mətbəx, reseptlər, anbar",sub:"idarəetmə sistemi",fio:"Ad Soyad",rest:"Restoran adı",email:"Email",pass:"Şifrə 6+",pass2:"Şifrə",create:"Yarat →",login:"Giriş →",have:"Hesabın var? Giriş",no:"Hesabın yoxdur? Yarat",creating:"Yaradılır...",fill:"Bütün xanaları doldurun",passMin:"Şifrə minimum 6 simvol",roleNeed:"Rol seçin",loginLoad:"Giriş edilir...",fTop:"Professional Kitchen OS • Baku",fMid1:"Sürətli iş • Məlumatların qorunması • 24/7 Dəstək",fMid2:"Şəhəri yedirdən mətbəxlər üçün yaradılıb"},
@@ -107,10 +92,8 @@ es:{t1:"¿Quién eres?",t2:"Elige tu rol para continuar",owner:"Dueño",ownerD:"
 de:{t1:"Wer bist du?",t2:"Wähle deine Rolle",owner:"Inhaber",ownerD:"Volle Kontrolle, Finanzen, Personal",chef:"Chef",chefD:"Küche, Rezepte, Lager",sub:"verwaltungssystem",fio:"Vollständiger Name",rest:"Restaurantname",email:"E-Mail",pass:"Passwort 6+",pass2:"Passwort",create:"Restaurant erstellen →",login:"Anmelden →",have:"Konto vorhanden? Anmelden",no:"Kein Konto? Erstellen",creating:"Wird erstellt...",fill:"Alle Felder ausfüllen",passMin:"Mindestens 6 Zeichen",roleNeed:"Rolle wählen",loginLoad:"Anmeldung...",fTop:"Professional Kitchen OS • Global",fMid1:"Schnell • Sicher • 24/7 Support",fMid2:"Für Küchen gebaut, die die Stadt ernähren"},
 it:{t1:"Chi sei?",t2:"Scegli il tuo ruolo",owner:"Proprietario",ownerD:"Controllo totale, finanze, personale",chef:"Chef",chefD:"Cucina, ricette, magazzino",sub:"sistema di gestione",fio:"Nome completo",rest:"Nome ristorante",email:"Email",pass:"Password 6+",pass2:"Password",create:"Crea ristorante →",login:"Accedi →",have:"Hai un account? Accedi",no:"Nessun account? Crea",creating:"Creazione in corso...",fill:"Compila tutti i campi",passMin:"Minimo 6 caratteri",roleNeed:"Scegli ruolo",loginLoad:"Accesso in corso...",fTop:"Professional Kitchen OS • Global",fMid1:"Veloce • Sicuro • Supporto 24/7",fMid2:"Creato per cucine che nutrono la città"}
 }
-
 let curLang=localStorage.getItem('hp_lang')||'ru';
 function t(key){ return (dict[curLang]||dict.en)[key] || dict.en[key]; }
-
 function apply(l){
   curLang=l;localStorage.setItem('hp_lang',l);
   const d=dict[l]||dict.en;
@@ -124,36 +107,46 @@ function apply(l){
   document.documentElement.dir=l==='ar'?'rtl':'ltr'
 }
 langBar.onclick=e=>{if(e.target.dataset.l) apply(e.target.dataset.l)};apply(curLang);
-
 btnReg.onclick=async()=>{
-  const msgEl=document.getElementById('msg'); const b=btnReg;
+  const msgEl=document.getElementById('msg');
+  const b=btnReg;
   const role = state.role;
   if(!role){msgEl.textContent=t('roleNeed');return}
-  const emailV=document.getElementById('email').value.trim(),passwordV=document.getElementById('password').value,full_nameV=document.getElementById('full_name').value.trim(),rest_nameV=document.getElementById('rest_name').value.trim();
+  const emailV=document.getElementById('email').value.trim();
+  const passwordV=document.getElementById('password').value;
+  const full_nameV=document.getElementById('full_name').value.trim();
+  const rest_nameV=document.getElementById('rest_name').value.trim();
   if(!full_nameV||!rest_nameV||!emailV||!passwordV){msgEl.textContent=t('fill');return}
   if(passwordV.length<6){msgEl.textContent=t('passMin');return}
-  b.disabled=true;msgEl.textContent=t('creating');
+  b.disabled=true; msgEl.style.color='#ff8c00'; msgEl.textContent=t('creating');
   try{
-    const {error:signErr}=await sb.auth.signUp({email:emailV,password:passwordV});
+    const {data: signData, error: signErr}=await sb.auth.signUp({email:emailV,password:passwordV});
     if(signErr) throw signErr;
-    const {error:loginErr}=await sb.auth.signInWithPassword({email:emailV,password:passwordV}); if(loginErr) throw loginErr;
-    const {data:{user}}=await sb.auth.getUser(); if(!user) throw new Error('Auth failed');
-
-    const { data: res, error: funcError } = await sb.functions.invoke('create-restaurant-v2', {
-      body: { restaurant_name: rest_nameV, full_name: full_nameV, role: role, lang: curLang }
+    const {data: loginData, error: loginErr}=await sb.auth.signInWithPassword({email:emailV,password:passwordV});
+    if(loginErr) throw loginErr;
+    const userId = loginData.user?.id || signData.user?.id;
+    if(!userId) throw new Error('Auth failed');
+    const {data: restaurant_id, error: rpcError} = await sb.rpc("create_tenant", {
+      p_user_id: userId,
+      p_restaurant_name: rest_nameV,
+      p_full_name: full_nameV,
+      p_role: role,
+      p_lang: curLang
     });
-    if(funcError) throw new Error(funcError.message);
-    if(res?.error) throw new Error(res.error);
-
-    localStorage.setItem('restaurant_id', res.restaurant_id);
-    location.href=role==='chef'?'/chef.html':'/owner.html';
+    if(rpcError) throw rpcError;
+    if(!restaurant_id) throw new Error('No restaurant_id');
+    localStorage.setItem('restaurant_id', restaurant_id);
+    msgEl.style.color='#00ff88'; msgEl.textContent='✓';
+    setTimeout(()=>{ location.href=role==='chef'?'/chef.html':'/owner.html'; }, 400);
   }catch(e){
-    msgEl.textContent=e.message;
-    b.disabled=false
-    console.error(e)
+    console.error(e);
+    msgEl.style.color='#ff6b6b';
+    let txt=e.message;
+    if(txt.includes('already registered')||txt.includes('already exists')||txt.includes('User already')) txt = curLang==='az'? 'Bu email artıq mövcuddur' : curLang==='tr'? 'Bu e-posta zaten kayıtlı' : 'Email уже зарегистрирован';
+    msgEl.textContent=txt;
+    b.disabled=false;
   }
 };
-
 btnLogin.onclick=async()=>{
   const b=btnLogin; const m=document.getElementById('msg2');
   const emailV=document.getElementById('emailLogin').value.trim(),passwordV=document.getElementById('passwordLogin').value;
