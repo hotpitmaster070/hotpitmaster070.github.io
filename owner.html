@@ -106,3 +106,89 @@ async function init(){
 document.getElementById('langBar').onclick=e=>{if(e.target.dataset.l) applyLang(e.target.dataset.l)}
 document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
 document.getElementById('xBtn').onclick=()=>document.getElementById('sidebar').classList.add('hide');
+document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  document.getElementById('pageTitle').textContent=b.textContent.trim();
+  if(b.dataset.tab==='staff') renderStaff(); else if(b.dataset.tab==='fot') renderFOT(); else if(b.dataset.tab==='stock') renderStock(); else if(b.dataset.tab==='history') renderHistory(); else if(b.dataset.tab==='settings') renderSettings(); else document.getElementById('content').innerHTML=`<div class="card">${b.textContent} - ${t('soon')}</div>`;
+  if(innerWidth<820) document.getElementById('sidebar').classList.add('hide');
+}});
+
+async function renderStaff(){
+  document.getElementById('pageTitle').textContent='👥 '+t('staff');
+  const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true).neq('id',ownerId||'00000000-0000-0000-0000-000000000000');
+  const filtered=(data||[]).filter(u=>u.role!=='owner');
+  const team=filtered.map(u=>`<div class="person"><div class="avatar">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div style="flex:1"><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''} - данные от шефа: на смене</div></div><div style="color:#22c55e;font-size:11px">● На смене</div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
+  const fotLimit=settings?.fot_limit;
+  const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString());
+  const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  document.getElementById('content').innerHTML=`
+    <div class="card"><div><b>👥 ${t('team')} - данные от шефа</b></div><div style="margin-top:10px">${team}</div></div>
+    <div class="card"><div><b>➕ ${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}"><button class="btn" id="inviteBtn">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div>
+    <div class="card"><div><b>💰 ${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:8px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted">${Math.round(used/fotLimit*100)}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,Math.round(used/fotLimit*100))}%"></div></div><div class="muted">${t('left')} ${fotLimit-used}</div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:12px">${t('sendPDF')}</button></div>`;
+  document.getElementById('inviteBtn')?.addEventListener('click',()=>{const e=document.getElementById('inviteEmail').value.trim(); if(!e) return; alert('Invite link: https://itmaster070.github.io/?invite='+myRestaurantId+' for '+e)});
+  document.getElementById('goSet')?.addEventListener('click',()=>document.querySelector('[data-tab=settings]').click());
+  document.getElementById('pdfBtn')?.addEventListener('click',closeMonthAndPDF);
+}
+
+async function renderFOT(){
+  document.getElementById('pageTitle').textContent='📊 '+t('fot');
+  const fotLimit=settings?.fot_limit;
+  const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString());
+  const used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('fotMonth')} - данные от шефа (часы)</h3>${!fotLimit?`<div style="color:#ff8c00">${t('limitNotSet')}</div>`: `<div>${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,Math.round(used/fotLimit*100))}%"></div></div>`}<button class="btn-fill" id="pdfBtn2" style="margin-top:12px">${t('sendPDF')}</button></div><div class="card">${(payouts||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0"><span>${p.profiles?.full_name||p.profile_id} (от шефа)</span><b>${p.amount}</b></div>`).join('')||'—'}</div>`;
+  document.getElementById('pdfBtn2')?.addEventListener('click',closeMonthAndPDF);
+}
+
+async function renderStock(){
+  document.getElementById('pageTitle').textContent='📦 '+t('stock');
+  const {data}=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId).order('name');
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('stockTitle')}</h3><div class="muted" style="margin-bottom:8px">Склад общий - списывает шеф-повар, овнер видит</div>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1a1a"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="window.doWaste('${p.id}')">Списать</button></div>`).join('')||'—'}</div>`;
+}
+
+window.doWaste=async(id)=>{
+  const qty=prompt('Qty? Сколько списать?'); if(!qty) return;
+  const {data:{user}}=await sb.auth.getUser();
+  await sb.from('stock_moves').insert({restaurant_id:myRestaurantId,item_id:id,qty:parseFloat(qty),type:'waste',profile_id:user.id});
+  const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single();
+  const cur=parseFloat(prod?.qty??prod?.stock??0);
+  await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id);
+  renderHistory();
+};
+
+async function renderHistory(){
+  document.getElementById('pageTitle').textContent='📜 '+t('history');
+  const {data}=await sb.from('stock_moves').select('*, products(name), profiles(full_name)').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(150);
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">Все списания от шеф-повара - кто и что списал</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.item_id} — ${m.qty} ${m.type}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
+}
+
+async function renderSettings(){
+  document.getElementById('pageTitle').textContent='⚙️ '+t('settings');
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('settingsTitle')}</h3><div class="muted">${t('fotMonth')}</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="${t('fotLimitPh')}"><div class="muted">Accounting</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="${t('emailPh')}"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}"><button class="btn-fill" id="saveSet">${t('save')}</button></div>`;
+  document.getElementById('saveSet').onclick=async()=>{
+    const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value};
+    const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
+    if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
+  };
+}
+
+async function closeMonthAndPDF(){
+  const start=new Date(); start.setDate(1);
+  const {data:attend}=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]);
+  const {data:payouts}=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
+  const {data:wastes}=await sb.from('stock_moves').select('*,products(name),profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString());
+  const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  const {jsPDF}=window.jspdf; const doc=new jsPDF();
+  doc.text(`HotPit ${document.getElementById('ownerRest').textContent} ${start.toLocaleDateString(curLang)} FOT ${fot_used}/${settings?.fot_limit||''}`,10,15);
+  let y=25;
+  (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked||0}h ${a.work_date} - from chef`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+  y+=5;
+  (wastes||[]).forEach(w=>{doc.text(`WASTE ${w.products?.name||w.item_id} ${w.qty} by ${w.profiles?.full_name||'chef'}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+  doc.text('Built to help children without parents - data from chef',10,285);
+  doc.save(`HotPit_${myRestaurantId}_${start.getMonth()+1}.pdf`);
+  if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=HotPit Report`);
+}
+document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); localStorage.clear(); location.href='/';};
+init();
+</script>
+</body>
+</html>
