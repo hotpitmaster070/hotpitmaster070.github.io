@@ -210,7 +210,7 @@ async function closeMonthAndPDF(){
   const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
   const {jsPDF}=window.jspdf; const doc=new jsPDF();
   const restName = restNameCache;
-  const motto = t('motto');
+  const motto = settings?.motto || t('motto');
   const title = t('pdfTitle');
   const footer = t('pdfFooter');
   doc.setFontSize(14); doc.text(`${restName} - ${motto}`, 10, 15);
