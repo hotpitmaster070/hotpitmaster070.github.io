@@ -180,10 +180,10 @@ async function renderHistory(){
   document.getElementById('pageTitle').textContent='📜 '+t('history');
   let data=[];
   try{
-    const r=await sb.from('stock_moves').select('*, products(name), profiles(full_name)').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100);
+    const r=await sb.from('waste_logs').select('*, products(name), profiles(full_name)').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100);
     data=r.data||[];
   }catch(_){}
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">${t('wasteHint')}</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.item_id} — ${m.qty}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">${t('wasteHint')}</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.product_id} — ${m.qty}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
 }
 
 async function renderSettings(){
