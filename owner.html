@@ -9,10 +9,12 @@
 *{box-sizing:border-box}body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;display:flex;min-height:100vh}
 .sidebar{width:268px;background:#0a0a0a;border-right:1px solid #1e1e1e;padding:14px 12px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:30;transition:.32s}
 .sidebar.hide{transform:translateX(-110%)}
-.side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
 .logo img{width:44px;height:44px;border-radius:10px;background:#111}
-.logo b{font-size:20px;line-height:1;font-weight:800}.logo b.orange{color:#ff6b00}.logo b.white{color:#fff}
+.logo b{font-size:20px;line-height:1;font-weight:800}
+.logo b.orange{color:#ff6b00}
+.logo b.white{color:#ff6b00}
 .logo small{font-size:10px;color:#555;letter-spacing:1px;display:block;margin-top:2px}
 .x-btn{width:36px;height:36px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;border-radius:12px;font-weight:800;cursor:pointer}
 .nav{display:flex;flex-direction:column;gap:4px;flex:1}
@@ -33,7 +35,11 @@
 .person{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a1a}
 .avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#1e1e1e;color:#fff}
 .progress{height:8px;background:#1e1e1e;border-radius:10px;overflow:hidden;margin:10px 0}.progress div{height:100%;background:#ff6b00}
-.lang-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.lang-bar button{background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:5px 10px;border-radius:20px;font-weight:800;font-size:11px;cursor:pointer}.lang-bar button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
+.lang-main{background:#1a1a1a;border:1px solid #2a2a2a;color:#ff8c00;padding:8px 14px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.lang-popup{position:absolute;left:12px;top:95px;background:#151515;border:1px solid #2a2a2a;border-radius:14px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;z-index:99;width:220px}
+.lang-popup.hidden{display:none}
+.lang-popup button{background:#0a0a0a;border:1px solid #242424;color:#999;padding:8px;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;text-align:left}
+.lang-popup button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
 #content{transition:.2s}
 </style>
 </head>
@@ -43,8 +49,20 @@
     <div class="logo" id="logoBtn"><img src="logo.png"><div><b><span class="orange">HotPit</span><br><span class="white">KITCHEN</span></b><small id="logoSub"></small></div></div>
     <button class="x-btn" id="xBtn">✕</button>
   </div>
-  <div class="lang-bar" id="langBar"><button data-l="ru">RU</button><button data-l="az">AZ</button><button data-l="tr">TR</button><button data-l="en">EN</button><button data-l="ar">AR</button><button data-l="es">ES</button><button data-l="de">DE</button><button data-l="it">IT</button></div>
-  <div class="nav">
+
+  <button id="langBtn" class="lang-main">🌐 <span id="curLangCode">RU</span></button>
+  <div id="langPopup" class="lang-popup hidden">
+    <button data-l="ru">🇷🇺 RU</button>
+    <button data-l="az">🇦🇿 AZ</button>
+    <button data-l="tr">🇹🇷 TR</button>
+    <button data-l="en">🇺🇸 EN</button>
+    <button data-l="ar">🇸🇦 AR</button>
+    <button data-l="es">🇪🇸 ES</button>
+    <button data-l="de">🇩🇪 DE</button>
+    <button data-l="it">🇮🇹 IT</button>
+  </div>
+
+  <div class="nav" style="margin-top:12px">
     <button data-tab="staff" class="active">👥 <span id="mStaff"></span></button>
     <button data-tab="orders">📋 <span id="mOrders"></span></button>
     <button data-tab="menu">🍽️ <span id="mMenu"></span></button>
@@ -79,6 +97,7 @@ function t(k){return (dict[curLang]||dict.en)[k]||k;}
 function applyLang(l){
   curLang=l; localStorage.setItem('hp_lang',l);
   document.documentElement.dir=l==='ar'?'rtl':'ltr';
+  document.getElementById('curLangCode').textContent=l.toUpperCase();
   const logoSub=document.getElementById('logoSub'); if(logoSub) logoSub.textContent=t('sub');
   const mStaff=document.getElementById('mStaff'); if(mStaff) mStaff.textContent=t('staff');
   const mOrders=document.getElementById('mOrders'); if(mOrders) mOrders.textContent=t('orders');
@@ -88,12 +107,12 @@ function applyLang(l){
   const mHistory=document.getElementById('mHistory'); if(mHistory) mHistory.textContent=t('history');
   const mSettings=document.getElementById('mSettings'); if(mSettings) mSettings.textContent=t('settings');
   const logout=document.getElementById('logout'); if(logout) logout.textContent=t('logout');
-  document.querySelectorAll('.lang-bar button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
+  document.querySelectorAll('#langPopup button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
   const ac=document.querySelector('.nav button.active')?.dataset.tab||'staff';
   if(ac==='staff') renderStaff(); else if(ac==='fot') renderFOT(); else if(ac==='stock') renderStock(); else if(ac==='history') renderHistory(); else if(ac==='settings') renderSettings();
-  document.getElementById('content').style.opacity='1';
+  else if(ac==='orders') document.getElementById('pageTitle').textContent='📋 '+t('orders');
+  else if(ac==='menu') document.getElementById('pageTitle').textContent='🍽️ '+t('menu');
 }
-// СРАЗУ показываем меню, без ожидания БД — чтобы не было пустого как на скрине
 applyLang(curLang);
 
 async function init(){
@@ -111,17 +130,26 @@ async function init(){
   applyLang(curLang);
  }catch(e){ console.log('init fallback',e); applyLang(curLang); }
 }
-document.getElementById('langBar').onclick=async e=>{
+document.getElementById('langBtn').onclick=()=>document.getElementById('langPopup').classList.toggle('hidden');
+document.getElementById('langPopup').onclick=async e=>{
   if(e.target.dataset.l){
-    applyLang(e.target.dataset.l);
-    try{ const {data:{user}}=await sb.auth.getUser(); if(user) await sb.from('profiles').update({preferred_language:e.target.dataset.l}).eq('id',user.id); }catch(_){}
+    const l=e.target.dataset.l;
+    applyLang(l);
+    document.getElementById('langPopup').classList.add('hidden');
+    try{ const {data:{user}}=await sb.auth.getUser(); if(user) await sb.from('profiles').update({preferred_language:l}).eq('id',user.id); }catch(_){}
   }
 }
 document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
 document.getElementById('xBtn').onclick=()=>document.getElementById('sidebar').classList.add('hide');
 document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{
   document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
-  applyLang(curLang);
+  const tab=b.dataset.tab;
+  if(tab==='staff') renderStaff();
+  else if(tab==='fot') renderFOT();
+  else if(tab==='stock') renderStock();
+  else if(tab==='history') renderHistory();
+  else if(tab==='settings') renderSettings();
+  else { document.getElementById('pageTitle').textContent=b.textContent; document.getElementById('content').innerHTML=`<div class="card"><div class="muted">${t('soon')}</div></div>`; }
   if(innerWidth<820) document.getElementById('sidebar').classList.add('hide');
 }});
 
@@ -145,7 +173,6 @@ async function renderFOT(){
   document.getElementById('content').innerHTML=`<div class="card"><h3>${t('fotMonth')}</h3><button class="btn-fill" id="pdfBtn2">${t('sendPDF')}</button></div>`;
   document.getElementById('pdfBtn2')?.addEventListener('click',closeMonthAndPDF);
 }
-
 async function renderStock(){
   document.getElementById('pageTitle').textContent='📦 '+t('stock');
   let data=[];
@@ -155,27 +182,17 @@ async function renderStock(){
   }catch(_){}
   document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('stockTitle')}</h3><div class="muted" style="margin-bottom:8px">${t('stockHint')}</div>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1a1a"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="window.doWaste('${p.id}')">${t('waste')}</button></div>`).join('')||'—'}</div>`;
 }
-
 window.doWaste=async(id)=>{
   const qty=prompt(t('qtyAsk')); if(!qty) return;
   try{
     const {data:{user}}=await sb.auth.getUser();
-    // пишем в твою таблицу waste_logs
-    await sb.from('waste_logs').insert({
-      restaurant_id: myRestaurantId,
-      product_id: id, // у тебя в waste_logs колонка product_id, не item_id
-      qty: parseFloat(qty),
-      profile_id: user.id,
-      type: 'waste'
-    });
-    // уменьшаем склад
+    await sb.from('waste_logs').insert({restaurant_id:myRestaurantId,product_id:id,qty:parseFloat(qty),profile_id:user.id,type:'waste'});
     const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single();
     const cur=parseFloat(prod?.qty??prod?.stock??0);
     await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id);
     renderHistory();
   }catch(e){alert(e.message)}
 };
-
 async function renderHistory(){
   document.getElementById('pageTitle').textContent='📜 '+t('history');
   let data=[];
@@ -185,7 +202,6 @@ async function renderHistory(){
   }catch(_){}
   document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">${t('wasteHint')}</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.product_id} — ${m.qty}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
 }
-
 async function renderSettings(){
   document.getElementById('pageTitle').textContent='⚙️ '+t('settings');
   document.getElementById('content').innerHTML=`<div class="card">
@@ -199,7 +215,6 @@ async function renderSettings(){
   <input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}">
   <button class="btn-fill" id="saveSet">${t('save')}</button>
 </div>`;
-
   document.getElementById('saveSet').onclick=async()=>{
     const upd={
       fot_limit: document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,
@@ -211,7 +226,6 @@ async function renderSettings(){
     if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
   };
 }
-
 async function closeMonthAndPDF(){
   const start=new Date(); start.setDate(1);
   let attend=[], payouts=[], wastes=[];
@@ -229,12 +243,11 @@ async function closeMonthAndPDF(){
   let y=32; doc.setFontSize(9);
   (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked||0}h ${a.work_date}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
   y+=5;
-  (wastes||[]).forEach(w=>{doc.text(`WASTE ${w.products?.name||w.item_id} ${w.qty} by ${w.profiles?.full_name||'chef'}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+  (wastes||[]).forEach(w=>{doc.text(`WASTE ${w.products?.name||w.product_id} ${w.qty} by ${w.profiles?.full_name||'chef'}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
   doc.setFontSize(8); doc.text(footer,10,285); doc.text(`HotPit KITCHEN v3.2 • ${restName}`,10,290);
   doc.save(`${restName}_${start.getMonth()+1}_${title}.pdf`);
   if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=${restName} - ${title} ${start.getMonth()+1}`);
 }
-
 document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); localStorage.clear(); location.href='/';};
 init();
 </script>
