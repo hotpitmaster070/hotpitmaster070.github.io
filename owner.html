@@ -149,14 +149,67 @@ async function renderStaff(){
   let filtered=[];
   try{ const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true); filtered=(data||[]).filter(u=>u.id!==ownerId && u.role!=='owner'); }catch(_){}
   const colors=['#ff6b00','#a855f7','#3b82f6','#22c55e'];
-  const team=filtered.map((u,i)=>`<div class="person"><div class="avatar" style="background:${colors[i%4]}22;color:${colors[i%4]}">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div style="flex:1"><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''}</div></div><div style="background:${u.job_title==='Повар'?'#333':'#163a22'};color:${u.job_title==='Повар'?'#aaa':'#4ade80'};font-size:10px;padding:4px 8px;border-radius:10px">${t('onShift')}</div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
+  const team=filtered.map((u,i)=>`<div class="person"><div class="avatar" style="background:${colors[i%4]}22;color:${colors[i%4]}">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div style="flex:1"><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''}</div></div><div style="background:#163a22;color:#4ade80;font-size:10px;padding:4px 8px;border-radius:10px">${t('onShift')}</div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
   let used=0; const fotLimit=settings?.fot_limit;
   try{ const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString()); used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0); }catch(_){}
-  document.getElementById('content').innerHTML=`<div class="card"><div style="display:flex;gap:10px;align-items:center"><span style="font-size:18px">👥</span><b>${t('team')}</b></div><div style="margin-top:10px">${team}</div></div><div class="card"><div style="display:flex;gap:10px;align-items:center"><span style="color:#ff6b00;font-size:20px">+ </span><b>${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}" style="margin-top:12px;border-color:#ff6b00"><button class="btn" id="inviteBtn" style="border-color:#ff6b00;color:#ff6b00;margin-top:6px">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div><div class="card"><div style="display:flex;gap:10px;align-items:center"><span>💰</span><b>${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:12px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted" style="margin-top:6px">${fotLimit?Math.round(used/fotLimit*100):0}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,fotLimit?Math.round(used/fotLimit*100):0)}%"></div></div><div style="display:flex;justify-content:space-between"><span class="muted">${t('left')} ${fotLimit-used}</span><span class="muted">${fotLimit?Math.round(used/fotLimit*100):0}%</span></div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:14px">${t('sendPDF')}</button></div>`;
+  document.getElementById('content').innerHTML=`<div class="card"><div style="display:flex;gap:10px"><span>👥</span><b>${t('team')}</b></div><div style="margin-top:10px">${team}</div></div><div class="card"><div><span style="color:#ff6b00">+ </span><b>${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}" style="margin-top:12px;border-color:#ff6b00"><button class="btn" id="inviteBtn" style="border-color:#ff6b00;color:#ff6b00;margin-top:6px">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div><div class="card"><div><span>💰</span><b>${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:12px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted" style="margin-top:6px">${fotLimit?Math.round(used/fotLimit*100):0}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,fotLimit?Math.round(used/fotLimit*100):0)}%"></div></div><div style="display:flex;justify-content:space-between"><span class="muted">${t('left')} ${fotLimit-used}</span><span class="muted">${fotLimit?Math.round(used/fotLimit*100):0}%</span></div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:14px">${t('sendPDF')}</button></div>`;
 }
 async function renderFOT(){
   document.getElementById('pageTitle').textContent='📊 '+t('fot');
   document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('fotMonth')}</h3><button class="btn-fill" id="pdfBtn2">${t('sendPDF')}</button></div>`;
 }
 async function renderStock(){
-  document.getElementById('page
+  document.getElementById('pageTitle').textContent='📦 '+t('stock');
+  let data=[];
+  try{ const r=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId).order('name'); data=r.data||[]; }catch(_){}
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('stockTitle')}</h3><div class="muted" style="margin-bottom:8px">${t('stockHint')}</div>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a1a"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn" style="width:auto;padding:6px 14px" data-waste-id="${p.id}">${t('waste')}</button></div>`).join('')||'—'}</div>`;
+}
+async function doWaste(id){
+  const qty=prompt(t('qtyAsk')); if(!qty) return;
+  try{
+    const {data:{user}}=await sb.auth.getUser();
+    await sb.from('waste_logs').insert({restaurant_id:myRestaurantId,product_id:id,qty:parseFloat(qty),profile_id:user.id,type:'waste'});
+    const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single();
+    const cur=parseFloat(prod?.qty??prod?.stock??0);
+    await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id);
+    renderHistory();
+  }catch(e){alert(e.message)}
+}
+async function renderHistory(){
+  document.getElementById('pageTitle').textContent='📜 '+t('history');
+  let data=[];
+  try{ const r=await sb.from('waste_logs').select('*, products(name), profiles(full_name)').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100); data=r.data||[]; }catch(_){}
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">${t('wasteHint')}</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.product_id} — ${m.qty}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
+}
+async function renderSettings(){
+  document.getElementById('pageTitle').textContent='⚙️ '+t('settings');
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('settingsTitle')}</h3><div class="muted">${t('fotMonth')}</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="${t('fotLimitPh')}"><div class="muted">Motto</div><input class="input" id="mottoInput" value="${settings?.motto||''}" placeholder="${t('motto')}"><div class="muted">Accounting</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="${t('emailPh')}"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}"><button class="btn-fill" id="saveSet">${t('save')}</button></div>`;
+}
+async function saveSettings(){
+    const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,motto:document.getElementById('mottoInput').value,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value};
+    const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
+    if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
+}
+async function closeMonthAndPDF(){
+  const start=new Date(); start.setDate(1);
+  let attend=[], payouts=[], wastes=[];
+  try{ const r=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]); attend=r.data||[]; }catch(_){}
+  try{ const r=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); payouts=r.data||[]; }catch(_){}
+  try{ const r=await sb.from('waste_logs').select('*,products(name),profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); wastes=r.data||[]; }catch(_){}
+  const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
+  const {jsPDF}=window.jspdf; const doc=new jsPDF();
+  doc.setFontSize(14); doc.text(`${restNameCache} - ${settings?.motto||t('motto')}`, 10, 15);
+  doc.setFontSize(10); doc.text(`${t('pdfTitle')} ${start.toLocaleDateString(curLang)} | FOT ${fot_used}/${settings?.fot_limit||'-'}`, 10, 22);
+  let y=32; doc.setFontSize(9);
+  (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked||0}h ${a.work_date}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+  y+=5;
+  (wastes||[]).forEach(w=>{doc.text(`WASTE ${w.products?.name||w.product_id} ${w.qty} by ${w.profiles?.full_name||'chef'}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
+  doc.setFontSize(8); doc.text(t('pdfFooter'),10,285); doc.text(`HotPit KITCHEN v3.2 • ${restNameCache}`,10,290);
+  doc.save(`${restNameCache}_${start.getMonth()+1}_${t('pdfTitle')}.pdf`);
+  if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=${restNameCache} - ${t('pdfTitle')} ${start.getMonth()+1}`);
+}
+document.getElementById('logout').addEventListener('click', async()=>{await sb.auth.signOut(); localStorage.clear(); location.href='/';});
+init();
+</script>
+</body>
+</html>
