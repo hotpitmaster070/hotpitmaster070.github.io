@@ -9,16 +9,15 @@
 *{box-sizing:border-box}body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;display:flex;min-height:100vh}
 .sidebar{width:280px;background:#0a0a0a;border-right:1px solid #1e1e1e;padding:14px 12px;display:flex;flex-direction:column;position:fixed;inset:0 auto 0 0;z-index:30;transition:.32s}
 .sidebar.hide{transform:translateX(-110%)}
-.side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
 .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
 .logo img{width:44px;height:44px;border-radius:10px;background:#111}
 .logo b{font-size:20px;line-height:1;font-weight:800}
-.logo b.orange{color:#ff6b00}
-.logo b.white{color:#fff;letter-spacing:5px;font-weight:300;font-size:11px;display:block}
+.orange{color:#ff6b00}.white{color:#fff;letter-spacing:5px;font-weight:300;font-size:11px;display:block}
 .logo small{font-size:10px;color:#555;letter-spacing:1px;display:block;margin-top:2px}
 .x-btn{width:36px;height:36px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;border-radius:12px;font-weight:800;cursor:pointer}
 .nav{display:flex;flex-direction:column;gap:4px;flex:1}
-.nav button{background:transparent;border:none;color:#555;padding:12px 12px;border-radius:12px;text-align:left;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:13px;font-weight:600}
+.nav button{background:transparent;border:none;color:#555;padding:12px 12px;border-radius:12px;text-align:left;cursor:pointer;display:flex;gap:10px;align-items:center;font-size:13px;font-weight:600;transition:.2s}
 .nav button.active{background:#1c130a;color:#ff8c00}
 .owner-card{margin-top:auto;background:#151515;border:1px solid #242424;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:center}
 .owner-card img{width:32px;height:32px;border-radius:50%;background:#222;object-fit:cover}
@@ -26,21 +25,20 @@
 @media(max-width:820px){.main{margin-left:0}.sidebar{width:86%}}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .top h2{margin:0;font-size:22px;font-weight:800}
-.card{background:#121212;border:1px solid #242424;border-radius:16px;padding:16px;margin-bottom:14px;border-left:4px solid #ff6b00}
+.card{background:#121212;border:1px solid #242424;border-radius:20px;padding:16px;margin-bottom:14px;border-left:4px solid #ff6b00}
 .input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px;outline:none}
 .input:focus{border-color:#ff6b00}
 .btn{width:100%;border:1px solid #ff6b00;color:#ff6b00;background:transparent;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
 .btn-fill{width:100%;background:#ff6b00;color:#000;border:none;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
 .muted{color:#666;font-size:12px}
-.person{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a1a}
-.avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#1e1e1e;color:#fff}
-.progress{height:8px;background:#1e1e1e;border-radius:10px;overflow:hidden;margin:10px 0}.progress div{height:100%;background:#ff6b00}
+.person{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid #1a1a1a}
+.avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;background:#1e1e1e;color:#fff;font-size:18px}
+.progress{height:10px;background:#1e1e1e;border-radius:10px;overflow:hidden;margin:12px 0}.progress div{height:100%;background:#ff6b00}
 .lang-main{background:#1a1a1a;border:1px solid #2a2a2a;color:#ff8c00;padding:8px 14px;border-radius:20px;font-weight:800;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;width:100%}
-.lang-popup{position:absolute;left:12px;top:100px;background:#151515;border:1px solid #2a2a2a;border-radius:14px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;z-index:99;width:220px}
+.lang-popup{position:absolute;left:12px;top:110px;background:#151515;border:1px solid #2a2a2a;border-radius:14px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;z-index:99;width:220px}
 .lang-popup.hidden{display:none}
 .lang-popup button{background:#0a0a0a;border:1px solid #242424;color:#999;padding:8px;border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;text-align:left}
 .lang-popup button.active{background:#ff6b00;color:#000;border-color:#ff6b00}
-#content{transition:.2s}
 </style>
 </head>
 <body>
@@ -73,14 +71,14 @@
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
 const dict={
- ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История списаний",settings:"Настройки",team:"Команда Кухни",teamHint:"данные от шефа",onShift:"На смене",noStaff:"Нет персонала",invite:"Пригласить Шефа",invitePh:"email",sendInvite:"Отправить",inviteHint:"Шеф получит ссылку",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен",goSettings:"Настройки",sendPDF:"Отправить PDF →",left:"Осталось",logout:"Выйти",soon:"скоро",wasteHistory:"История списаний",wasteHint:"Все списания от шефа",noWaste:"Нет списаний",stockTitle:"Склад",stockHint:"Склад общий - списывает шеф",settingsTitle:"Настройки",fotLimitPh:"ФОТ лимит",emailPh:"Email бухгалтера",tgPh:"Telegram @",save:"Сохранить",saved:"Сохранено",motto:"Ресторан который кормит город",pdfTitle:"Отчет",pdfFooter:"Professional Kitchen OS • Baku — Ресторан который кормит город",waste:"Списать",qtyAsk:"Сколько списать?"},
- az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabatlar",stock:"Anbar",history:"Tarixçə",settings:"Tənzimləmələr",team:"Mətbəx Komandası",teamHint:"şef məlumatı",onShift:"Növbədə",noStaff:"Heyət yoxdur",invite:"Şefi dəvət et",invitePh:"email",sendInvite:"Dəvət göndər",inviteHint:"Şef link alacaq",fotMonth:"FOT Ay",limitNotSet:"Limit yoxdur",goSettings:"Tənzimləmələr",sendPDF:"PDF göndər →",left:"Qalıq",logout:"Çıxış",soon:"tezliklə",wasteHistory:"Tarixçə",wasteHint:"Bütün silinmələr şefdən",noWaste:"Yoxdur",stockTitle:"Anbar",stockHint:"Anbar ümumidir",settingsTitle:"Tənzimləmələr",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Saxla",saved:"Saxlandı",motto:"Şəhəri doyuran restoran",pdfTitle:"Hesabat",pdfFooter:"Professional Kitchen OS • Baku — Şəhəri doyuran restoran",waste:"Sil",qtyAsk:"Nə qədər?"},
- tr:{sub:"yönetim",staff:"Personel",orders:"Siparişler",menu:"Menü",fot:"Raporlar",stock:"Depo",history:"Geçmiş",settings:"Ayarlar",team:"Mutfak Ekibi",teamHint:"şef verisi",onShift:"Vardiyada",noStaff:"Yok",invite:"Şef Davet",invitePh:"email",sendInvite:"Gönder",inviteHint:"Şef link alacak",fotMonth:"Maaş",limitNotSet:"Limit yok",goSettings:"Ayarlar",sendPDF:"PDF →",left:"Kalan",logout:"Çıkış",soon:"yakında",wasteHistory:"Geçmiş",wasteHint:"Tüm silmeler şeften",noWaste:"Yok",stockTitle:"Depo",stockHint:"Ortak depo",settingsTitle:"Ayarlar",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Kaydet",saved:"Kaydedildi",motto:"Şehri besleyen restoran",pdfTitle:"Rapor",pdfFooter:"Professional Kitchen OS",waste:"Sil",qtyAsk:"Miktar?"},
- en:{sub:"management",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"History",settings:"Settings",team:"Kitchen Team",teamHint:"data from chef",onShift:"On shift",noStaff:"No staff",invite:"Invite Chef",invitePh:"email",sendInvite:"Send",inviteHint:"Chef will get link",fotMonth:"Payroll",limitNotSet:"No limit",goSettings:"Settings",sendPDF:"Send PDF →",left:"Left",logout:"Logout",soon:"soon",wasteHistory:"History",wasteHint:"All wastes from chef",noWaste:"None",stockTitle:"Stock",stockHint:"Shared stock",settingsTitle:"Settings",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Save",saved:"Saved",motto:"The restaurant that feeds the city",pdfTitle:"Report",pdfFooter:"Professional Kitchen OS",waste:"Waste",qtyAsk:"Qty?"},
- ar:{sub:"نظام",staff:"الطاقم",orders:"الطلبات",menu:"القائمة",fot:"التقارير",stock:"المخزون",history:"السجل",settings:"الإعدادات",team:"فريق المطبخ",teamHint:"من الشيف",onShift:"في المناوبة",noStaff:"لا يوجد",invite:"دعوة",invitePh:"بريد",sendInvite:"إرسال",inviteHint:"الشيف سيحصل على رابط",fotMonth:"الرواتب",limitNotSet:"لا حد",goSettings:"الإعدادات",sendPDF:"PDF →",left:"متبقي",logout:"خروج",soon:"قريبا",wasteHistory:"السجل",wasteHint:"كل الحذف من الشيف",noWaste:"لا يوجد",stockTitle:"المخزون",stockHint:"مخزون مشترك",settingsTitle:"الإعدادات",fotLimitPh:"حد",emailPh:"بريد",tgPh:"تليجرام",save:"حفظ",saved:"تم",motto:"المطعم الذي يطعم المدينة",pdfTitle:"تقرير",pdfFooter:"Professional Kitchen OS",waste:"حذف",qtyAsk:"الكمية؟"},
- es:{sub:"sistema",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo",teamHint:"datos del chef",onShift:"En turno",noStaff:"Sin",invite:"Invitar",invitePh:"email",sendInvite:"Enviar",inviteHint:"Chef recibirá link",fotMonth:"Presupuesto",limitNotSet:"Sin límite",goSettings:"Ajustes",sendPDF:"PDF →",left:"Queda",logout:"Salir",soon:"pronto",wasteHistory:"Historial",wasteHint:"Todo del chef",noWaste:"Nada",stockTitle:"Almacén",stockHint:"Compartido",settingsTitle:"Ajustes",fotLimitPh:"Límite",emailPh:"Email",tgPh:"Telegram",save:"Guardar",saved:"Guardado",motto:"El restaurante que alimenta la ciudad",pdfTitle:"Informe",pdfFooter:"Professional Kitchen OS",waste:"Borrar",qtyAsk:"¿Cantidad?"},
- de:{sub:"system",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Team",teamHint:"Daten vom Chef",onShift:"Im Dienst",noStaff:"Kein",invite:"Einladen",invitePh:"email",sendInvite:"Senden",inviteHint:"Chef erhält Link",fotMonth:"Lohn",limitNotSet:"Kein Limit",goSettings:"Einstellungen",sendPDF:"PDF →",left:"Übrig",logout:"Abmelden",soon:"bald",wasteHistory:"Verlauf",wasteHint:"Alles vom Chef",noWaste:"Kein",stockTitle:"Lager",stockHint:"Gemeinsames Lager",settingsTitle:"Einstellungen",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Speichern",saved:"Gespeichert",motto:"Das Restaurant das die Stadt ernährt",pdfTitle:"Bericht",pdfFooter:"Professional Kitchen OS",waste:"Löschen",qtyAsk:"Menge?"},
- it:{sub:"sistema",staff:"Personale",orders:"Ordini",menu:"Menu",fot:"Report",stock:"Magazzino",history:"Cronologia",settings:"Impostazioni",team:"Team",teamHint:"dati dallo chef",onShift:"In turno",noStaff:"Nessuno",invite:"Invita",invitePh:"email",sendInvite:"Invia",inviteHint:"Lo chef riceverà link",fotMonth:"Budget",limitNotSet:"No limite",goSettings:"Impostazioni",sendPDF:"PDF →",left:"Rimane",logout:"Esci",soon:"presto",wasteHistory:"Cronologia",wasteHint:"Tutto dallo chef",noWaste:"Niente",stockTitle:"Magazzino",stockHint:"Condiviso",settingsTitle:"Impostazioni",fotLimitPh:"Limite",emailPh:"Email",tgPh:"Telegram",save:"Salva",saved:"Salvato",motto:"Il ristorante che nutre la città",pdfTitle:"Report",pdfFooter:"Professional Kitchen OS",waste:"Spreco",qtyAsk:"Quantità?"}
+ ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История списаний",settings:"Настройки",team:"Команда Кухни",teamHint:"данные от шефа",onShift:"На смене",offShift:"Выходной",noStaff:"Нет персонала",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен",goSettings:"Настройки",sendPDF:"Отправить PDF →",left:"Осталось",logout:"Выйти",soon:"скоро",wasteHistory:"История списаний",wasteHint:"Все списания от шефа",noWaste:"Нет списаний",stockTitle:"Склад",stockHint:"Склад общий - списывает шеф",settingsTitle:"Настройки",fotLimitPh:"ФОТ лимит",emailPh:"Email бухгалтера",tgPh:"Telegram @",save:"Сохранить",saved:"Сохранено",motto:"Ресторан который кормит город",pdfTitle:"Отчет",pdfFooter:"Professional Kitchen OS • Baku — Ресторан который кормит город",waste:"Списать",qtyAsk:"Сколько списать?"},
+ az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabatlar",stock:"Anbar",history:"Tarixçə",settings:"Tənzimləmələr",team:"Mətbəx Komandası",teamHint:"şef məlumatı",onShift:"Növbədə",offShift:"İstirahət",noStaff:"Heyət yoxdur",invite:"Şefi dəvət et",invitePh:"email",sendInvite:"Dəvət göndər",inviteHint:"Şef link alacaq",fotMonth:"FOT Ay",limitNotSet:"Limit yoxdur",goSettings:"Tənzimləmələr",sendPDF:"PDF göndər →",left:"Qalıq",logout:"Çıxış",soon:"tezliklə",wasteHistory:"Tarixçə",wasteHint:"Bütün silinmələr şefdən",noWaste:"Yoxdur",stockTitle:"Anbar",stockHint:"Anbar ümumidir",settingsTitle:"Tənzimləmələr",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Saxla",saved:"Saxlandı",motto:"Şəhəri doyuran restoran",pdfTitle:"Hesabat",pdfFooter:"Professional Kitchen OS • Baku — Şəhəri doyuran restoran",waste:"Sil",qtyAsk:"Nə qədər?"},
+ tr:{sub:"yönetim",staff:"Personel",orders:"Siparişler",menu:"Menü",fot:"Raporlar",stock:"Depo",history:"Geçmiş",settings:"Ayarlar",team:"Mutfak Ekibi",teamHint:"şef verisi",onShift:"Vardiyada",offShift:"İzinli",noStaff:"Yok",invite:"Şef Davet",invitePh:"email",sendInvite:"Gönder",inviteHint:"Şef link alacak",fotMonth:"Maaş",limitNotSet:"Limit yok",goSettings:"Ayarlar",sendPDF:"PDF →",left:"Kalan",logout:"Çıkış",soon:"yakında",wasteHistory:"Geçmiş",wasteHint:"Tüm silmeler şeften",noWaste:"Yok",stockTitle:"Depo",stockHint:"Ortak depo",settingsTitle:"Ayarlar",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Kaydet",saved:"Kaydedildi",motto:"Şehri besleyen restoran",pdfTitle:"Rapor",pdfFooter:"Professional Kitchen OS",waste:"Sil",qtyAsk:"Miktar?"},
+ en:{sub:"management",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"History",settings:"Settings",team:"Kitchen Team",teamHint:"data from chef",onShift:"On shift",offShift:"Day off",noStaff:"No staff",invite:"Invite Chef",invitePh:"email@example.com",sendInvite:"Send invitation",inviteHint:"Chef will get link",fotMonth:"Payroll",limitNotSet:"No limit",goSettings:"Settings",sendPDF:"Send PDF →",left:"Left",logout:"Logout",soon:"soon",wasteHistory:"History",wasteHint:"All wastes from chef",noWaste:"None",stockTitle:"Stock",stockHint:"Shared stock",settingsTitle:"Settings",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Save",saved:"Saved",motto:"The restaurant that feeds the city",pdfTitle:"Report",pdfFooter:"Professional Kitchen OS",waste:"Waste",qtyAsk:"Qty?"},
+ ar:{sub:"نظام",staff:"الطاقم",orders:"الطلبات",menu:"القائمة",fot:"التقارير",stock:"المخزون",history:"السجل",settings:"الإعدادات",team:"فريق المطبخ",teamHint:"من الشيف",onShift:"في المناوبة",offShift:"إجازة",noStaff:"لا يوجد",invite:"دعوة",invitePh:"بريد",sendInvite:"إرسال",inviteHint:"الشيف سيحصل على رابط",fotMonth:"الرواتب",limitNotSet:"لا حد",goSettings:"الإعدادات",sendPDF:"PDF →",left:"متبقي",logout:"خروج",soon:"قريبا",wasteHistory:"السجل",wasteHint:"كل الحذف من الشيف",noWaste:"لا يوجد",stockTitle:"المخزون",stockHint:"مخزون مشترك",settingsTitle:"الإعدادات",fotLimitPh:"حد",emailPh:"بريد",tgPh:"تليجرام",save:"حفظ",saved:"تم",motto:"المطعم الذي يطعم المدينة",pdfTitle:"تقرير",pdfFooter:"Professional Kitchen OS",waste:"حذف",qtyAsk:"الكمية؟"},
+ es:{sub:"sistema",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo",teamHint:"datos del chef",onShift:"En turno",offShift:"Libre",noStaff:"Sin",invite:"Invitar",invitePh:"email",sendInvite:"Enviar",inviteHint:"Chef recibirá link",fotMonth:"Presupuesto",limitNotSet:"Sin límite",goSettings:"Ajustes",sendPDF:"PDF →",left:"Queda",logout:"Salir",soon:"pronto",wasteHistory:"Historial",wasteHint:"Todo del chef",noWaste:"Nada",stockTitle:"Almacén",stockHint:"Compartido",settingsTitle:"Ajustes",fotLimitPh:"Límite",emailPh:"Email",tgPh:"Telegram",save:"Guardar",saved:"Guardado",motto:"El restaurante que alimenta la ciudad",pdfTitle:"Informe",pdfFooter:"Professional Kitchen OS",waste:"Borrar",qtyAsk:"¿Cantidad?"},
+ de:{sub:"system",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Team",teamHint:"Daten vom Chef",onShift:"Im Dienst",offShift:"Frei",noStaff:"Kein",invite:"Einladen",invitePh:"email",sendInvite:"Senden",inviteHint:"Chef erhält Link",fotMonth:"Lohn",limitNotSet:"Kein Limit",goSettings:"Einstellungen",sendPDF:"PDF →",left:"Übrig",logout:"Abmelden",soon:"bald",wasteHistory:"Verlauf",wasteHint:"Alles vom Chef",noWaste:"Kein",stockTitle:"Lager",stockHint:"Gemeinsames Lager",settingsTitle:"Einstellungen",fotLimitPh:"Limit",emailPh:"Email",tgPh:"Telegram",save:"Speichern",saved:"Gespeichert",motto:"Das Restaurant das die Stadt ernährt",pdfTitle:"Bericht",pdfFooter:"Professional Kitchen OS",waste:"Löschen",qtyAsk:"Menge?"},
+ it:{sub:"sistema",staff:"Personale",orders:"Ordini",menu:"Menu",fot:"Report",stock:"Magazzino",history:"Cronologia",settings:"Impostazioni",team:"Team",teamHint:"dati dallo chef",onShift:"In turno",offShift:"Libero",noStaff:"Nessuno",invite:"Invita",invitePh:"email",sendInvite:"Invia",inviteHint:"Lo chef riceverà link",fotMonth:"Budget",limitNotSet:"No limite",goSettings:"Impostazioni",sendPDF:"PDF →",left:"Rimane",logout:"Esci",soon:"presto",wasteHistory:"Cronologia",wasteHint:"Tutto dallo chef",noWaste:"Niente",stockTitle:"Magazzino",stockHint:"Condiviso",settingsTitle:"Impostazioni",fotLimitPh:"Limite",emailPh:"Email",tgPh:"Telegram",save:"Salva",saved:"Salvato",motto:"Il ristorante che nutre la città",pdfTitle:"Report",pdfFooter:"Professional Kitchen OS",waste:"Spreco",qtyAsk:"Quantità?"}
 }
 let curLang=localStorage.getItem('hp_lang')||'ru';
 let myRestaurantId=null, settings=null, ownerId=null, restNameCache='Restaurant';
@@ -89,126 +87,76 @@ function applyLang(l){
   curLang=l; localStorage.setItem('hp_lang',l);
   document.documentElement.dir=l==='ar'?'rtl':'ltr';
   document.getElementById('curLangCode').textContent=l.toUpperCase();
-  const logoSub=document.getElementById('logoSub'); if(logoSub) logoSub.textContent=t('sub');
-  const mStaff=document.getElementById('mStaff'); if(mStaff) mStaff.textContent=t('staff');
-  const mOrders=document.getElementById('mOrders'); if(mOrders) mOrders.textContent=t('orders');
-  const mMenu=document.getElementById('mMenu'); if(mMenu) mMenu.textContent=t('menu');
-  const mFot=document.getElementById('mFot'); if(mFot) mFot.textContent=t('fot');
-  const mStock=document.getElementById('mStock'); if(mStock) mStock.textContent=t('stock');
-  const mHistory=document.getElementById('mHistory'); if(mHistory) mHistory.textContent=t('history');
-  const mSettings=document.getElementById('mSettings'); if(mSettings) mSettings.textContent=t('settings');
-  const logout=document.getElementById('logout'); if(logout) logout.textContent=t('logout');
+  document.getElementById('logoSub').textContent=t('sub');
+  document.getElementById('mStaff').textContent=t('staff');
+  document.getElementById('mOrders').textContent=t('orders');
+  document.getElementById('mMenu').textContent=t('menu');
+  document.getElementById('mFot').textContent=t('fot');
+  document.getElementById('mStock').textContent=t('stock');
+  document.getElementById('mHistory').textContent=t('history');
+  document.getElementById('mSettings').textContent=t('settings');
+  document.getElementById('logout').textContent=t('logout');
   document.querySelectorAll('#langPopup button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
   const ac=document.querySelector('.nav button.active')?.dataset.tab||'staff';
   if(ac==='staff') renderStaff(); else if(ac==='fot') renderFOT(); else if(ac==='stock') renderStock(); else if(ac==='history') renderHistory(); else if(ac==='settings') renderSettings();
-  document.getElementById('content').style.opacity='1';
 }
-applyLang(curLang);
 async function init(){
  try{
   const {data:{user}} = await sb.auth.getUser(); if(!user){location.href='/'; return}
   const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
   if(p?.preferred_language) curLang=p.preferred_language;
   myRestaurantId=p.restaurant_id||localStorage.getItem('restaurant_id');
-  const nameEl=document.getElementById('ownerName'); if(nameEl) nameEl.textContent=p.full_name||'Owner';
+  document.getElementById('ownerName').textContent=p.full_name||'Owner';
   const {data:r}=await sb.from('restaurants').select('name,owner_id').eq('id',myRestaurantId).single();
   restNameCache = r?.name || 'Restaurant';
-  const restEl=document.getElementById('ownerRest'); if(restEl) restEl.textContent=restNameCache;
+  document.getElementById('ownerRest').textContent=restNameCache;
   ownerId=r?.owner_id;
   const {data:s}=await sb.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).single(); settings=s;
   applyLang(curLang);
- }catch(e){ console.log('init fallback',e); applyLang(curLang); }
+ }catch(e){ console.log(e); applyLang(curLang); renderStaff(); }
 }
-document.getElementById('langBtn').onclick=()=>document.getElementById('langPopup').classList.toggle('hidden');
-document.getElementById('langPopup').onclick=async e=>{
+document.getElementById('langBtn').addEventListener('click',()=>document.getElementById('langPopup').classList.toggle('hidden'));
+document.getElementById('langPopup').addEventListener('click', async e=>{
   if(e.target.dataset.l){
     const l=e.target.dataset.l;
     applyLang(l);
     document.getElementById('langPopup').classList.add('hidden');
     try{ const {data:{user}}=await sb.auth.getUser(); if(user) await sb.from('profiles').update({preferred_language:l}).eq('id',user.id); }catch(_){}
   }
-}
-document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.remove('hide');
-document.getElementById('xBtn').onclick=()=>document.getElementById('sidebar').classList.add('hide');
-document.querySelectorAll('.nav button').forEach(b=>{b.onclick=()=>{
+});
+document.getElementById('burger').addEventListener('click',()=>document.getElementById('sidebar').classList.remove('hide'));
+document.getElementById('xBtn').addEventListener('click',()=>document.getElementById('sidebar').classList.add('hide'));
+document.getElementById('logoBtn').addEventListener('click',()=>location.href='/');
+document.querySelectorAll('.nav button').forEach(b=>{
+ b.addEventListener('click',()=>{
   document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
   const tab=b.dataset.tab;
   if(tab==='staff') renderStaff(); else if(tab==='fot') renderFOT(); else if(tab==='stock') renderStock(); else if(tab==='history') renderHistory(); else if(tab==='settings') renderSettings();
   else { document.getElementById('pageTitle').textContent=b.textContent; document.getElementById('content').innerHTML=`<div class="card"><div class="muted">${t('soon')}</div></div>`; }
   if(innerWidth<820) document.getElementById('sidebar').classList.add('hide');
-}});
+ })});
+document.getElementById('content').addEventListener('click', async e=>{
+  const wasteBtn = e.target.closest('[data-waste-id]');
+  if(wasteBtn){ await doWaste(wasteBtn.dataset.wasteId); return; }
+  if(e.target.id==='inviteBtn'){ const em=document.getElementById('inviteEmail').value.trim(); if(!em) return; alert('Invite: https://itmaster070.github.io/?invite='+myRestaurantId+' for '+em); }
+  if(e.target.id==='goSet'){ document.querySelector('[data-tab=settings]').click(); }
+  if(e.target.id==='pdfBtn' || e.target.id==='pdfBtn2'){ closeMonthAndPDF(); }
+  if(e.target.id==='saveSet'){ saveSettings(); }
+});
+
 async function renderStaff(){
   document.getElementById('pageTitle').textContent='👥 '+t('staff');
   let filtered=[];
-  try{
-    const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true);
-    filtered=(data||[]).filter(u=>u.id!==ownerId && u.role!=='owner');
-  }catch(_){}
-  const team=filtered.map(u=>`<div class="person"><div class="avatar">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div style="flex:1"><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''} - ${t('teamHint')}: ${t('onShift')}</div></div><div style="color:#22c55e;font-size:11px">● ${t('onShift')}</div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
+  try{ const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true); filtered=(data||[]).filter(u=>u.id!==ownerId && u.role!=='owner'); }catch(_){}
+  const colors=['#ff6b00','#a855f7','#3b82f6','#22c55e'];
+  const team=filtered.map((u,i)=>`<div class="person"><div class="avatar" style="background:${colors[i%4]}22;color:${colors[i%4]}">${(u.full_name||'U').trim()[0].toUpperCase()}</div><div style="flex:1"><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''}</div></div><div style="background:${u.job_title==='Повар'?'#333':'#163a22'};color:${u.job_title==='Повар'?'#aaa':'#4ade80'};font-size:10px;padding:4px 8px;border-radius:10px">${t('onShift')}</div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
   let used=0; const fotLimit=settings?.fot_limit;
   try{ const {data:payouts}=await sb.from('payouts').select('*').eq('restaurant_id',myRestaurantId).gte('created_at',new Date(new Date().setDate(1)).toISOString()); used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0); }catch(_){}
-  document.getElementById('content').innerHTML=`<div class="card"><div><b>👥 ${t('team')} - ${t('teamHint')}</b></div><div style="margin-top:10px">${team}</div></div><div class="card"><div><b>➕ ${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}"><button class="btn" id="inviteBtn">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div><div class="card"><div><b>💰 ${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:8px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted">${fotLimit?Math.round(used/fotLimit*100):0}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,fotLimit?Math.round(used/fotLimit*100):0)}%"></div></div><div class="muted">${t('left')} ${fotLimit-used}</div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:12px">${t('sendPDF')}</button></div>`;
-  document.getElementById('inviteBtn')?.addEventListener('click',()=>{const e=document.getElementById('inviteEmail').value.trim(); if(!e) return; alert('Invite: https://itmaster070.github.io/?invite='+myRestaurantId+' for '+e)});
-  document.getElementById('goSet')?.addEventListener('click',()=>document.querySelector('[data-tab=settings]').click());
-  document.getElementById('pdfBtn')?.addEventListener('click',closeMonthAndPDF);
+  document.getElementById('content').innerHTML=`<div class="card"><div style="display:flex;gap:10px;align-items:center"><span style="font-size:18px">👥</span><b>${t('team')}</b></div><div style="margin-top:10px">${team}</div></div><div class="card"><div style="display:flex;gap:10px;align-items:center"><span style="color:#ff6b00;font-size:20px">+ </span><b>${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}" style="margin-top:12px;border-color:#ff6b00"><button class="btn" id="inviteBtn" style="border-color:#ff6b00;color:#ff6b00;margin-top:6px">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div><div class="card"><div style="display:flex;gap:10px;align-items:center"><span>💰</span><b>${t('fotMonth')}</b></div>${!fotLimit?`<div style="color:#ff8c00;margin:12px 0">${t('limitNotSet')}</div><button class="btn" id="goSet">${t('goSettings')}</button>`: `<div class="muted" style="margin-top:6px">${fotLimit?Math.round(used/fotLimit*100):0}% • ${used} / ${fotLimit}</div><div class="progress"><div style="width:${Math.min(100,fotLimit?Math.round(used/fotLimit*100):0)}%"></div></div><div style="display:flex;justify-content:space-between"><span class="muted">${t('left')} ${fotLimit-used}</span><span class="muted">${fotLimit?Math.round(used/fotLimit*100):0}%</span></div>`}<button class="btn-fill" id="pdfBtn" style="margin-top:14px">${t('sendPDF')}</button></div>`;
 }
 async function renderFOT(){
   document.getElementById('pageTitle').textContent='📊 '+t('fot');
-  document.getElementById('content').innerHTML=`<div class="card"><h3>${t('fotMonth')}</h3><button class="btn-fill" id="pdfBtn2">${t('sendPDF')}</button></div>`;
-  document.getElementById('pdfBtn2')?.addEventListener('click',closeMonthAndPDF);
+  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('fotMonth')}</h3><button class="btn-fill" id="pdfBtn2">${t('sendPDF')}</button></div>`;
 }
 async function renderStock(){
-  document.getElementById('pageTitle').textContent='📦 '+t('stock');
-  let data=[];
-  try{ const r=await sb.from('products').select('*').eq('restaurant_id',myRestaurantId).order('name'); data=r.data||[]; }catch(_){}
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('stockTitle')}</h3><div class="muted" style="margin-bottom:8px">${t('stockHint')}</div>${(data||[]).map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1a1a"><div><b>${p.name}</b><div class="muted">${p.qty||p.stock||0} ${p.unit||''}</div></div><button class="btn" style="width:auto;padding:6px 12px" onclick="window.doWaste('${p.id}')">${t('waste')}</button></div>`).join('')||'—'}</div>`;
-}
-window.doWaste=async(id)=>{
-  const qty=prompt(t('qtyAsk')); if(!qty) return;
-  try{
-    const {data:{user}}=await sb.auth.getUser();
-    await sb.from('waste_logs').insert({restaurant_id:myRestaurantId,product_id:id,qty:parseFloat(qty),profile_id:user.id,type:'waste'});
-    const {data:prod}=await sb.from('products').select('qty,stock').eq('id',id).single();
-    const cur=parseFloat(prod?.qty??prod?.stock??0);
-    await sb.from('products').update({qty:cur-parseFloat(qty),stock:cur-parseFloat(qty)}).eq('id',id);
-    renderHistory();
-  }catch(e){alert(e.message)}
-};
-async function renderHistory(){
-  document.getElementById('pageTitle').textContent='📜 '+t('history');
-  let data=[];
-  try{ const r=await sb.from('waste_logs').select('*, products(name), profiles(full_name)').eq('restaurant_id',myRestaurantId).order('created_at',{ascending:false}).limit(100); data=r.data||[]; }catch(_){}
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 8px">${t('wasteHistory')}</h3><div class="muted">${t('wasteHint')}</div><div style="margin-top:10px">${(data||[]).map(m=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a"><div style="display:flex;justify-content:space-between"><b>${m.products?.name||m.product_id} — ${m.qty}</b><span style="color:#ff6b00;font-weight:800">${m.profiles?.full_name||'Chef'}</span></div><div class="muted">${new Date(m.created_at).toLocaleString(curLang)}</div></div>`).join('')||t('noWaste')}</div></div>`;
-}
-async function renderSettings(){
-  document.getElementById('pageTitle').textContent='⚙️ '+t('settings');
-  document.getElementById('content').innerHTML=`<div class="card"><h3 style="margin:0 0 12px">${t('settingsTitle')}</h3><div class="muted">${t('fotMonth')}</div><input class="input" id="fotLimit" type="number" value="${settings?.fot_limit||''}" placeholder="${t('fotLimitPh')}"><div class="muted">Motto / Девиз (из БД)</div><input class="input" id="mottoInput" value="${settings?.motto||''}" placeholder="${t('motto')}"><div class="muted">Accounting</div><input class="input" id="accEmail" value="${settings?.accountant_email||''}" placeholder="${t('emailPh')}"><input class="input" id="accTg" value="${settings?.accountant_telegram||''}" placeholder="${t('tgPh')}"><button class="btn-fill" id="saveSet">${t('save')}</button></div>`;
-  document.getElementById('saveSet').onclick=async()=>{
-    const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,motto:document.getElementById('mottoInput').value,accountant_email:document.getElementById('accEmail').value,accountant_telegram:document.getElementById('accTg').value};
-    const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
-    if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
-  };
-}
-async function closeMonthAndPDF(){
-  const start=new Date(); start.setDate(1);
-  let attend=[], payouts=[], wastes=[];
-  try{ const r=await sb.from('attendance').select('*,profiles!inner(full_name)').eq('restaurant_id',myRestaurantId).gte('work_date',start.toISOString().split('T')[0]); attend=r.data||[]; }catch(_){}
-  try{ const r=await sb.from('payouts').select('*,profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); payouts=r.data||[]; }catch(_){}
-  try{ const r=await sb.from('waste_logs').select('*,products(name),profiles(full_name)').eq('restaurant_id',myRestaurantId).gte('created_at',start.toISOString()); wastes=r.data||[]; }catch(_){}
-  const fot_used=(payouts||[]).reduce((s,p)=>s+Number(p.amount),0);
-  const {jsPDF}=window.jspdf; const doc=new jsPDF();
-  doc.setFontSize(14); doc.text(`${restNameCache} - ${settings?.motto||t('motto')}`, 10, 15);
-  doc.setFontSize(10); doc.text(`${t('pdfTitle')} ${start.toLocaleDateString(curLang)} | FOT ${fot_used}/${settings?.fot_limit||'-'}`, 10, 22);
-  let y=32; doc.setFontSize(9);
-  (attend||[]).forEach(a=>{doc.text(`${a.profiles.full_name} ${a.hours_worked||0}h ${a.work_date}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
-  y+=5;
-  (wastes||[]).forEach(w=>{doc.text(`WASTE ${w.products?.name||w.product_id} ${w.qty} by ${w.profiles?.full_name||'chef'}`,10,y); y+=6; if(y>270){doc.addPage(); y=15;}});
-  doc.setFontSize(8); doc.text(t('pdfFooter'),10,285); doc.text(`HotPit KITCHEN v3.2 • ${restNameCache}`,10,290);
-  doc.save(`${restNameCache}_${start.getMonth()+1}_${t('pdfTitle')}.pdf`);
-  if(settings?.accountant_email) window.open(`mailto:${settings.accountant_email}?subject=${restNameCache} - ${t('pdfTitle')} ${start.getMonth()+1}`);
-}
-document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); localStorage.clear(); location.href='/';};
-init();
-</script>
-</body>
-</html>
+  document.getElementById('page
