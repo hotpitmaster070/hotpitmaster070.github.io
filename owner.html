@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit Owner - Push</title>
+<title>HotPit Owner - Push Final</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -23,10 +23,7 @@ body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;displ
 .owner-card{margin-top:auto;background:#151515;border:1px solid #242424;border-radius:12px;padding:8px;display:flex;gap:8px;align-items:center}
 .main{margin-left:0;flex:1;padding:16px;width:100%;max-width:100%;transition:margin-left.32s ease, max-width.32s ease}
 .main.shifted{margin-left:200px;max-width:calc(100% - 200px)}
-@media(max-width:820px){
- .sidebar{width:165px}
- .main.shifted{margin-left:165px;max-width:calc(100% - 165px)}
-}
+@media(max-width:820px){.sidebar{width:165px}.main.shifted{margin-left:165px;max-width:calc(100% - 165px)}}
 .card{background:#121212;border:1px solid #242424;border-radius:18px;padding:16px;margin-bottom:12px;border-left:4px solid #ff6b00}
 .input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;color:#fff;padding:12px;border-radius:12px;margin-bottom:10px;outline:none}
 .btn{width:100%;border:1px solid #ff6b00;color:#ff6b00;background:transparent;padding:12px;border-radius:12px;font-weight:800;cursor:pointer}
@@ -88,7 +85,18 @@ const dict={
  it:{sub:"gestione",staff:"Staff",orders:"Ordini",menu:"Menù",fot:"Report",stock:"Magazzino",history:"Storico",settings:"Impostazioni",team:"Team Cucina",onShift:"In servizio",noStaff:"Nessuno",invite:"Invita Chef",invitePh:"email",sendInvite:"Invia",inviteHint:"Chef riceverà link",fotMonth:"Stipendi",limitNotSet:"Nessun limite",goSettings:"Impostazioni",sendPDF:"Invia PDF →",left:"Rimasto",logout:"Esci",soon:"presto",settingsTitle:"Impostazioni",fotLimitPh:"Limite",save:"Salva",saved:"Salvato",motto:"Motto",pdfTitle:"Report",stockTitle:"Magazzino",waste:"Scarto"}
 }
 let curLang=localStorage.getItem('hp_lang')||'ru', myRestaurantId=null, settings=null, ownerId=null, restNameCache='Restaurant';
+let currentTab='staff';
 function t(k){return (dict[curLang]||dict.en)[k]||k;}
+
+function renderCurrentTab(){
+ if(currentTab==='staff') renderStaff();
+ else if(currentTab==='settings') renderSettings();
+ else {
+   document.getElementById('pageTitle').textContent=t(currentTab);
+   document.getElementById('content').innerHTML=`<div class="card"><div class="muted">${t('soon')}</div></div>`;
+ }
+}
+
 function applyLang(l){
  curLang=l; localStorage.setItem('hp_lang',l);
  document.getElementById('curLangCode').textContent=l.toUpperCase();
@@ -102,8 +110,9 @@ function applyLang(l){
  document.getElementById('mSettings').textContent=t('settings');
  document.getElementById('logout').textContent=t('logout');
  document.querySelectorAll('#langPopup button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
- if(document.querySelector('.nav button.active')?.dataset.tab==='staff') renderStaff();
+ renderCurrentTab();
 }
+
 async function init(){
  const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='/';return}
  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
@@ -112,17 +121,24 @@ async function init(){
  const {data:r}=await sb.from('restaurants').select('name,owner_id').eq('id',myRestaurantId).single();
  restNameCache=r?.name||'Restaurant'; document.getElementById('ownerRest').textContent=restNameCache; ownerId=r?.owner_id;
  const {data:s}=await sb.from('restaurant_settings').select('*').eq('restaurant_id',myRestaurantId).single(); settings=s;
- applyLang(curLang); renderStaff();
+ applyLang(curLang);
 }
 document.getElementById('langBtn').onclick=()=>document.getElementById('langPopup').classList.toggle('hidden');
-document.getElementById('langPopup').onclick=async e=>{ if(e.target.dataset.l){ applyLang(e.target.dataset.l); document.getElementById('langPopup').classList.add('hidden'); const {data:{user}}=await sb.auth.getUser(); if(user) await sb.from('profiles').update({preferred_language:e.target.dataset.l}).eq('id',user.id); } };
+document.getElementById('langPopup').onclick=async e=>{
+ if(e.target.dataset.l){
+  const l=e.target.dataset.l;
+  applyLang(l);
+  document.getElementById('langPopup').classList.add('hidden');
+  try{const {data:{user}}=await sb.auth.getUser(); if(user) await sb.from('profiles').update({preferred_language:l}).eq('id',user.id);}catch(_){}
+ }
+};
 document.getElementById('burger').onclick=()=>{document.getElementById('sidebar').classList.remove('hide');document.getElementById('mainBox').classList.add('shifted')};
 document.getElementById('xBtn').onclick=()=>{document.getElementById('sidebar').classList.add('hide');document.getElementById('mainBox').classList.remove('shifted')};
 document.getElementById('logoBtn').onclick=()=>location.href='/';
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
- const tab=b.dataset.tab;
- if(tab==='staff') renderStaff(); else if(tab==='settings') renderSettings(); else {document.getElementById('pageTitle').textContent=b.textContent; document.getElementById('content').innerHTML=`<div class="card"><div class="muted">${t('soon')}</div></div>`}
+ currentTab=b.dataset.tab;
+ renderCurrentTab();
  if(innerWidth<820){document.getElementById('sidebar').classList.add('hide');document.getElementById('mainBox').classList.remove('shifted')}
 });
 document.getElementById('content').onclick=e=>{
@@ -131,7 +147,7 @@ document.getElementById('content').onclick=e=>{
   const link=`${location.origin}/?invite=${myRestaurantId}&email=${encodeURIComponent(em)}`;
   document.getElementById('inviteLinkText').textContent=link; document.getElementById('inviteModal').classList.add('show');
  }
- if(e.target.id==='goSet') document.querySelector('[data-tab=settings]').click();
+ if(e.target.id==='goSet'){currentTab='settings'; document.querySelector('[data-tab=settings]').click();}
  if(e.target.id==='saveSet') saveSettings();
 };
 async function renderStaff(){
@@ -159,7 +175,7 @@ async function renderSettings(){
 async function saveSettings(){
  const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,motto:document.getElementById('mottoInput').value};
  const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
- if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff();}
+ if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff(); currentTab='staff';}
 }
 document.getElementById('closeInvite').onclick=()=>document.getElementById('inviteModal').classList.remove('show');
 document.getElementById('copyInvite').onclick=()=>{navigator.clipboard.writeText(document.getElementById('inviteLinkText').textContent); document.getElementById('copyInvite').textContent='✓'; setTimeout(()=>document.getElementById('copyInvite').textContent='Копировать →',1200)};
