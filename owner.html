@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit Owner - Push Final</title>
+<title>HotPit Owner - Final Reliable</title>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -15,7 +15,7 @@ body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;displ
 .logo{display:flex;gap:8px;align-items:center;cursor:pointer}
 .logo img{width:38px;height:38px;border-radius:10px;background:#111}
 .orange{color:#ff6b00}.white{color:#fff;letter-spacing:4px;font-weight:300;font-size:10px;display:block}
-.logo small{font-size:9px;color:#555;display:block;margin-top:2px}
+.logo small{font-size:9px;color:#555;display:block;margin-top:2px;line-height:1.2}
 .x-btn{width:30px;height:30px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;border-radius:10px;cursor:pointer}
 .nav{display:flex;flex-direction:column;gap:3px;flex:1}
 .nav button{background:transparent;border:none;color:#555;padding:10px 10px;border-radius:10px;text-align:left;cursor:pointer;display:flex;gap:8px;font-size:12px;font-weight:600}
@@ -76,18 +76,17 @@ import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
 const dict={
  ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История",settings:"Настройки",team:"Команда Кухни",onShift:"На смене",noStaff:"Нет персонала",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен",goSettings:"Настройки",sendPDF:"Отправить PDF →",left:"Осталось",logout:"Выйти",soon:"скоро",settingsTitle:"Настройки",fotLimitPh:"ФОТ лимит",save:"Сохранить",saved:"Сохранено",motto:"Девиз",pdfTitle:"Отчет",stockTitle:"Склад",waste:"Списать"},
- az:{sub:"idarəetmə",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabat",stock:"Anbar",history:"Tarix",settings:"Tənzimləmə",team:"Komanda",onShift:"Növbədə",noStaff:"Yoxdur",invite:"Şefi dəvət",invitePh:"email",sendInvite:"Göndər",inviteHint:"Şef link alacaq",fotMonth:"FOT",limitNotSet:"Limit yox",goSettings:"Tənzimləmə",sendPDF:"PDF göndər →",left:"Qalıq",logout:"Çıxış",soon:"tezliklə",settingsTitle:"Tənzimləmə",fotLimitPh:"Limit",save:"Saxla",saved:"Saxlandı",motto:"Şüar",pdfTitle:"Hesabat",stockTitle:"Anbar",waste:"Sil"},
- tr:{sub:"yönetim",staff:"Personel",orders:"Sipariş",menu:"Menü",fot:"Rapor",stock:"Depo",history:"Geçmiş",settings:"Ayar",team:"Mutfak Ekibi",onShift:"Vardiyada",noStaff:"Yok",invite:"Şef Davet",invitePh:"email",sendInvite:"Gönder",inviteHint:"Şef link alacak",fotMonth:"Maaş",limitNotSet:"Limit yok",goSettings:"Ayar",sendPDF:"PDF Gönder →",left:"Kalan",logout:"Çıkış",soon:"yakında",settingsTitle:"Ayarlar",fotLimitPh:"Limit",save:"Kaydet",saved:"Kaydedildi",motto:"Slogan",pdfTitle:"Rapor",stockTitle:"Depo",waste:"Sil"},
- en:{sub:"management",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"History",settings:"Settings",team:"Kitchen Team",onShift:"On shift",noStaff:"No staff",invite:"Invite Chef",invitePh:"email",sendInvite:"Send",inviteHint:"Chef will get link",fotMonth:"Payroll",limitNotSet:"No limit",goSettings:"Settings",sendPDF:"Send PDF →",left:"Left",logout:"Logout",soon:"soon",settingsTitle:"Settings",fotLimitPh:"Limit",save:"Save",saved:"Saved",motto:"Motto",pdfTitle:"Report",stockTitle:"Stock",waste:"Waste"},
- ar:{sub:"إدارة",staff:"الموظفون",orders:"الطلبات",menu:"القائمة",fot:"تقارير",stock:"مخزن",history:"السجل",settings:"إعدادات",team:"فريق المطبخ",onShift:"في العمل",noStaff:"لا يوجد",invite:"دعوة الشيف",invitePh:"البريد",sendInvite:"إرسال",inviteHint:"الشيف سيحصل على رابط",fotMonth:"الرواتب",limitNotSet:"لا يوجد حد",goSettings:"إعدادات",sendPDF:"إرسال PDF →",left:"متبقي",logout:"خروج",soon:"قريباً",settingsTitle:"إعدادات",fotLimitPh:"الحد",save:"حفظ",saved:"تم الحفظ",motto:"شعار",pdfTitle:"تقرير",stockTitle:"مخزن",waste:"هدر"},
- es:{sub:"gestión",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo",onShift:"En turno",noStaff:"Vacío",invite:"Invitar Chef",invitePh:"email",sendInvite:"Enviar",inviteHint:"Chef recibirá link",fotMonth:"Nómina",limitNotSet:"Sin límite",goSettings:"Ajustes",sendPDF:"Enviar PDF →",left:"Queda",logout:"Salir",soon:"pronto",settingsTitle:"Ajustes",fotLimitPh:"Límite",save:"Guardar",saved:"Guardado",motto:"Lema",pdfTitle:"Informe",stockTitle:"Almacén",waste:"Desechar"},
- de:{sub:"Management",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Küchenteam",onShift:"Im Dienst",noStaff:"Kein",invite:"Chef einladen",invitePh:"email",sendInvite:"Senden",inviteHint:"Chef erhält Link",fotMonth:"Lohn",limitNotSet:"Kein Limit",goSettings:"Einstellungen",sendPDF:"PDF senden →",left:"Übrig",logout:"Logout",soon:"bald",settingsTitle:"Einstellungen",fotLimitPh:"Limit",save:"Speichern",saved:"Gespeichert",motto:"Motto",pdfTitle:"Bericht",stockTitle:"Lager",waste:"Abschreiben"},
- it:{sub:"gestione",staff:"Staff",orders:"Ordini",menu:"Menù",fot:"Report",stock:"Magazzino",history:"Storico",settings:"Impostazioni",team:"Team Cucina",onShift:"In servizio",noStaff:"Nessuno",invite:"Invita Chef",invitePh:"email",sendInvite:"Invia",inviteHint:"Chef riceverà link",fotMonth:"Stipendi",limitNotSet:"Nessun limite",goSettings:"Impostazioni",sendPDF:"Invia PDF →",left:"Rimasto",logout:"Esci",soon:"presto",settingsTitle:"Impostazioni",fotLimitPh:"Limite",save:"Salva",saved:"Salvato",motto:"Motto",pdfTitle:"Report",stockTitle:"Magazzino",waste:"Scarto"}
+ az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabat",stock:"Anbar",history:"Tarix",settings:"Tənzimləmə",team:"Komanda",onShift:"Növbədə",noStaff:"Yoxdur",invite:"Şefi dəvət",invitePh:"email",sendInvite:"Göndər",inviteHint:"Şef link alacaq",fotMonth:"FOT",limitNotSet:"Limit yox",goSettings:"Tənzimləmə",sendPDF:"PDF göndər →",left:"Qalıq",logout:"Çıxış",soon:"tezliklə",settingsTitle:"Tənzimləmə",fotLimitPh:"Limit",save:"Saxla",saved:"Saxlandı",motto:"Şüar",pdfTitle:"Hesabat",stockTitle:"Anbar",waste:"Sil"},
+ tr:{sub:"yönetim sistemi",staff:"Personel",orders:"Sipariş",menu:"Menü",fot:"Rapor",stock:"Depo",history:"Geçmiş",settings:"Ayar",team:"Mutfak Ekibi",onShift:"Vardiyada",noStaff:"Yok",invite:"Şef Davet",invitePh:"email",sendInvite:"Gönder",inviteHint:"Şef link alacak",fotMonth:"Maaş",limitNotSet:"Limit yok",goSettings:"Ayar",sendPDF:"PDF Gönder →",left:"Kalan",logout:"Çıkış",soon:"yakında",settingsTitle:"Ayarlar",fotLimitPh:"Limit",save:"Kaydet",saved:"Kaydedildi",motto:"Slogan",pdfTitle:"Rapor",stockTitle:"Depo",waste:"Sil"},
+ en:{sub:"management system",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"History",settings:"Settings",team:"Kitchen Team",onShift:"On shift",noStaff:"No staff",invite:"Invite Chef",invitePh:"email",sendInvite:"Send",inviteHint:"Chef will get link",fotMonth:"Payroll",limitNotSet:"No limit",goSettings:"Settings",sendPDF:"Send PDF →",left:"Left",logout:"Logout",soon:"soon",settingsTitle:"Settings",fotLimitPh:"Limit",save:"Save",saved:"Saved",motto:"Motto",pdfTitle:"Report",stockTitle:"Stock",waste:"Waste"},
+ ar:{sub:"نظام إدارة",staff:"الموظفون",orders:"الطلبات",menu:"القائمة",fot:"تقارير",stock:"مخزن",history:"السجل",settings:"إعدادات",team:"فريق المطبخ",onShift:"في العمل",noStaff:"لا يوجد",invite:"دعوة الشيف",invitePh:"البريد",sendInvite:"إرسال",inviteHint:"الشيف سيحصل على رابط",fotMonth:"الرواتب",limitNotSet:"لا يوجد حد",goSettings:"إعدادات",sendPDF:"إرسال PDF →",left:"متبقي",logout:"خروج",soon:"قريباً",settingsTitle:"إعدادات",fotLimitPh:"الحد",save:"حفظ",saved:"تم الحفظ",motto:"شعار",pdfTitle:"تقرير",stockTitle:"مخزن",waste:"هدر"},
+ es:{sub:"sistema de gestión",staff:"Personal",orders:"Pedidos",menu:"Menú",fot:"Informes",stock:"Almacén",history:"Historial",settings:"Ajustes",team:"Equipo",onShift:"En turno",noStaff:"Vacío",invite:"Invitar Chef",invitePh:"email",sendInvite:"Enviar",inviteHint:"Chef recibirá link",fotMonth:"Nómina",limitNotSet:"Sin límite",goSettings:"Ajustes",sendPDF:"Enviar PDF →",left:"Queda",logout:"Salir",soon:"pronto",settingsTitle:"Ajustes",fotLimitPh:"Límite",save:"Guardar",saved:"Guardado",motto:"Lema",pdfTitle:"Informe",stockTitle:"Almacén",waste:"Desechar"},
+ de:{sub:"Management System",staff:"Personal",orders:"Bestellungen",menu:"Menü",fot:"Berichte",stock:"Lager",history:"Verlauf",settings:"Einstellungen",team:"Küchenteam",onShift:"Im Dienst",noStaff:"Kein",invite:"Chef einladen",invitePh:"email",sendInvite:"Senden",inviteHint:"Chef erhält Link",fotMonth:"Lohn",limitNotSet:"Kein Limit",goSettings:"Einstellungen",sendPDF:"PDF senden →",left:"Übrig",logout:"Logout",soon:"bald",settingsTitle:"Einstellungen",fotLimitPh:"Limit",save:"Speichern",saved:"Gespeichert",motto:"Motto",pdfTitle:"Bericht",stockTitle:"Lager",waste:"Abschreiben"},
+ it:{sub:"sistema di gestione",staff:"Staff",orders:"Ordini",menu:"Menù",fot:"Report",stock:"Magazzino",history:"Storico",settings:"Impostazioni",team:"Team Cucina",onShift:"In servizio",noStaff:"Nessuno",invite:"Invita Chef",invitePh:"email",sendInvite:"Invia",inviteHint:"Chef riceverà link",fotMonth:"Stipendi",limitNotSet:"Nessun limite",goSettings:"Impostazioni",sendPDF:"Invia PDF →",left:"Rimasto",logout:"Esci",soon:"presto",settingsTitle:"Impostazioni",fotLimitPh:"Limite",save:"Salva",saved:"Salvato",motto:"Motto",pdfTitle:"Report",stockTitle:"Magazzino",waste:"Scarto"}
 }
 let curLang=localStorage.getItem('hp_lang')||'ru', myRestaurantId=null, settings=null, ownerId=null, restNameCache='Restaurant';
 let currentTab='staff';
 function t(k){return (dict[curLang]||dict.en)[k]||k;}
-
 function renderCurrentTab(){
  if(currentTab==='staff') renderStaff();
  else if(currentTab==='settings') renderSettings();
@@ -96,7 +95,6 @@ function renderCurrentTab(){
    document.getElementById('content').innerHTML=`<div class="card"><div class="muted">${t('soon')}</div></div>`;
  }
 }
-
 function applyLang(l){
  curLang=l; localStorage.setItem('hp_lang',l);
  document.getElementById('curLangCode').textContent=l.toUpperCase();
@@ -112,7 +110,6 @@ function applyLang(l){
  document.querySelectorAll('#langPopup button').forEach(b=>b.classList.toggle('active',b.dataset.l===l));
  renderCurrentTab();
 }
-
 async function init(){
  const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='/';return}
  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
@@ -184,4 +181,4 @@ document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); loc
 init();
 </script>
 </body>
-</html>
+  </html>
