@@ -1,143 +1,82 @@
 <!doctype html>
-<html lang="az">
+<html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HotPit KITCHEN - Owner</title>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet">
+<title>HotPit - Персонал</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;500;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#080808;--side:#0f0f0f;--card:#171717;--border:#262626;--accent:#ff6b00;--text:#fff;--muted:#7a7a7a}
-*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:Manrope,sans-serif;display:flex;min-height:100vh}
-.sidebar{width:72px;background:var(--side);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:space-between;padding:14px 10px;position:fixed;top:0;bottom:0;left:0;z-index:100;transition:.3s}
-.sidebar.open{width:280px}
-.brand{display:flex;align-items:center;gap:10px;overflow:hidden;white-space:nowrap;margin-bottom:16px}
-.brand img{width:38px;height:38px;border-radius:10px;flex-shrink:0}
-.brand b span{display:block;color:#fff;font-size:18px;font-weight:800;line-height:1} /* БЕЛЫЕ БУКВЫ КАК ПРОСИЛ */
-.brand small{color:#555;font-size:9px;letter-spacing:1px;margin-top:2px;display:block}
+*{box-sizing:border-box}body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;display:flex;min-height:100vh}
+.sidebar{width:260px;background:#0f0f0f;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;justify-content:space-between;padding:20px 14px;position:fixed;left:0;top:0;bottom:0;z-index:50;transition:.3s}
+.logo{display:flex;gap:12px;align-items:center;margin-bottom:36px;padding-left:6px}
+.logo-img{width:48px;height:48px;border-radius:12px;object-fit:cover}
+.hot2{font-size:26px;font-weight:800;color:#fff !important;line-height:1}
+.kit2{font-size:13px;letter-spacing:4px;color:#fff !important;font-weight:500;opacity:.9}
+.sub{font-size:10px;color:#666;margin-top:2px}
 .menu{display:flex;flex-direction:column;gap:6px}
-.menu button{background:transparent;border:none;color:var(--muted);padding:12px;border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer;white-space:nowrap;overflow:hidden;font-family:Manrope;font-size:14px}
-.menu button.active{background:rgba(255,107,0,.12);color:var(--accent);border:1px solid rgba(255,107,0,.2)}
-.menu button .ico{width:22px;flex-shrink:0;text-align:center}
-.langs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px}
-.langs button{background:#1a1a1a;border:1px solid #2a2a2a;color:#666;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:800;cursor:pointer}
-.langs button.active{background:var(--accent);color:#000;border-color:var(--accent)}
-.content{flex:1;margin-left:72px;padding:18px;width:100%;max-width:480px}
-.topbar{display:flex;justify-content:space-between;margin-bottom:16px}
-.burger{display:none;background:var(--card);border:1px solid var(--border);color:#fff;padding:8px 12px;border-radius:10px}
-.card{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:16px;padding:16px;margin-bottom:14px}
-.h2{font-size:15px;font-weight:800;margin-bottom:10px}
-.input{width:100%;background:#0a0a0a;border:1px solid #333;border-radius:12px;padding:12px 14px;color:#fff;margin-top:8px;outline:none}
-.input:focus{border-color:var(--accent)}
-.btn{width:100%;padding:12px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:12px;font-weight:800;cursor:pointer;margin-top:10px}
-.badge{background:#122012;color:#4ade80;padding:2px 8px;border-radius:20px;font-size:10px;margin-left:6px}
-.muted{color:var(--muted);font-size:12px}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:200}
-.modal-bg.show{display:flex}
-.modal{width:92%;max-width:380px;background:#151515;border:1px solid #2a2a2a;border-left:4px solid var(--accent);border-radius:20px;padding:20px}
-.linkBox{background:#0a0a0a;border:1px solid #333;border-radius:12px;padding:10px;color:var(--accent);font-size:12px;word-break:break-all;margin:12px 0}
-@media(max-width:900px){.sidebar{transform:translateX(-100%);width:280px}.sidebar.open{transform:translateX(0)}.content{margin-left:0}.burger{display:block}}
+.menu-item{padding:12px 14px;border-radius:12px;color:#777;display:flex;align-items:center;gap:12px;cursor:pointer;font-size:14px;border:1px solid transparent}
+.menu-item.active{background:rgba(255,107,0,.15);color:#ff8c00;border-color:rgba(255,107,0,.25);font-weight:700}
+.bottom{margin-top:auto;padding-top:20px;border-top:1px solid #1e1e1e}
+.user-card{display:flex;align-items:center;gap:10px;background:#151515;border:1px solid #222;border-radius:14px;padding:10px 12px}
+.user-av{width:32px;height:32px;background:#222;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.user-name{font-size:13px;font-weight:700}.user-role{font-size:10px;color:#666}
+.main{margin-left:260px;flex:1;padding:20px;max-width:800px}
+.topbar{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.burger{display:none;width:36px;height:36px;background:#151515;border:1px solid #222;border-radius:10px;align-items:center;justify-content:center;cursor:pointer}
+.hamburger{width:16px;height:2px;background:#fff;position:relative}.hamburger::before,.hamburger::after{content:'';position:absolute;width:16px;height:2px;background:#fff;left:0}.hamburger::before{top:-5px}.hamburger::after{top:5px}
+.title{font-size:22px;font-weight:800}
+.card{background:#151515;border:1px solid #222;border-radius:18px;padding:18px;margin-bottom:14px;position:relative}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:#ff6b00}
+.card-head{display:flex;gap:10px;font-size:18px;font-weight:800;margin-bottom:16px}
+.team-item{display:flex;gap:14px;padding:10px 0;align-items:center}
+.avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800}
+.ak{background:#2a1a15;color:#ff8c3a}.m{background:#231a3a;color:#a78bfa}.d{background:#15223a;color:#6b9bff}
+.status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.on{background:#1a2e1a;color:#6fdc6f;border:1px solid #2a4a2a}.off{background:#2a2a2a;color:#888}
+.invite-input{width:100%;background:#0f0f0f;border:1px solid #333;border-radius:12px;padding:14px;color:#fff;margin-bottom:12px}
+.btn-orange{width:100%;background:transparent;border:1px solid #ff6b00;color:#ff8c00;padding:12px;border-radius:12px;font-weight:700;cursor:pointer}
+.progress{height:8px;background:#222;border-radius:10px;overflow:hidden;margin:12px 0}.progress-bar{height:100%;background:#ff6b00;border-radius:10px}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.burger{display:flex}}
 </style>
 </head>
 <body>
-<aside class="sidebar" id="sidebar">
+<div class="sidebar" id="sidebar">
 <div>
-<div class="brand"><img src="logo.png"><b><span>HotPit</span><span>KITCHEN</span><small id="brandSub">idarəetmə sistemi</small></b></div>
-<div class="langs" id="langs"></div>
-<div class="menu" id="menu"></div>
+<div class="logo"><img src="logo.png" class="logo-img"><div><div class="hot2">HotPit</div><div class="kit2">KITCHEN</div><div class="sub">система управления</div></div></div>
+<div class="menu">
+<div class="menu-item">☰ Дашборд</div>
+<div class="menu-item active">👥 Персонал</div>
+<div class="menu-item">≡ Заказы</div>
+<div class="menu-item">🍽 Меню</div>
+<div class="menu-item">📊 Отчёты</div>
+<div class="menu-item">⚙️ Настройки</div>
 </div>
-<div><div class="card" style="border-left:none;padding:10px;display:flex;gap:10px;align-items:center"><img src="logo.png" style="width:36px;height:36px;border-radius:50%"><div><b id="userName" style="font-size:13px"></b><div class="muted" id="restName"></div></div></div><div class="menu"><button id="logout">🚪 <span id="logoutTxt">Çıxış</span></button></div></div>
-</aside>
-
-<main class="content">
-<div class="topbar"><button class="burger" id="burger">☰</button><div></div></div>
-<div class="card"><div class="h2" id="teamTitle">👥 Komanda</div><div id="teamList" class="muted">...</div></div>
-<div class="card"><div class="h2" id="inviteTitle">➕ Şefi dəvət et</div><input class="input" id="inviteEmail" placeholder="email@misal.com"><button class="btn" id="inviteBtn"></button><div class="muted" id="inviteHint" style="margin-top:8px"></div></div>
-<div class="card"><div class="h2" id="fotTitle">💰 Aylıq FOT</div><div id="fotText" class="muted"></div><div style="height:8px;background:#2a2a2a;border-radius:20px;margin:10px 0"><div id="fotBar" style="width:0%;height:100%;background:var(--accent);border-radius:20px;transition:.5s"></div></div><div class="muted" id="fotRemain"></div></div>
-</main>
-
-<div class="modal-bg" id="modal"><div class="modal"><h3 style="color:#fff" id="modalTitle">🔥 Dəvət hazırdır</h3><div class="linkBox" id="linkText"></div><button class="btn" id="copy"></button><button class="btn" style="border-color:#333;color:#fff" id="close"></button></div></div>
-
+</div>
+<div class="bottom"><div class="user-card"><div class="user-av">👑</div><div><div class="user-name" id="profileName">Владелец</div><div class="user-role" id="profileRest">Загрузка...</div></div><div style="margin-left:auto">›</div></div></div>
+</div>
+<div class="main">
+<div class="topbar"><div class="burger" id="burger"><div class="hamburger"></div></div><div class="title">Персонал</div></div>
+<div class="card"><div class="card-head">👥 Команда Кухни</div>
+<div class="team-item"><div class="avatar ak">AK</div><div style="flex:1"><div><b>Алексей</b> <span class="status on">На смене</span></div><div style="color:#888;font-size:13px">Шеф-повар</div></div></div>
+<div class="team-item"><div class="avatar m">M</div><div style="flex:1"><div><b>Мария</b> <span class="status on">На смене</span></div><div style="color:#888;font-size:13px">Су-шеф</div></div></div>
+<div class="team-item"><div class="avatar d">Д</div><div style="flex:1"><div><b>Дмитрий</b> <span class="status off">Выходной</span></div><div style="color:#888;font-size:13px">Повар</div></div></div>
+</div>
+<div class="card"><div class="card-head">✦ Пригласить Шефа</div><input class="invite-input" id="inviteEmail" placeholder="email@пример.com"><button class="btn-orange" id="btnInvite">Отправить приглашение</button><div id="inviteMsg" style="font-size:12px;text-align:center;margin-top:8px;color:#888"></div></div>
+<div class="card"><div class="card-head">💲 ФОТ Месяц</div><div style="font-size:13px;color:#888"><span>72% • 540 000 ₽ / 750 000 ₽</span></div><div class="progress"><div class="progress-bar" style="width:72%"></div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:#666"><span>До лимита 210 000 ₽</span><span>72%</span></div></div>
+</div>
+<script>
+document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.toggle('open');
+</script>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
-
-const DICT={
-az:{brand:'idarəetmə sistemi',menu:['Hesabatlar','Anbar','Tarixçə','Tənzimləmələr','Komanda'],team:'👥 Komanda',invite:'➕ Şefi dəvət et',inviteBtn:'Dəvət göndər',hint:'Şef link alacaq: join.html?token=... email kilidlənir',fot:'💰 Aylıq FOT',remain:'Limitə qədər',logout:'Çıxış',modal:'🔥 Dəvət hazırdır',copy:'Linki kopyala',close:'Bağla',loading:'Yüklənir...',noTeam:'Komanda yoxdur',cur:'₼'},
-ru:{brand:'система управления',menu:['Отчеты','Склад','История','Настройки','Команда'],team:'👥 Команда',invite:'➕ Пригласить шефа',inviteBtn:'Отправить',hint:'Шеф получит ссылку join.html?token=... email заблокирован',fot:'💰 ФОТ Месяц',remain:'До лимита',logout:'Выйти',modal:'🔥 Приглашение готово',copy:'Копировать',close:'Закрыть',loading:'Загрузка...',noTeam:'Нет команды',cur:'₽'},
-tr:{brand:'yönetim sistemi',menu:['Raporlar','Depo','Geçmiş','Ayarlar','Ekip'],team:'👥 Ekip',invite:'➕ Şef davet et',inviteBtn:'Gönder',hint:'Şef link alacak: join.html?token=...',fot:'💰 Aylık Bordro',remain:'Limite kadar',logout:'Çıkış',modal:'🔥 Davet hazır',copy:'Kopyala',close:'Kapat',loading:'Yükleniyor...',noTeam:'Ekip yok',cur:'₺'},
-en:{brand:'management system',menu:['Reports','Stock','History','Settings','Team'],team:'👥 Team',invite:'➕ Invite Chef',inviteBtn:'Send invite',hint:'Chef gets link join.html?token=... email locked',fot:'💰 Monthly Payroll',remain:'Remaining',logout:'Logout',modal:'🔥 Invite ready',copy:'Copy link',close:'Close',loading:'Loading...',noTeam:'No team',cur:'$'}
-}
-let LANG = localStorage.getItem('hp_lang')||'az'
-let restId=null, curLang=DICT[LANG]||DICT.az
-
-function applyLang(l){
- LANG=l; localStorage.setItem('hp_lang',l); curLang=DICT[l]||DICT.en
- document.getElementById('brandSub').textContent=curLang.brand
- document.getElementById('teamTitle').textContent=curLang.team
- document.getElementById('inviteTitle').textContent=curLang.invite
- document.getElementById('inviteBtn').textContent=curLang.inviteBtn
- document.getElementById('inviteHint').textContent=curLang.hint
- document.getElementById('fotTitle').textContent=curLang.fot
- document.getElementById('logoutTxt').textContent=curLang.logout
- document.getElementById('modalTitle').textContent=curLang.modal
- document.getElementById('copy').textContent=curLang.copy
- document.getElementById('close').textContent=curLang.close
- document.getElementById('menu').innerHTML=curLang.menu.map((t,i)=>`<button class="${i===4?'active':''}"><span class="ico">${['📊','📦','📜','⚙️','👥'][i]}</span><span>${t}</span></button>`).join('')
- renderLangs()
-}
-
-function renderLangs(){
- document.getElementById('langs').innerHTML=['ru','az','tr','en','ar','es','de','it'].map(l=>`<button data-l="${l}" class="${l===LANG?'active':''}">${l.toUpperCase()}</button>`).join('')
-}
-document.getElementById('langs').onclick=e=>{if(e.target.dataset.l){applyLang(e.target.dataset.l); loadFOT()}}
-applyLang(LANG)
-
-document.getElementById('burger').onclick=()=>document.getElementById('sidebar').classList.toggle('open')
-document.getElementById('logout').onclick=async()=>{await sb.auth.signOut();location.href='/index.html'}
-
-async function init(){
- const {data:{user}}=await sb.auth.getUser(); if(!user) return location.href='/index.html'
- const {data:prof}=await sb.from('profiles').select('restaurant_id,full_name').eq('id',user.id).single()
- restId=prof?.restaurant_id
- document.getElementById('userName').textContent=prof?.full_name||''
- if(restId){
-   const {data:rest}=await sb.from('restaurants').select('name').eq('id',restId).single()
-   document.getElementById('restName').textContent=rest?.name||''
+const {data:{user}}=await sb.auth.getUser()
+if(user){
+ const {data:p}=await sb.from('profiles').select('full_name,restaurant_id,restaurants(name)').eq('id',user.id).single()
+ if(p){
+   document.getElementById('profileName').textContent=p.full_name||'Владелец'
+   document.getElementById('profileRest').textContent=p.restaurants?.name||'Ресторан'
  }
- const {data:team}=await sb.from('profiles').select('*').eq('restaurant_id',restId).eq('is_active',true)
- if(!team?.length){document.getElementById('teamList').textContent=curLang.noTeam}
- else{
-   document.getElementById('teamList').innerHTML=team.map(p=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #222"><div style="width:36px;height:36px;background:#ff6b0020;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ff6b00;font-weight:800">${(p.full_name||'U')[0]}</div><div><b style="color:#fff">${p.full_name}</b><span class="badge">${p.role}</span><div class="muted">${p.job_title||''} • ${(p.salary||0).toLocaleString()} ${curLang.cur}</div></div></div>`).join('')
- }
- loadFOT(team)
 }
-
-async function loadFOT(teamData){
- let team=teamData
- if(!team){const {data}=await sb.from('profiles').select('salary').eq('restaurant_id',restId).eq('is_active',true); team=data}
- const total = team?.reduce((s,p)=>s+(p.salary||0),0)||0
- const {data:rest}=await sb.from('restaurants').select('fot_limit').eq('id',restId).single()
- const limit = rest?.fot_limit || 100000
- const percent = Math.min(100, Math.round(total/limit*100))
- document.getElementById('fotText').textContent=`${percent}% • ${total.toLocaleString()} ${curLang.cur} / ${limit.toLocaleString()} ${curLang.cur}`
- document.getElementById('fotBar').style.width=percent+'%'
- document.getElementById('fotRemain').textContent=`${curLang.remain}: ${(limit-total).toLocaleString()} ${curLang.cur}`
-}
-init()
-
-document.getElementById('inviteBtn').onclick=async()=>{
- const email=document.getElementById('inviteEmail').value.trim(); if(!email) return
- const btn=document.getElementById('inviteBtn'); btn.disabled=true; btn.textContent='...'
- try{
-   const token=crypto.randomUUID()
-   const {error}=await sb.from('invites').insert([{token,restaurant_id:restId,email,role:'chef',job_title:'Chef',salary:0,salary_type:'daily'}])
-   if(error) throw error
-   document.getElementById('linkText').textContent=`https://hotpitmaster070.github.io/join.html?token=${token}`
-   document.getElementById('modal').classList.add('show')
- }catch(e){alert(e.message)} finally{btn.disabled=false; btn.textContent=curLang.inviteBtn}
-}
-document.getElementById('close').onclick=()=>document.getElementById('modal').classList.remove('show')
-document.getElementById('copy').onclick=()=>{navigator.clipboard.writeText(document.getElementById('linkText').textContent); document.getElementById('copy').textContent='✓'}
-document.getElementById('modal').onclick=e=>{if(e.target.id==='modal') e.currentTarget.classList.remove('show')}
 </script>
 </body>
-</html>    
+ </html>
