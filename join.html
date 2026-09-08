@@ -73,7 +73,7 @@ if(!token){
     // ТОПОВАЯ МОДАЛКА ТОЛЬКО ЕСЛИ ШЕФ
     if(data.role==='chef'){
       document.getElementById('chefAvatar').innerHTML = avatarHtml || '🔥';
-      document.getElementById('chefTitle').textContent = `Привет, Шеф ${data.job_title}!`;
+      document.getElementById('chefTitle').textContent = `Привет, ${data.job_title}!`;
       document.getElementById('chefRest').textContent = data.restaurants?.name;
       document.getElementById('chefDetails').innerHTML = `Должность: <b>${data.job_title}</b><br>Ставка: <b>${data.salary} ${typeText}</b><br>Email: <b>${data.email}</b>`;
       document.getElementById('chefModal').classList.add('show');
