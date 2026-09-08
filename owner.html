@@ -139,11 +139,28 @@ document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
  if(innerWidth<820){document.getElementById('sidebar').classList.add('hide');document.getElementById('mainBox').classList.remove('shifted')}
 });
 document.getElementById('content').onclick=e=>{
- if(e.target.id==='inviteBtn'){
-  const em=document.getElementById('inviteEmail').value.trim(); if(!em) return;
-  const link=`${location.origin}/?invite=${myRestaurantId}&email=${encodeURIComponent(em)}`;
-  document.getElementById('inviteLinkText').textContent=link; document.getElementById('inviteModal').classList.add('show');
- }
+ // в owner.html
+if(e.target.id==='inviteBtn'){
+  const em = document.getElementById('inviteEmail').value.trim(); 
+  if(!em) return;
+  const tok = crypto.randomUUID();
+  const {error} = await sb.from('invites').insert({
+    token: tok,
+    restaurant_id: myRestaurantId, // твой текущий ресторан
+    role: 'cook',
+    email: em,
+    job_title: document.getElementById('inviteJob').value || 'Повар',
+    salary: Number(document.getElementById('inviteSalary').value)||0,
+    salary_type: 'hourly',
+    expires_at: new Date(Date.now()+7*24*60*60*1000).toISOString()
+  });
+  if(error){ alert(error.message); return; }
+  const link = `${location.origin}/join.html?token=${tok}`;
+  document.getElementById('inviteLinkText').textContent = link;
+  document.getElementById('inviteModal').classList.add('show');
+  // копирование по клику
+  navigator.clipboard.writeText(link);
+}
  if(e.target.id==='goSet'){currentTab='settings'; document.querySelector('[data-tab=settings]').click();}
  if(e.target.id==='saveSet') saveSettings();
 };
