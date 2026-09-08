@@ -41,7 +41,7 @@ body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;displ
 </head>
 <body>
 
-<div class="sidebar hide" id="sidebar">
+<div class="sidebar" id="sidebar">
   <div class="side-head">
     <div class="logo" id="logoBtn"><img src="logo.png"><div><b><span class="orange">HotPit</span><br><span class="white">KITCHEN</span></b><small id="logoSub"></small></div></div>
     <button class="x-btn" id="xBtn">✕</button>
@@ -64,7 +64,7 @@ body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;displ
   <button class="btn" id="logout" style="margin-top:8px;border-color:#2a2a2a;color:#666;font-size:12px"></button>
 </div>
 
-<div class="main" id="mainBox">
+<div class="main shifted" id="mainBox">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button id="burger" style="background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:8px 12px;border-radius:12px;cursor:pointer">☰</button><h2 id="pageTitle" style="margin:0;font-size:20px"></h2></div>
   <div id="content"></div>
 </div>
@@ -75,7 +75,7 @@ body{margin:0;background:#080808;color:#fff;font-family:Manrope,sans-serif;displ
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const sb=createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs')
 const dict={
- ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История",settings:"Настройки",team:"Команда Кухни",onShift:"На смене",noStaff:"Нет персонала",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен",goSettings:"Настройки",sendPDF:"Отправить PDF →",left:"Осталось",logout:"Выйти",soon:"скоро",settingsTitle:"Настройки",fotLimitPh:"ФОТ лимит",save:"Сохранить",saved:"Сохранено",motto:"Девиз",pdfTitle:"Отчет",stockTitle:"Склад",waste:"Списать"},
+ ru:{sub:"система управления",staff:"Персонал",orders:"Заказы",menu:"Меню",fot:"Отчёты",stock:"Склад",history:"История",settings:"Настройки",team:"Команда Кухни",onShift:"На смене",noStaff:"Нет персонала",invite:"Пригласить Шефа",invitePh:"email@пример.com",sendInvite:"Отправить приглашение",inviteHint:"Шеф получит ссылку на join",fotMonth:"ФОТ Месяц",limitNotSet:"Лимит не установлен",goSettings:"Настройки",sendPDF:"Отправить PDF →",left:"Осталось",logout:"Выйти",soon:"скоро",settingsTitle:"Настройки",fotLimitPh:"ФОТ лимит",save:"Сохранить",saved:"Сохранено",motto:"Девиз",pdfTitle:"Отчет",stockTitle:"Склад",waste:"Списать"},
  az:{sub:"idarəetmə sistemi",staff:"Heyət",orders:"Sifarişlər",menu:"Menyu",fot:"Hesabat",stock:"Anbar",history:"Tarix",settings:"Tənzimləmə",team:"Komanda",onShift:"Növbədə",noStaff:"Yoxdur",invite:"Şefi dəvət",invitePh:"email",sendInvite:"Göndər",inviteHint:"Şef link alacaq",fotMonth:"FOT",limitNotSet:"Limit yox",goSettings:"Tənzimləmə",sendPDF:"PDF göndər →",left:"Qalıq",logout:"Çıxış",soon:"tezliklə",settingsTitle:"Tənzimləmə",fotLimitPh:"Limit",save:"Saxla",saved:"Saxlandı",motto:"Şüar",pdfTitle:"Hesabat",stockTitle:"Anbar",waste:"Sil"},
  tr:{sub:"yönetim sistemi",staff:"Personel",orders:"Sipariş",menu:"Menü",fot:"Rapor",stock:"Depo",history:"Geçmiş",settings:"Ayar",team:"Mutfak Ekibi",onShift:"Vardiyada",noStaff:"Yok",invite:"Şef Davet",invitePh:"email",sendInvite:"Gönder",inviteHint:"Şef link alacak",fotMonth:"Maaş",limitNotSet:"Limit yok",goSettings:"Ayar",sendPDF:"PDF Gönder →",left:"Kalan",logout:"Çıkış",soon:"yakında",settingsTitle:"Ayarlar",fotLimitPh:"Limit",save:"Kaydet",saved:"Kaydedildi",motto:"Slogan",pdfTitle:"Rapor",stockTitle:"Depo",waste:"Sil"},
  en:{sub:"management system",staff:"Staff",orders:"Orders",menu:"Menu",fot:"Reports",stock:"Stock",history:"History",settings:"Settings",team:"Kitchen Team",onShift:"On shift",noStaff:"No staff",invite:"Invite Chef",invitePh:"email",sendInvite:"Send",inviteHint:"Chef will get link",fotMonth:"Payroll",limitNotSet:"No limit",goSettings:"Settings",sendPDF:"Send PDF →",left:"Left",logout:"Logout",soon:"soon",settingsTitle:"Settings",fotLimitPh:"Limit",save:"Save",saved:"Saved",motto:"Motto",pdfTitle:"Report",stockTitle:"Stock",waste:"Waste"},
@@ -111,7 +111,7 @@ function applyLang(l){
  renderCurrentTab();
 }
 async function init(){
- const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='/';return}
+ const {data:{user}}=await sb.auth.getUser(); if(!user){location.href='./index.html';return}
  const {data:p}=await sb.from('profiles').select('*').eq('id',user.id).single();
  if(p?.preferred_language) curLang=p.preferred_language;
  myRestaurantId=p.restaurant_id; document.getElementById('ownerName').textContent=p.full_name||'Owner';
@@ -129,41 +129,51 @@ document.getElementById('langPopup').onclick=async e=>{
   try{const {data:{user}}=await sb.auth.getUser(); if(user) await sb.from('profiles').update({preferred_language:l}).eq('id',user.id);}catch(_){}
  }
 };
-document.getElementById('burger').onclick=()=>{document.getElementById('sidebar').classList.remove('hide');document.getElementById('mainBox').classList.add('shifted')};
-document.getElementById('xBtn').onclick=()=>{document.getElementById('sidebar').classList.add('hide');document.getElementById('mainBox').classList.remove('shifted')};
-document.getElementById('logoBtn').onclick=()=>location.href='/';
+document.getElementById('burger').onclick=()=>{
+  document.getElementById('sidebar').classList.toggle('hide');
+  document.getElementById('mainBox').classList.toggle('shifted');
+};
+document.getElementById('xBtn').onclick=()=>{
+  document.getElementById('sidebar').classList.add('hide');
+  document.getElementById('mainBox').classList.remove('shifted');
+};
+document.getElementById('logoBtn').onclick=()=>location.href='./index.html';
+
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
  currentTab=b.dataset.tab;
  renderCurrentTab();
  if(innerWidth<820){document.getElementById('sidebar').classList.add('hide');document.getElementById('mainBox').classList.remove('shifted')}
 });
-document.getElementById('content').onclick=e=>{
- // в owner.html
-if(e.target.id==='inviteBtn'){
-  const em = document.getElementById('inviteEmail').value.trim(); 
-  if(!em) return;
-  const tok = crypto.randomUUID();
-  const {error} = await sb.from('invites').insert({
-    token: tok,
-    restaurant_id: myRestaurantId, // твой текущий ресторан
-    role: 'cook',
-    email: em,
-    job_title: document.getElementById('inviteJob').value || 'Повар',
-    salary: Number(document.getElementById('inviteSalary').value)||0,
-    salary_type: 'hourly',
-    expires_at: new Date(Date.now()+7*24*60*60*1000).toISOString()
-  });
-  if(error){ alert(error.message); return; }
-  const link = `${location.origin}/join.html?token=${tok}`;
-  document.getElementById('inviteLinkText').textContent = link;
-  document.getElementById('inviteModal').classList.add('show');
-  // копирование по клику
-  navigator.clipboard.writeText(link);
-}
+
+// ИСПРАВЛЕНО - async + create_invite
+document.getElementById('content').onclick=async e=>{
+ if(e.target.id==='inviteBtn'){
+   const em = document.getElementById('inviteEmail').value.trim();
+   if(!em){ alert('Введите email'); return; }
+   const job = document.getElementById('inviteJob')?.value || 'Шеф-повар';
+   const sal = Number(document.getElementById('inviteSalary')?.value)||0;
+
+   e.target.disabled=true; e.target.textContent='Создаю...';
+   const {data: token, error} = await sb.rpc('create_invite',{
+     p_email: em,
+     p_role: 'chef',
+     p_job_title: job,
+     p_salary: sal,
+     p_salary_type: 'hourly'
+   });
+   e.target.disabled=false; e.target.textContent=t('sendInvite');
+
+   if(error){ alert(error.message); return; }
+   const link = `${location.origin}/join.html?token=${token}`;
+   document.getElementById('inviteLinkText').textContent = link;
+   document.getElementById('inviteModal').classList.add('show');
+   try{ await navigator.clipboard.writeText(link); }catch(_){}
+ }
  if(e.target.id==='goSet'){currentTab='settings'; document.querySelector('[data-tab=settings]').click();}
  if(e.target.id==='saveSet') saveSettings();
 };
+
 async function renderStaff(){
  document.getElementById('pageTitle').textContent='👥 '+t('staff');
  let filtered=[]; try{ const {data}=await sb.from('profiles').select('*').eq('restaurant_id',myRestaurantId).eq('is_active',true); filtered=(data||[]).filter(u=>u.id!==ownerId && u.role!=='owner'); }catch(_){}
@@ -171,7 +181,14 @@ async function renderStaff(){
  const team=filtered.map((u,i)=>`<div style="display:flex;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #1a1a1a"><div style="width:38px;height:38px;border-radius:50%;background:${colors[i%4]}22;color:${colors[i%4]};display:flex;align-items:center;justify-content:center;font-weight:800">${(u.full_name||'U')[0]}</div><div><b>${u.full_name}</b><div class="muted">${u.job_title||u.role||''}</div></div><div style="margin-left:auto;background:#163a22;color:#4ade80;font-size:9px;padding:4px 8px;border-radius:10px">${t('onShift')}</div></div>`).join('')||`<div class="muted">${t('noStaff')}</div>`;
  document.getElementById('content').innerHTML=`
   <div class="card"><div style="font-weight:800">👥 ${t('team')}</div><div style="margin-top:10px">${team}</div></div>
-  <div class="card"><div><span style="color:#ff6b00">+ </span><b>${t('invite')}</b></div><input class="input" id="inviteEmail" placeholder="${t('invitePh')}" style="margin-top:12px"><button class="btn" id="inviteBtn">${t('sendInvite')}</button><div class="muted" style="margin-top:8px">${t('inviteHint')}</div></div>
+  <div class="card">
+    <div><span style="color:#ff6b00">+ </span><b>${t('invite')}</b></div>
+    <input class="input" id="inviteEmail" placeholder="${t('invitePh')}" style="margin-top:12px">
+    <input class="input" id="inviteJob" placeholder="Должность" value="Шеф-повар">
+    <input class="input" id="inviteSalary" type="number" placeholder="Ставка в час">
+    <button class="btn" id="inviteBtn">${t('sendInvite')}</button>
+    <div class="muted" style="margin-top:8px">${t('inviteHint')}</div>
+  </div>
   <div class="card"><div>💰 <b>${t('fotMonth')}</b></div><div class="muted" style="margin-top:8px">${settings?.fot_limit?settings.fot_limit:t('limitNotSet')}</div><button class="btn" id="goSet" style="margin-top:10px">${t('goSettings')}</button></div>`;
 }
 async function renderSettings(){
@@ -189,12 +206,12 @@ async function renderSettings(){
 async function saveSettings(){
  const upd={fot_limit:document.getElementById('fotLimit').value?parseInt(document.getElementById('fotLimit').value):null,motto:document.getElementById('mottoInput').value};
  const {error}=await sb.from('restaurant_settings').update(upd).eq('restaurant_id',myRestaurantId);
- if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); renderStaff(); currentTab='staff';}
+ if(error) alert(error.message); else {settings={...settings,...upd}; alert(t('saved')); currentTab='staff'; renderStaff();}
 }
 document.getElementById('closeInvite').onclick=()=>document.getElementById('inviteModal').classList.remove('show');
 document.getElementById('copyInvite').onclick=()=>{navigator.clipboard.writeText(document.getElementById('inviteLinkText').textContent); document.getElementById('copyInvite').textContent='✓'; setTimeout(()=>document.getElementById('copyInvite').textContent='Копировать →',1200)};
 document.getElementById('inviteModal').onclick=e=>{if(e.target.id==='inviteModal') e.currentTarget.classList.remove('show')};
-document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); location.href='/'};
+document.getElementById('logout').onclick=async()=>{await sb.auth.signOut(); location.href='./index.html'};
 init();
 </script>
 </body>
