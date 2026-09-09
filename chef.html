@@ -13,7 +13,7 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(255,107,0,.12),tra
 .menu{display:flex;flex-direction:column;gap:4px;margin-top:16px}
 .menu button{width:100%;background:transparent;border:none;color:#9f9f9f;text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:12px;border-left:3px solid transparent}
 .menu button.active,.menu button:hover{background:rgba(255,107,0,.08);color:#fff;border-left-color:var(--accent)}
-.menu-parent{font-weight:700!important;color:#fff!important;background:rgba(255,107,0,.12)!important;width:100%;border:none;padding:12px 14px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between}
+.menu-parent{font-weight:700!important;color:#fff!important;background:rgba(255,107,0,.12)!important;width:100%;border:none;padding:12px 14px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
 .submenu{max-height:0;overflow:hidden;transition:.3s;padding-left:14px;border-left:2px solid #ff6b0040;margin-left:12px;margin-top:8px;display:flex;flex-direction:column;gap:2px}
 .submenu.open{max-height:400px}
 .lang-switch{display:flex;gap:4px;background:#1e1e1e;padding:4px;border-radius:20px;border:1px solid var(--border)}
@@ -22,7 +22,7 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(255,107,0,.12),tra
 .content{flex:1;padding:24px}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
-.close-btn{background:transparent;border:1px solid #333;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer}
+.close-btn{background:transparent;border:1px solid #333;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .acc-card{border:1px solid var(--border);border-radius:16px;margin-bottom:12px;background:var(--card-2);border-left:3px solid transparent;overflow:hidden}
 .acc-card.open{border-left-color:var(--accent);background:#242424}
 .acc-head{display:flex;justify-content:space-between;align-items:center;font-weight:600;padding:18px 20px;cursor:pointer}
@@ -91,7 +91,7 @@ const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbG
 const i18n={
   ru:{home:"Главная",personnel:"Персонал",timetable:"Табель",dashboard:"Дашборд",stock:"Мой склад",settings:"Настройки",shift:"Смены",accounting:"Бухгалтерия",save:"Сохранить",logout:"Выйти"},
   az:{home:"Ev",personnel:"Heyət",timetable:"Cədvəl",dashboard:"Panel",stock:"Anbarım",settings:"Tənzimləmələr",shift:"Növbələr",accounting:"Mühasibat",save:"Yadda saxla",logout:"Çıxış"},
-  en:{home:"Home",personnel:"Personnel",timetable:"Timetable",dashboard:"Dashboard",stock:"My Stock",settings:"Settings",shift:"Shifts",accounting:"Accounting",save:"Save",logout:"Logout"}
+  en:{home:"Home",personnel:"Staff",timetable:"Schedule",dashboard:"Dashboard",stock:"My Stock",settings:"Settings",shift:"Shifts",accounting:"Accounting",save:"Save",logout:"Logout"}
 };
 let lang=localStorage.getItem('hotpit_lang')||'ru';
 function setLang(l){
@@ -114,9 +114,12 @@ document.querySelectorAll('.acc-head').forEach(h=>h.onclick=()=>{
   const card=h.parentElement; card.classList.toggle('open');
   const arrow=h.querySelector('span:last-child'); if(arrow) arrow.textContent=card.classList.contains('open')?'⌃':'⌄';
 });
-safe('chefParentBtn',el=>el.onclick=()=>{$('chefAcc').classList.toggle('open'); $('chefSub').classList.toggle('open');});
+safe('chefParentBtn',el=>el.onclick=()=>{$('chefSub').classList.toggle('open')});
 
 document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{
+  const href=btn.dataset.href;
+  if(href){ location.href=href; return; }
+  if(btn.dataset.tab==='stock'){ location.href='/stock.html'; return; }
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
   document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===btn.dataset.tab?'block':'none');
   $('sidebar').classList.remove('open'); $('overlay').classList.remove('show');
@@ -125,13 +128,23 @@ safe('logoutBtn',el=>el.onclick=()=>supabase.auth.signOut().then(()=>location.hr
 
 let myRestaurantId=null;
 async function loadData(){
-  const {data:{user}}=await supabase.auth.getUser(); if(!user) return location.href='/index.html';
-  const {data:prof}=await supabase.from('profiles').select('*, restaurants(id,name,logo_url)').eq('id',user.id).maybeSingle();
-  if(!prof?.restaurant_id) return location.href='/index.html';
-  myRestaurantId=prof.restaurant_id;
-  if(prof.restaurants){
-    $('restName').textContent=prof.restaurants.name;
-    if(prof.restaurants.logo_url) $('brandLogo').src=prof.restaurants.logo_url;
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user){ location.href='/index.html'; return; }
+  try{
+    const {data:prof, error} = await supabase.from('profiles').select('restaurant_id, restaurants(id,name,logo_url)').eq('id',user.id).maybeSingle();
+    if(error){ console.warn('profiles error', error.message); $('restName').textContent='Ошибка profiles: '+error.message; return; }
+    if(!prof){ $('restName').textContent='Нет профиля в profiles'; return; }
+    if(!prof.restaurant_id){ $('restName').textContent='Нет restaurant_id — добавь в profiles'; return; }
+    myRestaurantId=prof.restaurant_id;
+    if(prof.restaurants){
+      $('restName').textContent=prof.restaurants.name;
+      if(prof.restaurants.logo_url) $('brandLogo').src=prof.restaurants.logo_url;
+    } else {
+      $('restName').textContent='Restaurant: '+myRestaurantId.slice(0,8);
+    }
+  }catch(e){
+    console.warn(e);
+    $('restName').textContent='Ошибка загрузки';
   }
 }
 loadData();
