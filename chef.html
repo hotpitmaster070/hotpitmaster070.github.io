@@ -13,7 +13,7 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(255,107,0,.12),tra
 .menu{display:flex;flex-direction:column;gap:4px;margin-top:16px}
 .menu button{width:100%;background:transparent;border:none;color:#9f9f9f;text-align:left;padding:12px 14px;border-radius:10px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:12px;border-left:3px solid transparent}
 .menu button.active,.menu button:hover{background:rgba(255,107,0,.08);color:#fff;border-left-color:var(--accent)}
-.menu-parent{font-weight:700!important;color:#fff!important;background:rgba(255,107,0,.12)!important;width:100%;border:none;padding:12px 14px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.menu-parent{font-weight:700!important;color:#fff!important;background:rgba(255,107,0,.12)!important;width:100%;border:none;padding:12px 14px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between}
 .submenu{max-height:0;overflow:hidden;transition:.3s;padding-left:14px;border-left:2px solid #ff6b0040;margin-left:12px;margin-top:8px;display:flex;flex-direction:column;gap:2px}
 .submenu.open{max-height:400px}
 .lang-switch{display:flex;gap:4px;background:#1e1e1e;padding:4px;border-radius:20px;border:1px solid var(--border)}
@@ -22,33 +22,44 @@ body{background:radial-gradient(1200px 600px at 80% -20%,rgba(255,107,0,.12),tra
 .content{flex:1;padding:24px}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .burger{background:var(--card-2);border:1px solid #333;color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
-.close-btn{background:transparent;border:1px solid #333;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.close-btn{background:transparent;border:1px solid #333;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer}
 .acc-card{border:1px solid var(--border);border-radius:16px;margin-bottom:12px;background:var(--card-2);border-left:3px solid transparent;overflow:hidden}
 .acc-card.open{border-left-color:var(--accent);background:#242424}
 .acc-head{display:flex;justify-content:space-between;align-items:center;font-weight:600;padding:18px 20px;cursor:pointer}
 .acc-body{max-height:0;overflow:hidden;transition:.35s;opacity:0;padding:0 20px}
 .acc-card.open.acc-body{max-height:800px;opacity:1;padding:0 20px 20px}
-.btn{background:var(--accent);border:none;color:#fff;padding:10px 22px;border-radius:20px;font-weight:700;cursor:pointer;margin-top:16px}
+.btn{background:var(--accent);border:none;color:#fff;padding:10px 22px;border-radius:20px;font-weight:700;cursor:pointer}
 input{width:100%;padding:12px 14px;background:#111;border:1px solid #333;border-radius:10px;color:var(--text);margin-top:8px}
 @media(min-width:901px){.sidebar{position:static;transform:translateX(0)}.burger{display:none}.close-btn{display:none!important}}
 </style></head><body>
 <div class="app">
 <div class="overlay" id="overlay"></div>
 <aside class="sidebar" id="sidebar">
-  <div style="display:flex;align-items:center;justify-content:space-between">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
     <div style="display:flex;align-items:center;gap:14px">
-      <img id="brandLogo" src="logo.png" width="54" height="54" style="object-fit:contain;border-radius:10px" onerror="this.style.display='none'">
+      <img id="brandLogo" src="logo.png" width="54" height="54" style="object-fit:contain" onerror="this.style.display='none'">
       <div style="line-height:1">
         <div style="color:#FF6A00;font-weight:900;font-size:26px">HotPit</div>
-        <div id="brandSub" style="letter-spacing:5px;font-size:12px">KITCHEN</div>
+        <div style="letter-spacing:5px;font-size:12px">KITCHEN</div>
         <div style="margin-top:6px;background:#FF6A00;color:#fff;font-weight:800;font-size:11px;padding:3px 14px;border-radius:14px;display:inline-block">ChefOS</div>
       </div>
     </div>
     <button class="close-btn" id="closeBtn">✕</button>
   </div>
   <div id="restName" style="color:var(--muted);font-size:11px;margin-top:14px;letter-spacing:.5px">...</div>
-  <nav class="menu" id="sideMenu">
-    <!-- генерируется из JS без хардкода -->
+  <nav class="menu">
+    <button class="tab-btn active" data-tab="dashboard" data-i18n="home">🏠 Home</button>
+    <button class="tab-btn" data-tab="personal" data-i18n="personnel">👤 Personnel</button>
+    <button class="tab-btn" data-tab="tabel" data-i18n="timetable">📅 Timetable</button>
+    <div class="menu-item has-submenu open" id="chefAcc">
+      <button class="menu-parent" id="chefParentBtn">🍳 ChefOS <span>⌃</span></button>
+      <div class="submenu open" id="chefSub">
+        <button class="tab-btn" data-tab="dashboard" data-i18n="dashboard">Dashboard</button>
+        <button class="tab-btn" data-tab="stock" data-i18n="stock">My Stock</button>
+      </div>
+    </div>
+    <button class="tab-btn" data-tab="settings">⚙️ <span data-i18n="settings">Settings</span></button>
+    <button id="logoutBtn" style="margin-top:20px">🚪 <span data-i18n="logout">Выйти</span></button>
   </nav>
 </aside>
 <main class="content">
@@ -61,19 +72,13 @@ input{width:100%;padding:12px 14px;background:#111;border:1px solid #333;border-
     </div>
   </div>
 
-  <div id="tab-dashboard" data-tab-content="dashboard"><h2 data-i18n="home">Home</h2><div id="dTeam"></div></div>
+  <div id="tab-dashboard" data-tab-content="dashboard"> <h2 data-i18n="home">Home</h2> <div id="dTeam"></div></div>
   <div id="tab-personal" data-tab-content="personal" style="display:none"><div id="povaraList"></div></div>
   <div id="tab-tabel" data-tab-content="tabel" style="display:none"><div id="tabelList"></div></div>
   <div id="tab-stock" data-tab-content="stock" style="display:none"><div id="stockList"></div></div>
-  <div id="tab-settings" data-tab-content="settings" style="display:none">
-    <div class="acc-card open" id="accShift">
-      <div class="acc-head"><span data-i18n="shift">Shifts</span><span>⌃</span></div>
-      <div class="acc-body"><input type="time" id="startTime" value="08:00"><input type="time" id="endTime" value="23:00" style="margin-top:8px"></div>
-    </div>
-    <div class="acc-card" id="accAccounting">
-      <div class="acc-head"><span data-i18n="accounting">Accounting</span><span>⌄</span></div>
-      <div class="acc-body"><input id="acc_email" placeholder="email"><input id="acc_tg" placeholder="@telegram" style="margin-top:8px"><input id="acc_phone" placeholder="+994..." style="margin-top:8px"></div>
-    </div>
+  <div id="tab-settings" data-tab-content="settings" style="display:block">
+    <div class="acc-card open"><div class="acc-head"><span data-i18n="shift">Shift Settings</span> <span>⌃</span></div><div class="acc-body"><input type="time" id="startTime" value="08:00"></div></div>
+    <div class="acc-card"><div class="acc-head"><span data-i18n="accounting">Accounting</span> <span>⌄</span></div><div class="acc-body"><input id="acc_email" placeholder="email"><input id="acc_tg" placeholder="@telegram" style="margin-top:8px"></div></div>
     <button class="btn" id="saveBtn" data-i18n="save">Save</button>
   </div>
 </main>
@@ -83,76 +88,45 @@ input{width:100%;padding:12px 14px;background:#111;border:1px solid #333;border-
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 const supabase = createClient('https://xljogkyropyocvuuodfl.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsam9na3lyb3B5b2N2dXVvZGZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyODA5MjgsImV4cCI6MjA5Mzg1NjkyOH0.e7m1owNpYoqTpnGRKeEiMlTAIp0T0bAe28v6MX-MyVs');
 
-const I18N={
-  ru:{home:"Главная",personnel:"Персонал",timetable:"Табель",dashboard:"Дашборд",stock:"Склад",settings:"Настройки",shift:"Смены",accounting:"Бухгалтерия",save:"Сохранить",logout:"Выйти",chefos:"ChefOS"},
-  az:{home:"Ev",personnel:"Heyət",timetable:"Cədvəl",dashboard:"Panel",stock:"Anbar",settings:"Tənzimləmələr",shift:"Növbələr",accounting:"Mühasibat",save:"Yadda saxla",logout:"Çıxış",chefos:"ChefOS"},
-  en:{home:"Home",personnel:"Staff",timetable:"Schedule",dashboard:"Dashboard",stock:"My Stock",settings:"Settings",shift:"Shifts",accounting:"Accounting",save:"Save",logout:"Logout",chefos:"ChefOS"}
+const i18n={
+  ru:{home:"Главная",personnel:"Персонал",timetable:"Табель",dashboard:"Дашборд",stock:"Мой склад",settings:"Настройки",shift:"Смены",accounting:"Бухгалтерия",save:"Сохранить",logout:"Выйти"},
+  az:{home:"Ev",personnel:"Heyət",timetable:"Cədvəl",dashboard:"Panel",stock:"Anbarım",settings:"Tənzimləmələr",shift:"Növbələr",accounting:"Mühasibat",save:"Yadda saxla",logout:"Çıxış"},
+  en:{home:"Home",personnel:"Personnel",timetable:"Timetable",dashboard:"Dashboard",stock:"My Stock",settings:"Settings",shift:"Shifts",accounting:"Accounting",save:"Save",logout:"Logout"}
 };
-
-const MENU=[
-  {id:'dashboard',icon:'🏠',i18n:'home'},
-  {id:'personal',icon:'👤',i18n:'personnel'},
-  {id:'tabel',icon:'📅',i18n:'timetable'},
-  {type:'parent', id:'chefParent', i18n:'chefos', icon:'🍳', children:[
-    {id:'dashboard',icon:'📊',i18n:'dashboard'},
-    {id:'stock',icon:'📦',i18n:'stock', href:'/stock.html'},
-  ]},
-  {id:'settings',icon:'⚙️',i18n:'settings'}
-];
-
 let lang=localStorage.getItem('hotpit_lang')||'ru';
-const $=id=>document.getElementById(id);
-
-function renderMenu(){
-  const t=I18N[lang];
-  const side=$('sideMenu');
-  side.innerHTML = MENU.map(m=>{
-    if(m.type==='parent'){
-      return `<div class="menu-block"><button class="menu-parent" id="btn-${m.id}"><span>${m.icon} ${t[m.i18n]}</span><span>⌃</span></button><div class="submenu open" id="sub-${m.id}">${m.children.map(c=>`<button class="tab-btn" data-tab="${c.id}" data-href="${c.href||''}">${c.icon} <span data-i18n="${c.i18n}">${t[c.i18n]}</span></button>`).join('')}</div></div>`;
-    } else {
-      return `<button class="tab-btn ${m.id==='dashboard'?'active':''}" data-tab="${m.id}">${m.icon} <span data-i18n="${m.i18n}">${t[m.i18n]}</span></button>`;
-    }
-  }).join('') + `<button id="logoutBtn" style="margin-top:20px">🚪 <span data-i18n="logout">${t.logout}</span></button>`;
-  bindTabs();
-}
-
 function setLang(l){
-  lang=l; localStorage.setItem('hotpit_lang',l);
+  lang=l;localStorage.setItem('hotpit_lang',l);
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active',b.dataset.lang===l));
   document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k=el.dataset.i18n; if(I18N[l][k]) el.textContent=I18N[l][k];
+    const k=el.dataset.i18n;
+    if(i18n[l][k]) el.textContent=i18n[l][k];
   });
-  renderMenu();
 }
-document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+document.querySelectorAll('.lang-btn').forEach(b=>b.onclick=()=>setLang(b.dataset.lang)); setLang(lang);
 
-function bindTabs(){
-  document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{
-    const href=btn.dataset.href; if(href){ location.href=href; return; }
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-    const tab=btn.dataset.tab;
-    document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===tab?'block':'none');
-    closeSB();
-  });
-  const parentBtn=$('btn-chefParent'); if(parentBtn){ parentBtn.onclick=()=>{ $('sub-chefParent').classList.toggle('open'); }; }
-}
+const $=id=>document.getElementById(id);
+const safe=(id,fn)=>{const el=$(id); if(el) fn(el)};
 
-function openSB(){ $('sidebar').classList.add('open'); $('overlay').classList.add('show'); }
-function closeSB(){ $('sidebar').classList.remove('open'); $('overlay').classList.remove('show'); }
-$('burgerBtn').onclick=openSB; $('closeBtn').onclick=closeSB; $('overlay').onclick=closeSB;
-
+safe('burgerBtn',el=>el.onclick=()=>{$('sidebar').classList.add('open');$('overlay').classList.add('show')});
+safe('closeBtn',el=>el.onclick=()=>{$('sidebar').classList.remove('open');$('overlay').classList.remove('show')});
+safe('overlay',el=>el.onclick=()=>{$('sidebar').classList.remove('open');el.classList.remove('show')});
 document.querySelectorAll('.acc-head').forEach(h=>h.onclick=()=>{
   const card=h.parentElement; card.classList.toggle('open');
   const arrow=h.querySelector('span:last-child'); if(arrow) arrow.textContent=card.classList.contains('open')?'⌃':'⌄';
 });
+safe('chefParentBtn',el=>el.onclick=()=>{$('chefAcc').classList.toggle('open'); $('chefSub').classList.toggle('open');});
 
-renderMenu(); setLang(lang);
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  document.querySelectorAll('[data-tab-content]').forEach(c=>c.style.display=c.dataset.tabContent===btn.dataset.tab?'block':'none');
+  $('sidebar').classList.remove('open'); $('overlay').classList.remove('show');
+});
+safe('logoutBtn',el=>el.onclick=()=>supabase.auth.signOut().then(()=>location.href='/index.html'));
 
-// Oracle-level: данные с БД, без хардкода лого и названия
 let myRestaurantId=null;
-async function init(){
+async function loadData(){
   const {data:{user}}=await supabase.auth.getUser(); if(!user) return location.href='/index.html';
-  const {data:prof}=await supabase.from('profiles').select('restaurant_id, restaurants(id,name,logo_url)').eq('id',user.id).maybeSingle();
+  const {data:prof}=await supabase.from('profiles').select('*, restaurants(id,name,logo_url)').eq('id',user.id).maybeSingle();
   if(!prof?.restaurant_id) return location.href='/index.html';
   myRestaurantId=prof.restaurant_id;
   if(prof.restaurants){
@@ -160,17 +134,6 @@ async function init(){
     if(prof.restaurants.logo_url) $('brandLogo').src=prof.restaurants.logo_url;
   }
 }
-init();
-
-$('saveBtn').onclick=async()=>{
-  // тут твой save в restaurant_settings без хардкода
-  const payload={ restaurant_id:myRestaurantId, start_time:$('startTime').value, end_time:$('endTime').value, acc_email:$('acc_email').value, acc_tg:$('acc_tg').value };
-  const {error}=await supabase.from('restaurant_settings').upsert(payload,{onConflict:'restaurant_id'});
-  if(error) alert(error.message); else alert(I18N[lang].save+' ✓');
-};
-document.getElementById('sideMenu').addEventListener('click', e=>{
-  if(e.target.closest('#logoutBtn')) supabase.auth.signOut().then(()=>location.href='/index.html');
-});
-document.querySelector('[data-tab="dashboard"]').click();
+loadData();
 </script>
 </body></html>
